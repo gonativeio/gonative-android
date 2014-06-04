@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        Base application theme, dependent on API level. This theme is replaced
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    -->
+    <style name="AppBaseTheme" parent="android:Theme.Holo">
+        <!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+    </style>
+
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="AppBaseTheme">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
+
+    <attr name="ic_drawer" format="reference"/>
+    <attr name="ic_action_refresh" format="reference"/>
+    <attr name="ic_action_search" format="reference"/>
+
+    <style name="GoNativeLight" parent="android:Theme.Holo.Light">
+        <item name="ic_drawer">@drawable/ic_drawer_light</item>
+        <item name="ic_action_refresh">@drawable/ic_action_refresh_light</item>
+        <item name="ic_action_search">@drawable/ic_action_search_light</item>
+    </style>
+
+    <style name="GoNativeDarkActionBar" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="ic_drawer">@drawable/ic_drawer_dark</item>
+        <item name="ic_action_refresh">@drawable/ic_action_refresh_dark</item>
+        <item name="ic_action_search">@drawable/ic_action_search_dark</item>
+    </style>
+
+    <style name="LoginFormContainer">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+</resources>

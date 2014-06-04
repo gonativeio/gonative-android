@@ -1,0 +1,88 @@
+<android.support.v4.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <!-- The main content view -->
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+              android:orientation="vertical" 
+              android:layout_width="match_parent" 
+              android:layout_height="match_parent">
+        
+        <io.gonative.android.LeanWebView android:id="@+id/webview"
+              android:layout_width="match_parent" 
+              android:layout_height="match_parent"/>
+
+    </RelativeLayout>
+    <!-- The navigation drawer -->
+    <!-- width should be no more than 320dp -->
+    <RelativeLayout android:id="@+id/left_drawer"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:paddingTop="11dp"
+        android:background="?android:colorBackground">
+        
+        <ImageView
+            android:id="@+id/user_avatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginRight="10dp"
+            android:src="@drawable/ic_launcher"
+            android:contentDescription="@string/avatar"
+            android:visibility="gone" />
+        <TextView
+			android:id="@+id/user_name"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_toRightOf="@id/user_avatar"
+			android:text="@string/not_logged_in"
+			android:textColor="#d0d0d0"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:paddingTop="18dp"
+			android:paddingBottom="15dp"
+			android:maxLines="2"
+			android:ellipsize="end" 
+			android:visibility="gone"/>
+        <TextView
+			android:id="@+id/user_bio"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_toRightOf="@id/user_avatar"
+			android:layout_below="@id/user_name"
+			android:textColor="?android:textColorSecondaryInverse"
+			android:textSize="12sp"
+			android:maxLines="3"
+			android:ellipsize="end"
+			android:visibility="gone" />
+        <Spinner
+            android:id="@+id/profile_picker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/user_avatar"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:visibility="gone"/>
+        <ExpandableListView
+			android:id="@+id/drawer_list"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_below="@id/profile_picker"
+			android:choiceMode="singleChoice"
+			android:scrollbars="vertical"
+            android:scrollbarStyle="insideOverlay"
+            android:groupIndicator="@null"
+			android:divider="#30808080"
+			android:dividerHeight="1dp"
+			android:footerDividersEnabled="false"
+			android:headerDividersEnabled="false"
+			android:layout_marginLeft="10dp"
+			android:layout_marginRight="10dp"/>
+    </RelativeLayout>
+</android.support.v4.widget.DrawerLayout>

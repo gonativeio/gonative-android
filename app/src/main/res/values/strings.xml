@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="app_name">GoNative</string>
+	<string name="action_search">Search</string>
+	<string name="avatar">Avatar</string>
+	<string name="not_logged_in">Not logged in</string>
+	<string name="action_refresh">Refresh</string>
+	<string name="drawer_open">Open drawer</string>
+	<string name="drawer_close">Close drawer</string>
+	<string name="search_hint">Search</string>
+	<string name="pick_photo">Pick a photo</string>
+	<string name="crop_square">Crop to a square when ready</string>
+	<string name="not_connected">&lt;html&gt;&lt;title&gt;GoNative&lt;/title&gt;&lt;body&gt;No internet connection. Connect and try again.&lt;/body&gt;&lt;/html&gt;</string>
+</resources>

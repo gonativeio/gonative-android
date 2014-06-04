@@ -1,0 +1,34 @@
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.1"
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 18
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("../../release.keystore")
+            storePassword "password"
+            keyAlias "release"
+            keyPassword "password"
+        }
+    }
+
+    buildTypes {
+        release {
+            packageNameSuffix ".gonative"
+            runProguard true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:+'
+    compile files('libs/dd-plist.jar')
+}
