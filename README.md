@@ -5,7 +5,7 @@ This is the native Android code used by https://www.gonative.io/. It allows the 
 
 How to use
 ------------
-Import into Android Studio. Edit appConfig.plist as appropriate.
+Import into Android Studio. Edit app/build.gradle as appropriate.
 
 License
 ------------
