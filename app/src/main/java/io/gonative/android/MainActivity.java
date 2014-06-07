@@ -236,6 +236,7 @@ public class MainActivity extends Activity implements Observer {
 
 		webSettings.setJavaScriptEnabled(true);
 		webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        webSettings.setDomStorageEnabled(true);
 		webSettings.setSaveFormData(false);
 		webSettings.setSavePassword(false);
 		webSettings.setUserAgentString(AppConfig.getInstance(this).getUserAgent());
