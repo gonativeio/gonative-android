@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/GoNativeAndroid.iml" filepath="$PROJECT_DIR$/GoNativeAndroid.iml" />
-      <module fileurl="file://$PROJECT_DIR$/LeanAndroid.iml" filepath="$PROJECT_DIR$/LeanAndroid.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/gonative-android.iml" filepath="$PROJECT_DIR$/gonative-android.iml" />
     </modules>
   </component>
 </project>
