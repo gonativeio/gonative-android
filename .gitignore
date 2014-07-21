@@ -1,6 +1,7 @@
 *~
+.idea/
 .gradle/
+*.iml
 local.properties
-.idea/workspace.xml
-.idea/tasks.xml
 app/build/
+build/

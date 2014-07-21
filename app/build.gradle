@@ -2,11 +2,11 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.1"
+    buildToolsVersion "19.1.0"
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 18
+        targetSdkVersion 19
     }
 
     signingConfigs {
@@ -20,7 +20,7 @@ android {
 
     buildTypes {
         release {
-            packageNameSuffix ".gonative"
+            applicationIdSuffix ".gonative"
             runProguard true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             signingConfig signingConfigs.release
@@ -29,6 +29,5 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:+'
-    compile files('libs/dd-plist.jar')
+    compile 'com.android.support:support-v4:20.+'
 }

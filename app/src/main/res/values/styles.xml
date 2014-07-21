@@ -34,6 +34,12 @@
         <item name="ic_action_search">@drawable/ic_action_search_dark</item>
     </style>
 
+    <style name="GoNativeNoActionBar" parent="android:Theme.Holo.Light.NoActionBar">
+        <item name="ic_drawer">@drawable/ic_drawer_light</item>
+        <item name="ic_action_refresh">@drawable/ic_action_refresh_light</item>
+        <item name="ic_action_search">@drawable/ic_action_search_light</item>
+    </style>
+
     <style name="LoginFormContainer">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

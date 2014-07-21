@@ -92,7 +92,7 @@ public class WebFormActivity extends Activity implements Observer{
         mTitle = getIntent().getStringExtra(EXTRA_TITLE);
         mIsLogin = getIntent().getBooleanExtra(EXTRA_IS_LOGIN, false);
 
-        if (AppConfig.getInstance(this).containsKey("forgotPasswordURL")){
+        if ( AppConfig.getInstance(this).getString("forgotPasswordURL") != null ){
             mForgotPasswordUrl = AppConfig.getInstance(this).getString("forgotPasswordURL");
         }
         else {
@@ -139,7 +139,7 @@ public class WebFormActivity extends Activity implements Observer{
             LoginManager.getInstance().checkIfNotAlreadyChecking();
         }
 
-        loadJsonResource(getIntent().getIntExtra(EXTRA_JSONCONFIG, -1));
+        loadJsonResource(getIntent().getStringExtra(EXTRA_JSONCONFIG));
 
         findViewById(R.id.submit_button).setOnClickListener(
                 new View.OnClickListener() {
@@ -179,15 +179,9 @@ public class WebFormActivity extends Activity implements Observer{
         }
     }
 
-    public void loadJsonResource(int resourceId) {
-        InputStream is = getResources().openRawResource(resourceId);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        String jsonString = null;
+    public void loadJsonResource(String configName) {
         try {
-            IOUtils.copy(is,  os);
-            jsonString = os.toString("UTF-8");
-
-            mJson = new JSONObject(jsonString);
+            mJson = AppConfig.getInstance(this).getJSONObject(configName);
             JSONArray fields = mJson.getJSONArray("fields");
 
             mFieldRefs = new ArrayList<View>(fields.length());
@@ -287,7 +281,7 @@ public class WebFormActivity extends Activity implements Observer{
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.web_form, menu);
 
-        if (mIsLogin && AppConfig.getInstance(this).containsKey("forgotPasswordURL")){
+        if (mIsLogin && AppConfig.getInstance(this).getString("forgotPasswordURL") != null){
             MenuItem forgotPassword = (MenuItem) menu.findItem(R.id.action_forgot_password);
             forgotPassword.setVisible(true);
         }
@@ -546,12 +540,14 @@ public class WebFormActivity extends Activity implements Observer{
                     mSubmitted = false;
                     mSubmitButton.setEnabled(true);
 
-                    try {
+                    String errorSelector = mJson.optString("errorSelector", "");
+                    if (errorSelector.length() > 0) {
                         mHiddenWebView.loadUrl(String.format("javascript:if(jQuery(%s).length > 0) alert(jQuery(%s).text()); else alert('Error submitting form');",
-                                LeanUtils.jsWrapString(mJson.getString("errorSelector")),
-                                LeanUtils.jsWrapString(mJson.getString("errorSelector"))));
-                    } catch (JSONException e) {
-                        Log.e(TAG, e.toString(), e);
+                                LeanUtils.jsWrapString(errorSelector),
+                                LeanUtils.jsWrapString(errorSelector)));
+                    }
+                    else {
+                        Toast.makeText(WebFormActivity.this, R.string.form_error, Toast.LENGTH_LONG).show();
                     }
 
                     mHiddenWebView.loadUrl(mFormUrl);

@@ -40,7 +40,7 @@ public class LeanUtils {
 
 
     public static boolean isValidEmail(String email) {
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile(".+@([A-Za-z0-9]+\\.)+[A-Za-z]{2}[A-Za-z]*");
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("\\S+@\\S+\\.\\S+");
         java.util.regex.Matcher m = p.matcher(email);
         return m.matches();
     }
@@ -57,5 +57,26 @@ public class LeanUtils {
         }
 
         return null;
+    }
+
+    public static String capitalizeWords(String s) {
+        StringBuilder sb = new StringBuilder();
+        String[] words = s.split("\\s+");
+
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i];
+            if (word.length() > 0) {
+                sb.append(Character.toUpperCase(word.charAt(0)));
+                if (word.length() > 1) {
+                    sb.append(word.substring(1));
+                }
+            }
+
+            if (i < words.length - 1) {
+                sb.append(" ");
+            }
+        }
+
+        return sb.toString();
     }
 }

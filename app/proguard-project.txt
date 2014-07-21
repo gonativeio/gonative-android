@@ -25,4 +25,8 @@
 -keepclassmembers class io.gonative.android.ProfilePicker$ProfileJsBridge {
     <methods>;
 }
+-keepclassmembers class io.gonative.android.MainActivity$StatusCheckerBridge {
+    <methods>;
+}
+
 -keepattributes JavascriptInterface

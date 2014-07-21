@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -8,7 +9,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -18,6 +18,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 
 public class LeanWebviewClient extends WebViewClient{
@@ -53,6 +55,18 @@ public class LeanWebviewClient extends WebViewClient{
 	
 	
 	private boolean isInternalUri(Uri uri) {
+        String urlString = uri.toString();
+
+        // first check regexes
+        ArrayList<Pattern> regexes = AppConfig.getInstance(mainActivity).getRegexInternalExternal();
+        ArrayList<Boolean> isInternal = AppConfig.getInstance(mainActivity).getRegexIsInternal();
+        for (int i = 0; i < regexes.size(); i++) {
+            Pattern regex = regexes.get(i);
+            if (regex.matcher(urlString).matches()) {
+                return isInternal.get(i);
+            }
+        }
+
         String host = uri.getHost();
         String initialHost = AppConfig.getInstance(mainActivity).getInitialHost();
 
@@ -77,52 +91,99 @@ public class LeanWebviewClient extends WebViewClient{
         boolean checkLoginSignup = ((LeanWebView)view).checkLoginSignup();
         ((LeanWebView)view).setCheckLoginSignup(true);
 
-		boolean override = false;
-
 		Uri uri = Uri.parse(url);
 
-        if(checkLoginSignup &&
-                AppConfig.getInstance(mainActivity).getBoolean("checkNativeLogin") &&
-                LeanUtils.urlsMatchOnPath(url, AppConfig.getInstance(mainActivity).getString("loginURL"))){
+        AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
-            mainActivity.launchWebForm(R.raw.login_config, AppConfig.getInstance(mainActivity).getString("loginURL"),
-                    AppConfig.getInstance(mainActivity).getString("loginURLfail"), "Log In", true);
+        if(checkLoginSignup &&
+                appConfig.getBoolean("checkNativeLogin") &&
+                LeanUtils.urlsMatchOnPath(url, appConfig.getString("loginURL"))){
+
+            mainActivity.launchWebForm("login_config", appConfig.getString("loginURL"),
+                   appConfig.getString("loginURLfail"), "Log In", true);
             return true;
         }
         else if(checkLoginSignup &&
-                AppConfig.getInstance(mainActivity).getBoolean("checkNativeSignup") &&
-                LeanUtils.urlsMatchOnPath(url, AppConfig.getInstance(mainActivity).getString("signupURL"))) {
+                appConfig.getBoolean("checkNativeSignup") &&
+                LeanUtils.urlsMatchOnPath(url, appConfig.getString("signupURL"))) {
 
-            mainActivity.launchWebForm(R.raw.signup_config, AppConfig.getInstance(mainActivity).getString("signupURL"),
-                    AppConfig.getInstance(mainActivity).getString("signupURLfail"), "Sign Up", false);
+            mainActivity.launchWebForm("signup_config", appConfig.getString("signupURL"),
+                    appConfig.getString("signupURLfail"), "Sign Up", false);
             return true;
         }
 		
 		if (!isInternalUri(uri)){
-            override = true;
+            // launch browser
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            view.getContext().startActivity(intent);
 
+            // pop this webview if the first page loaded is external
+            if (!view.canGoBack() && mainActivity.globalWebViews.size() > 1) {
+                mainActivity.popWebView();
+            }
+
+            return true;
 		}
 
-		if (override){
-			// launch browser
-			Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-			view.getContext().startActivity(intent);
+        // Starting here, we are going to load the request, but possibly in a
+        // different activity depending on the structured nav level
+
+        int currentLevel = mainActivity.getUrlLevel();
+        int newLevel = mainActivity.urlLevelForUrl(url);
+        if (currentLevel >= 0 && newLevel >= 0) {
+            if (newLevel > currentLevel) {
+                // new activity
+                Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
+                intent.putExtra("isRoot", false);
+                intent.putExtra("url", url);
+                intent.putExtra("parentUrlLevel", currentLevel);
+                mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
+
+                // pop this webview if the first page loaded is higher nav level
+                if (!view.canGoBack() && mainActivity.globalWebViews.size() > 1) {
+                    mainActivity.popWebView();
+                }
+
+                return true;
+            }
+            else if (newLevel < currentLevel) {
+                // pop activity
+                Intent returnIntent = new Intent();
+                returnIntent.putExtra("url", url);
+                returnIntent.putExtra("urlLevel", newLevel);
+                mainActivity.setResult(Activity.RESULT_OK, returnIntent);
+                mainActivity.finish();
+                return true;
+            }
         }
+
+        // Starting here, the request will be loaded in this activity.
+        if (newLevel >= 0) {
+            mainActivity.setUrlLevel(newLevel);
+        }
+
+        String newTitle = mainActivity.titleForUrl(url);
+        if (newTitle != null) {
+            mainActivity.setTitle(newTitle);
+        }
+
         // intercept html
-        else if (AppConfig.getInstance(mainActivity).getInterceptHtml()) {
+        if (AppConfig.getInstance(mainActivity).getInterceptHtml()) {
             try {
                 URL parsedUrl = new URL(url);
                 if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
                     mainActivity.setProgress(0);
                     new DownloadPageTask().execute(new WebViewAndUrl(view, parsedUrl, isReload));
-                    override = true;
+                    mainActivity.hideWebview();
+                    return true;
                 }
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage(), e);
             }
         }
 
-        return override;
+        mainActivity.hideWebview();
+        return false;
     }
 
 	@Override
@@ -140,24 +201,23 @@ public class LeanWebviewClient extends WebViewClient{
 
 		String path = uri.getPath();
 
-		// reload menu if at /user/logout or /products (first redirection from /user/login), or / (facebook)
-        /*
-		if (isInternalUri(uri) && (path.equals("/user/logout") || path.equals("/products") || path.equals("/"))){
-			mainActivity.updateMenu();
-		}*/
 
         // reload menu if internal url
         if (AppConfig.getInstance(mainActivity).getBoolean("checkUserAuth") && isInternalUri(uri)) {
-//            Log.d(TAG, "onpagestarted refreshing menu");
             mainActivity.updateMenu();
         }
 
 		super.onPageStarted(view, url, favicon);
+
+        // check ready status
+        mainActivity.startCheckingReadyStatus();
 	}
 
 	@Override
 	public void onPageFinished(WebView view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
+        mainActivity.showWebview();
+
         UrlInspector.getInstance().inspectUrl(url);
 		super.onPageFinished(view, url);
 
@@ -179,20 +239,27 @@ public class LeanWebviewClient extends WebViewClient{
 
         // profile picker
         if (this.profilePickerExec != null) {
-//            Log.d(TAG, "running " + profilePickerExec);
             view.loadUrl(this.profilePickerExec);
         }
 		
 		mainActivity.clearProgress();
 	}
+
+    @Override
+    public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+        if (!isReload) {
+            mainActivity.addToHistory(url);
+        }
+    }
 	
 	@Override
 	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl){
+        mainActivity.showWebview();
+
 		// first check connectivity
 		if (!mainActivity.isConnected()){			
 			view.loadData(mainActivity.getString(R.string.not_connected), "text/html", "utf-8");
 		}
-		
 	}
 
     private class DownloadPageTask extends AsyncTask<WebViewAndUrl, Void, String> {
@@ -283,7 +350,18 @@ public class LeanWebviewClient extends WebViewClient{
                     if (appConfig.containsKey("stringViewport")) {
                         builder.append("<meta name=\"viewport\" content=\"");
                         builder.append(TextUtils.htmlEncode(appConfig.getString("stringViewport")));
-                        builder.append("\">");
+                        builder.append("\" />");
+                    }
+                    if (appConfig.containsKey("viewportWidth")) {
+                        // we want to use user-scalable=no, but android has a bug that sets scale to
+                        // 1.0 if user-scalable=no. The workaround to is calculate the scale and set
+                        // it for initial, minimum, and maximum.
+                        // http://stackoverflow.com/questions/12723844/android-viewport-setting-user-scalable-no-breaks-width-zoom-level-of-viewpor
+                        double webViewWidth = webview.getWidth() / mainActivity.getResources().getDisplayMetrics().density;
+                        double viewportWidth = appConfig.getDouble("viewportWidth");
+                        double scale = webViewWidth / viewportWidth;
+                        builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
+                                viewportWidth, scale, scale, scale));
                     }
 
                     builder.append(origString.substring(insertPoint));

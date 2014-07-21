@@ -41,8 +41,12 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         menuItems = null;
     }
 
-    public synchronized void parseJson(String json) throws JSONException {
-        menuItems = new JSONArray(json);
+
+    public synchronized void update(String status) {
+        if (status == null) status = "default";
+
+        menuItems = AppConfig.getInstance(mainActivity).getMenus().get(status);
+        if (menuItems == null) menuItems = new JSONArray();
 
         // figure out groupsHaveIcons and childrenHaveIcons (for layout alignment)
         groupsHaveIcons = false;
@@ -71,20 +75,6 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         }
 
         notifyDataSetChanged();
-    }
-
-    public void parseJson(InputStream is) throws JSONException, IOException {
-        if (is == null) return;
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        IOUtils.copy(is, baos);
-        IOUtils.close(is);
-        IOUtils.close(baos);
-        parseJson(baos.toString("UTF-8"));
-    }
-
-    public void parseJsonAsset(String assetFile) throws JSONException, IOException {
-        parseJson(mainActivity.getAssets().open(assetFile));
     }
 
 
@@ -134,7 +124,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     boolean isGrouping(int groupPosition) {
         try {
             JSONObject section = (JSONObject)menuItems.get(groupPosition);
-            return section.getBoolean("isGrouping");
+            return section.optBoolean("isGrouping", false);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
             return false;
@@ -151,7 +141,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         int count = 0;
         try {
             JSONObject section = (JSONObject)menuItems.get(groupPosition);
-            if (section.getBoolean("isGrouping")) {
+            if (section.optBoolean("isGrouping", false)) {
                 count = section.getJSONArray("subLinks").length();
             } else {
                 count = 0;

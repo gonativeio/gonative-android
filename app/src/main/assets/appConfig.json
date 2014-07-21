@@ -1,1 +1,27 @@
-{}
+{
+    "userAgentAdd":"gonative",
+    "appName":"GoNative.io",
+    "initialURL":"https://www.gonative.io",
+    "checkNativeNav":true,
+    "checkUserAuth":false,
+    "checkCustomStyling":true,
+    "checkNativeLoginSignup":false,
+    "checkNativeLogin":false,
+    "checkNativeSignup":false,
+    "customCss":null,
+    "loginDetectionURL":null,
+    "loginDetectionURLnotloggedin":null,
+    "loginURL":null,
+    "loginURLfail":null,
+    "signupURL":null,
+    "signupURLfail":null,
+    "forgotPasswordURL":null,
+    "login_config":{},
+    "signup_config":{},
+    "searchTemplateURL":"https://www.google.com/#q=",
+    "menuAnimationDuration":0.15,
+    "menuRefreshURLs":[],
+    "useWebpageTitle":false,
+    "internalHosts":["www.gonative.io", "gonative.io"],
+    "enableChromecast":false
+}
