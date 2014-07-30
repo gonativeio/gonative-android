@@ -1,8 +1,17 @@
 package io.gonative.android;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,6 +38,7 @@ import android.content.res.TypedArray;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -60,6 +70,9 @@ import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import org.apache.http.util.ByteArrayBuffer;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity implements Observer {
 	private static final String MENU_CACHED = "menu_cached.xml";
@@ -127,17 +140,6 @@ public class MainActivity extends Activity implements Observer {
         parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
 
         if (isRoot) {
-            // enable httpurlconnection response cache
-            try {
-                long httpCacheSize = 10 * 1024 * 1024; // 10 MiB
-                File httpCacheDir = new File(getCacheDir(), "http");
-                Class.forName("android.net.http.HttpResponseCache")
-                        .getMethod("install", File.class, long.class)
-                        .invoke(null, httpCacheDir, httpCacheSize);
-            } catch (Exception httpResponseCacheNotAvailable) {
-                Log.i(TAG, "HTTP response cache is unavailable.");
-            }
-
             // html5 app cache (manifest)
             File cachePath = new File(getCacheDir(), webviewCacheSubdir);
             cachePath.mkdirs();
@@ -147,6 +149,8 @@ public class MainActivity extends Activity implements Observer {
             // url inspector
             UrlInspector.getInstance().init(this);
 
+            // OTA configs
+            new UpdateConfigTask().execute();
         }
 
         // WebView debugging
@@ -958,4 +962,42 @@ public class MainActivity extends Activity implements Observer {
         }
     }
 
+    private class UpdateConfigTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            String appnumHashed = AppConfig.getInstance(MainActivity.this).getString("appnumHashed");
+            if (appnumHashed == null) return null;
+
+            try {
+                URL url = new URL(String.format("https://gonative.io/static/appConfig/%s.json", appnumHashed));
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+                int responseCode = connection.getResponseCode();
+                if (responseCode >= 400) return null;
+
+                // verify json
+                ByteArrayOutputStream baos;
+                if (connection.getContentLength() > 0) baos = new ByteArrayOutputStream(connection.getContentLength());
+                else baos = new ByteArrayOutputStream();
+
+                InputStream is = new BufferedInputStream(connection.getInputStream());
+                IOUtils.copy(is, baos);
+                is.close();
+                baos.close();
+                new JSONObject(baos.toString("UTF-8"));
+
+                // save file
+                File destination = AppConfig.getInstance(MainActivity.this).fileForOTAconfig();
+                OutputStream os = new BufferedOutputStream(new FileOutputStream(destination));
+                is = new BufferedInputStream(new ByteArrayInputStream(baos.toByteArray()));
+                IOUtils.copy(is, os);
+                is.close();
+                os.close();
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+
+            return null;
+        }
+    }
 }

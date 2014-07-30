@@ -9,7 +9,10 @@ import android.webkit.WebView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -34,6 +37,7 @@ public class AppConfig {
     private static AppConfig mInstance = null;
 
     // instance variables
+    private Context context;
     private JSONObject json = null;
 
     private ArrayList<String> mInternalHosts = null;
@@ -54,16 +58,39 @@ public class AppConfig {
     private HashMap<String,JSONArray> menus = null;
 
 
+    public File fileForOTAconfig() {
+        return new File(context.getFilesDir(), "appConfig.json");
+    }
+
     private AppConfig(Context context){
+        this.context = context;
+
         InputStream is = null;
         InputStream jsonIs = null;
         try {
             // read json
-            jsonIs = context.getAssets().open("appConfig.json");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            IOUtils.copy(jsonIs, baos);
-            IOUtils.close(baos);
-            this.json = new JSONObject(baos.toString("UTF-8"));
+
+            if (fileForOTAconfig().exists()){
+                InputStream otaIS = null;
+                try {
+                    otaIS = new BufferedInputStream(new FileInputStream(fileForOTAconfig()));
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    IOUtils.copy(otaIS, baos);
+                    baos.close();
+                    this.json = new JSONObject(baos.toString("UTF-8"));
+                } catch (Exception e) {
+                    Log.e(TAG, e.getMessage(), e);
+                    IOUtils.close(otaIS);
+                }
+            }
+
+            if (this.json == null) {
+                jsonIs = context.getAssets().open("appConfig.json");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                IOUtils.copy(jsonIs, baos);
+                IOUtils.close(baos);
+                this.json = new JSONObject(baos.toString("UTF-8"));
+            }
 
             // preprocess internalHosts
             JSONArray hosts = json.getJSONArray("internalHosts");
@@ -228,7 +255,7 @@ public class AppConfig {
     }
 
     public boolean containsKey(String key){
-        return json.has(key);
+        return !json.isNull(key);
     }
 
     public ArrayList<String> getInternalHosts(){
