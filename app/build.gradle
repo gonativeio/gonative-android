@@ -7,6 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 19
+        applicationId "io.gonative.android"
+        versionCode 1
     }
 
     signingConfigs {
@@ -19,8 +21,10 @@ android {
     }
 
     buildTypes {
+        debug {
+	    applicationIdSuffix ".debug"
+        }
         release {
-            applicationIdSuffix ".gonative"
             runProguard true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             signingConfig signingConfigs.release
