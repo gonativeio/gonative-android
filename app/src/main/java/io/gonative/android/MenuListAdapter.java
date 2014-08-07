@@ -31,8 +31,8 @@ public class MenuListAdapter extends ArrayAdapter<DrawerMenuItem> {
 		title.setText(items.get(position).getTitle());
 
         // style it
-        if (AppConfig.getInstance(activity).getSidebarForegroundColor() != null)
-            title.setTextColor(AppConfig.getInstance(activity).getSidebarForegroundColor());
+        if (AppConfig.getInstance(activity).sidebarForegroundColor != null)
+            title.setTextColor(AppConfig.getInstance(activity).sidebarForegroundColor);
 
 		return rowView;
 	}

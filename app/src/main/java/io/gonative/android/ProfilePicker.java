@@ -83,14 +83,14 @@ public class ProfilePicker implements AdapterView.OnItemSelectedListener {
                 @Override
                 public View getView(int position, View convertView, ViewGroup parent) {
                     TextView view = (TextView) super.getView(position, convertView, parent);
-                    view.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+                    view.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
                     return view;
                 }
 
                 @Override
                 public View getDropDownView(int position, View convertView, ViewGroup parent) {
                     TextView view = (TextView) super.getDropDownView(position, convertView, parent);
-                    view.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+                    view.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
                     return view;
                 }
             };

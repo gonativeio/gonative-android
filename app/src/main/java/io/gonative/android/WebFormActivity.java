@@ -46,19 +46,18 @@ public class WebFormActivity extends Activity implements Observer{
 
     private static final String TAG = WebFormActivity.class.getName();
 
-    public static final String EXTRA_JSONCONFIG = "io.gonative.android.extra.jsonconfig";
-    public static final String EXTRA_FORMURL = "io.gonative.android.extra.formurl";
-    public static final String EXTRA_ERRORURL = "io.gonative.android.extra.errorurl";
+    public static final String EXTRA_FORMNAME = "io.gonative.android.extra.formname";
     public static final String EXTRA_TITLE = "io.gonative.android.extra.title";
-    // login pages can show password recovery menu option
-    public static final String EXTRA_IS_LOGIN = "io.gonative.android.extra.isLogin";
 
     private JSONObject mJson;
+    private ArrayList<JSONObject> fields;
+    private boolean mIsLogin;
+    private String mFormName;
     private String mFormUrl;
     private String mErrorUrl;
     private String mForgotPasswordUrl;
     private String mTitle;
-    private boolean mIsLogin;
+
     private boolean checkingLogin;
     private ArrayList<View> mFieldRefs;
     private WebView mHiddenWebView;
@@ -80,24 +79,34 @@ public class WebFormActivity extends Activity implements Observer{
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if (AppConfig.getInstance(this).containsKey("androidTheme") &&
-                AppConfig.getInstance(this).getString("androidTheme").equals("dark")){
+        AppConfig appConfig = AppConfig.getInstance(this);
+
+        if (appConfig.androidTheme != null && appConfig.androidTheme.equals("dark")){
             setTheme(R.style.GoNativeDarkActionBar);
         }
 
         super.onCreate(savedInstanceState);
 
-        mFormUrl = getIntent().getStringExtra(EXTRA_FORMURL);
-        mErrorUrl = getIntent().getStringExtra(EXTRA_ERRORURL);
-        mTitle = getIntent().getStringExtra(EXTRA_TITLE);
-        mIsLogin = getIntent().getBooleanExtra(EXTRA_IS_LOGIN, false);
-
-        if ( AppConfig.getInstance(this).getString("forgotPasswordURL") != null ){
-            mForgotPasswordUrl = AppConfig.getInstance(this).getString("forgotPasswordURL");
+        mFormName = getIntent().getStringExtra(EXTRA_FORMNAME);
+        if (mFormName.equals("login")) {
+            mJson = appConfig.loginConfig;
+            mIsLogin = true;
+            mForgotPasswordUrl = AppConfig.optString(mJson, "passwordResetUrl");
+        }
+        else if (mFormName.equals("signup")) {
+            mJson = appConfig.signupConfig;
         }
         else {
-            mForgotPasswordUrl = "";
+            Log.e(TAG, "Unknown form name " + mFormName);
         }
+
+        mTitle = getIntent().getStringExtra(EXTRA_TITLE);
+        if (mTitle == null) mTitle = mJson.optString("title", appConfig.appName);
+
+        mFormUrl = AppConfig.optString(mJson, "interceptUrl");
+        mErrorUrl = AppConfig.optString(mJson, "errorUrl");
+
+
 
         this.setTitle(mTitle);
 
@@ -106,17 +115,6 @@ public class WebFormActivity extends Activity implements Observer{
         webSettings.setJavaScriptEnabled(true);
         webSettings.setSaveFormData(false);
         webSettings.setSavePassword(false);
-        if (AppConfig.getInstance(this).getAllowZoom()) {
-            webSettings.setBuiltInZoomControls(true);
-            webSettings.setDisplayZoomControls(false);
-            webSettings.setLoadWithOverviewMode(true);
-            webSettings.setUseWideViewPort(true);
-        }
-        else {
-            webSettings.setBuiltInZoomControls(false);
-            webSettings.setLoadWithOverviewMode(false);
-            webSettings.setUseWideViewPort(false);
-        }
         mHiddenWebView.setWebViewClient(new WebFormWebViewClient());
         mHiddenWebView.setWebChromeClient(new WebFormWebChromeClient());
         mHiddenWebView.addJavascriptInterface(new jsBridge(), "gonative_js_bridge");
@@ -129,7 +127,7 @@ public class WebFormActivity extends Activity implements Observer{
         mSubmitButton = (Button) findViewById(R.id.submit_button);
 
         // if login is the first page that loads. Hide form until login check is done.
-        if (mIsLogin && AppConfig.getInstance(this).loginIsFirstPage()) {
+        if (mIsLogin && AppConfig.getInstance(this).loginIsFirstPage) {
             mLoginStatusView.setVisibility(View.VISIBLE);
             mLoginFormView.setVisibility(View.GONE);
 
@@ -139,7 +137,7 @@ public class WebFormActivity extends Activity implements Observer{
             LoginManager.getInstance().checkIfNotAlreadyChecking();
         }
 
-        loadJsonResource(getIntent().getStringExtra(EXTRA_JSONCONFIG));
+        processForm(mFormName);
 
         findViewById(R.id.submit_button).setOnClickListener(
                 new View.OnClickListener() {
@@ -156,10 +154,10 @@ public class WebFormActivity extends Activity implements Observer{
 
         mSubmitted = false;
         mSubmitButton.setEnabled(true);
-        if (!AppConfig.getInstance(this).loginIsFirstPage())
-            mHiddenWebView.loadUrl(mFormUrl);
+        if (!AppConfig.getInstance(this).loginIsFirstPage)
+            mHiddenWebView.loadUrl(this.mJson.optString("interceptUrl", ""));
         else
-            LoginManager.getInstance().checkIfNotAlreadyChecking();;
+            LoginManager.getInstance().checkIfNotAlreadyChecking();
     }
 
     public void update (Observable sender, Object data) {
@@ -172,23 +170,27 @@ public class WebFormActivity extends Activity implements Observer{
                 setResult(RESULT_OK, returnIntent);
                 finish();
             } else {
-                mHiddenWebView.loadUrl(mFormUrl);
+                mHiddenWebView.loadUrl(this.mJson.optString("interceptUrl", ""));
                 mLoginStatusView.setVisibility(View.GONE);
                 mLoginFormView.setVisibility(View.VISIBLE);
             }
         }
     }
 
-    public void loadJsonResource(String configName) {
+    public void processForm(String configName) {
         try {
-            mJson = AppConfig.getInstance(this).getJSONObject(configName);
-            JSONArray fields = mJson.getJSONArray("fields");
+            JSONArray jsonFields = mJson.getJSONArray("formInputs");
 
-            mFieldRefs = new ArrayList<View>(fields.length());
+            fields = new ArrayList<JSONObject>();
+            mFieldRefs = new ArrayList<View>();
+
+            JSONObject lastPasswordField = null;
 
             LinearLayout formLayout = (LinearLayout) findViewById(R.id.form_layout);
-            for (int i = 0; i < fields.length(); i++){
-                JSONObject field = fields.getJSONObject(i);
+            for (int i = 0; i < jsonFields.length(); i++){
+                JSONObject field = jsonFields.optJSONObject(i);
+                if (field == null) continue;
+
                 String type = field.getString("type");
 
                 if (type.equals("email") || type.equals("name") ||
@@ -207,8 +209,8 @@ public class WebFormActivity extends Activity implements Observer{
                     else if(type.equals("number")) {
                         textField.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_NORMAL);
                     }
-
-                    mFieldRefs.add(i, textField);
+                    fields.add(field);
+                    mFieldRefs.add(textField);
                 }
                 else if (type.equals("password")) {
                     LayoutInflater.from(getBaseContext()).inflate(R.layout.form_password, formLayout, true);
@@ -229,7 +231,14 @@ public class WebFormActivity extends Activity implements Observer{
                         }
                     });
 
-                    mFieldRefs.add(i, textField);
+                    lastPasswordField = field;
+                    fields.add(field);
+                    mFieldRefs.add(textField);
+                }
+                else if (type.equals("password (hidden)")) {
+                    if (lastPasswordField != null) {
+                        lastPasswordField.put("selector2", AppConfig.optString(field, "selector"));
+                    }
                 }
                 else if (type.equals("options")) {
                     LayoutInflater.from(getBaseContext()).inflate(R.layout.form_option, formLayout, true);
@@ -245,7 +254,8 @@ public class WebFormActivity extends Activity implements Observer{
                         rg.addView(rb);
                     }
 
-                    mFieldRefs.add(i, rg);
+                    fields.add(field);
+                    mFieldRefs.add(rg);
                 }
                 else if (type.equals("list")) {
                     LayoutInflater.from(getBaseContext()).inflate(R.layout.form_list, formLayout, true);
@@ -261,7 +271,8 @@ public class WebFormActivity extends Activity implements Observer{
                         rg.addView(rb);
                     }
 
-                    mFieldRefs.add(i, rg);
+                    fields.add(field);
+                    mFieldRefs.add(rg);
                 }
 
 
@@ -281,7 +292,7 @@ public class WebFormActivity extends Activity implements Observer{
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.web_form, menu);
 
-        if (mIsLogin && AppConfig.getInstance(this).getString("forgotPasswordURL") != null){
+        if (mIsLogin && mForgotPasswordUrl != null){
             MenuItem forgotPassword = (MenuItem) menu.findItem(R.id.action_forgot_password);
             forgotPassword.setVisible(true);
         }
@@ -297,7 +308,7 @@ public class WebFormActivity extends Activity implements Observer{
 
             // show forgot password in main view
             Intent returnIntent = new Intent();
-            returnIntent.putExtra("url", AppConfig.getInstance(this).getString("forgotPasswordURL"));
+            returnIntent.putExtra("url", mForgotPasswordUrl);
             returnIntent.putExtra("success", false);
             setResult(RESULT_OK, returnIntent);
             finish();
@@ -313,10 +324,8 @@ public class WebFormActivity extends Activity implements Observer{
             if (validateForm()){
                 //setContentView(mHiddenWebView);
 
-                JSONArray fields = mJson.getJSONArray("fields");
-
-                for (int i = 0; i < fields.length(); i++) {
-                    JSONObject field = fields.getJSONObject(i);
+                for (int i = 0; i < fields.size(); i++) {
+                    JSONObject field = fields.get(i);
                     String type = field.getString("type");
 
                     if (type.equals("email") || type.equals("name") ||
@@ -325,10 +334,17 @@ public class WebFormActivity extends Activity implements Observer{
                         // these have an EditText
                         EditText textField = (EditText) mFieldRefs.get(i);
 
-                        mHiddenWebView.loadUrl(String.format("javascript:jQuery(%s).val(%s);",
+                        runJavascript(String.format("jQuery(%s).val(%s);",
                                 LeanUtils.jsWrapString(field.getString("selector")),
                                 LeanUtils.jsWrapString(textField.getText().toString())));
 
+                        // for password confirmations
+                        String selector2 = AppConfig.optString(field, "selector2");
+                        if (selector2 != null) {
+                            runJavascript(String.format("jQuery(%s).val(%s);",
+                                    LeanUtils.jsWrapString(selector2),
+                                    LeanUtils.jsWrapString(textField.getText().toString())));
+                        }
                     }
                     if ( (type.equals("options") || type.equals("list")) && field.getBoolean("required")) {
                         // RadioGroup
@@ -336,7 +352,7 @@ public class WebFormActivity extends Activity implements Observer{
                         for(int j = 0; j < rg.getChildCount(); j++){
                             RadioButton rb = (RadioButton) rg.getChildAt(j);
                             if (rb.isChecked()) {
-                                mHiddenWebView.loadUrl(String.format("javascript:jQuery(%s).click();",
+                                runJavascript(String.format("jQuery(%s).click();",
                                         LeanUtils.jsWrapString(field.getString("selector"))));
                             }
                         }
@@ -348,7 +364,7 @@ public class WebFormActivity extends Activity implements Observer{
                 imm.hideSoftInputFromWindow(mLoginFormView.getWindowToken(), 0);
 
                 // submit the form
-                mHiddenWebView.loadUrl(String.format("javascript:jQuery(%s).submit();",
+                runJavascript(String.format("jQuery(%s).submit();",
                         LeanUtils.jsWrapString(mJson.getString("formSelector"))));
                 mSubmitted = true;
                 mSubmitButton.setEnabled(false);
@@ -392,11 +408,11 @@ public class WebFormActivity extends Activity implements Observer{
         if (mSubmitted) {
             try {
                 if (mJson.has("errorSelector2")){
-                    mHiddenWebView.loadUrl(String.format("javascript:gonative_js_bridge.send(jQuery(%s).html(), jQuery(%s).html());",
+                    runJavascript(String.format("gonative_js_bridge.send(jQuery(%s).html(), jQuery(%s).html());",
                             LeanUtils.jsWrapString(mJson.getString("errorSelector")), LeanUtils.jsWrapString(mJson.getString("errorSelector2"))));
                 }
                 else{
-                    mHiddenWebView.loadUrl(String.format("javascript:gonative_js_bridge.send(jQuery(%s).html(), null);",
+                    runJavascript(String.format("gonative_js_bridge.send(jQuery(%s).html(), null);",
                             LeanUtils.jsWrapString(mJson.getString("errorSelector"))));
                 }
 
@@ -410,10 +426,8 @@ public class WebFormActivity extends Activity implements Observer{
         boolean valid = true;
         View toFocus = null;
 
-        JSONArray fields = mJson.getJSONArray("fields");
-
-        for (int i = 0; i < fields.length(); i++) {
-            JSONObject field = fields.getJSONObject(i);
+        for (int i = 0; i < fields.size(); i++) {
+            JSONObject field = fields.get(i);
             String type = field.getString("type");
 
             if (type.equals("email") || type.equals("name") ||
@@ -485,7 +499,7 @@ public class WebFormActivity extends Activity implements Observer{
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && mIsLogin &&
-                AppConfig.getInstance(this).getBoolean("loginIsFirstPage")) {
+                AppConfig.getInstance(this).loginIsFirstPage) {
             // exit application
             Intent returnIntent = new Intent();
             returnIntent.putExtra("exit", true);
@@ -496,6 +510,11 @@ public class WebFormActivity extends Activity implements Observer{
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void runJavascript(String js) {
+        js = js.replace("%5C", "%5C%5C");
+        mHiddenWebView.loadUrl("javascript:" + js);
     }
 
 
@@ -542,7 +561,7 @@ public class WebFormActivity extends Activity implements Observer{
 
                     String errorSelector = mJson.optString("errorSelector", "");
                     if (errorSelector.length() > 0) {
-                        mHiddenWebView.loadUrl(String.format("javascript:if(jQuery(%s).length > 0) alert(jQuery(%s).text()); else alert('Error submitting form');",
+                        runJavascript(String.format("if(jQuery(%s).length > 0) alert(jQuery(%s).text()); else alert('Error submitting form');",
                                 LeanUtils.jsWrapString(errorSelector),
                                 LeanUtils.jsWrapString(errorSelector)));
                     }

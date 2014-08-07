@@ -45,7 +45,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     public synchronized void update(String status) {
         if (status == null) status = "default";
 
-        menuItems = AppConfig.getInstance(mainActivity).getMenus().get(status);
+        menuItems = AppConfig.getInstance(mainActivity).menus.get(status);
         if (menuItems == null) menuItems = new JSONArray();
 
         // figure out groupsHaveIcons and childrenHaveIcons (for layout alignment)
@@ -106,11 +106,11 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     }
 
     String getTitle(int groupPosition) {
-        return itemString("name", groupPosition);
+        return itemString("label", groupPosition);
     }
 
     String getTitle(int groupPosition, int childPosition) {
-        return itemString("name", groupPosition, childPosition);
+        return itemString("label", groupPosition, childPosition);
     }
 
     String getUrl(int groupPosition) {
@@ -186,9 +186,9 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                     R.layout.menu_group_icon : R.layout.menu_group_noicon, null);
 
             // style it
-            if (AppConfig.getInstance(mainActivity).getSidebarForegroundColor() != null) {
+            if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                 TextView title = (TextView) convertView.findViewById(R.id.menu_item_title);
-                title.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+                title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
             }
         }
 
@@ -202,8 +202,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.fa_angle_down);
 
             iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_expand_indicator_size);
-            if (AppConfig.getInstance(mainActivity).getSidebarForegroundColor() != null) {
-                iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+            if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+                iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
             }
             indicator.setImageDrawable(iconDrawable);
             indicator.setVisibility(View.VISIBLE);
@@ -224,8 +224,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             try {
                 IconDrawable iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.valueOf(icon));
                 iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_icon_size);
-                if (AppConfig.getInstance(mainActivity).getSidebarForegroundColor() != null) {
-                    iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+                if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+                    iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
                 }
                 imageView.setImageDrawable(iconDrawable);
                 imageView.setVisibility(View.VISIBLE);
@@ -253,9 +253,9 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 convertView = inflater.inflate(R.layout.menu_child_noicon, null);
 
             // style it
-            if (AppConfig.getInstance(mainActivity).getSidebarForegroundColor() != null) {
+            if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                 TextView title = (TextView) convertView.findViewById(R.id.menu_item_title);
-                title.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+                title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
             }
         }
 
@@ -272,8 +272,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             try {
                 IconDrawable iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.valueOf(icon));
                 iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_icon_size);
-                if (AppConfig.getInstance(mainActivity).getSidebarForegroundColor() != null) {
-                    iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).getSidebarForegroundColor());
+                if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+                    iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
                 }
                 imageView.setImageDrawable(iconDrawable);
                 imageView.setVisibility(View.VISIBLE);

@@ -43,7 +43,7 @@ public class LeanWebviewClient extends WebViewClient{
 		this.isDialog = isDialog;
 
         // profile picker
-        String profileJs = AppConfig.getInstance(mainActivity).getString("profilePickerJS");
+        String profileJs = AppConfig.getInstance(mainActivity).profilePickerJS;
         if (profileJs != null) {
             StringBuilder sb = new StringBuilder();
             sb.append("javascript: gonative_profile_picker.parseJson(");
@@ -55,24 +55,26 @@ public class LeanWebviewClient extends WebViewClient{
 	
 	
 	private boolean isInternalUri(Uri uri) {
+        AppConfig appConfig = AppConfig.getInstance(mainActivity);
         String urlString = uri.toString();
 
         // first check regexes
-        ArrayList<Pattern> regexes = AppConfig.getInstance(mainActivity).getRegexInternalExternal();
-        ArrayList<Boolean> isInternal = AppConfig.getInstance(mainActivity).getRegexIsInternal();
-        for (int i = 0; i < regexes.size(); i++) {
-            Pattern regex = regexes.get(i);
-            if (regex.matcher(urlString).matches()) {
-                return isInternal.get(i);
+        ArrayList<Pattern> regexes = appConfig.regexInternalExternal;
+        ArrayList<Boolean> isInternal = appConfig.regexIsInternal;
+        if (regexes != null) {
+            for (int i = 0; i < regexes.size(); i++) {
+                Pattern regex = regexes.get(i);
+                if (regex.matcher(urlString).matches()) {
+                    return isInternal.get(i);
+                }
             }
         }
 
         String host = uri.getHost();
-        String initialHost = AppConfig.getInstance(mainActivity).getInitialHost();
+        String initialHost = appConfig.initialHost;
 
         return host != null &&
-                (host.equals(initialHost) || host.endsWith("." + initialHost) ||
-                        AppConfig.getInstance(mainActivity).getInternalHosts().contains(host));
+                (host.equals(initialHost) || host.endsWith("." + initialHost));
     }
 
     @Override
@@ -96,19 +98,17 @@ public class LeanWebviewClient extends WebViewClient{
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
         if(checkLoginSignup &&
-                appConfig.getBoolean("checkNativeLogin") &&
-                LeanUtils.urlsMatchOnPath(url, appConfig.getString("loginURL"))){
+                appConfig.loginUrl != null &&
+                LeanUtils.urlsMatchOnPath(url, appConfig.loginUrl)){
 
-            mainActivity.launchWebForm("login_config", appConfig.getString("loginURL"),
-                   appConfig.getString("loginURLfail"), "Log In", true);
+            mainActivity.launchWebForm("login", "Log In");
             return true;
         }
         else if(checkLoginSignup &&
-                appConfig.getBoolean("checkNativeSignup") &&
-                LeanUtils.urlsMatchOnPath(url, appConfig.getString("signupURL"))) {
+                appConfig.signupUrl != null &&
+                LeanUtils.urlsMatchOnPath(url, appConfig.signupUrl)) {
 
-            mainActivity.launchWebForm("signup_config", appConfig.getString("signupURL"),
-                    appConfig.getString("signupURLfail"), "Sign Up", false);
+            mainActivity.launchWebForm("signup", "Sign Up");
             return true;
         }
 		
@@ -168,7 +168,7 @@ public class LeanWebviewClient extends WebViewClient{
         }
 
         // intercept html
-        if (AppConfig.getInstance(mainActivity).getInterceptHtml()) {
+        if (AppConfig.getInstance(mainActivity).interceptHtml) {
             try {
                 URL parsedUrl = new URL(url);
                 if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
@@ -203,7 +203,7 @@ public class LeanWebviewClient extends WebViewClient{
 
 
         // reload menu if internal url
-        if (AppConfig.getInstance(mainActivity).getBoolean("checkUserAuth") && isInternalUri(uri)) {
+        if (AppConfig.getInstance(mainActivity).loginDetectionUrl != null && isInternalUri(uri)) {
             mainActivity.updateMenu();
         }
 
@@ -228,13 +228,13 @@ public class LeanWebviewClient extends WebViewClient{
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
-        if (appConfig.getBoolean("checkUserAuth")) {
+        if (appConfig.loginDetectionUrl != null) {
             if (mVisitedLoginOrSignup){
                 mainActivity.updateMenu();
             }
 
-            mVisitedLoginOrSignup = LeanUtils.urlsMatchOnPath(url, appConfig.getString("loginURL")) ||
-                    LeanUtils.urlsMatchOnPath(url, appConfig.getString("signupURL"));
+            mVisitedLoginOrSignup = LeanUtils.urlsMatchOnPath(url, appConfig.loginUrl) ||
+                    LeanUtils.urlsMatchOnPath(url, appConfig.signupUrl);
         }
 
         // profile picker
@@ -285,7 +285,7 @@ public class LeanWebviewClient extends WebViewClient{
                 do {
                     connection = (HttpURLConnection) parsedUrl.openConnection();
                     connection.setInstanceFollowRedirects(true);
-                    connection.setRequestProperty("User-Agent", appConfig.getUserAgent());
+                    connection.setRequestProperty("User-Agent", appConfig.userAgent);
                     if (isReload)
                         connection.setRequestProperty("Cache-Control", "no-cache");
 
@@ -342,23 +342,23 @@ public class LeanWebviewClient extends WebViewClient{
                 if (insertPoint >= 0) {
                     StringBuilder builder = new StringBuilder(initialLength);
                     builder.append(origString.substring(0, insertPoint));
-                    if (appConfig.containsKey("customCss")) {
+                    if (appConfig.customCss != null) {
                         builder.append("<style>");
-                        builder.append(appConfig.getString("customCss"));
+                        builder.append(appConfig.customCss);
                         builder.append("</style>");
                     }
-                    if (appConfig.containsKey("stringViewport")) {
+                    if (appConfig.stringViewport != null) {
                         builder.append("<meta name=\"viewport\" content=\"");
-                        builder.append(TextUtils.htmlEncode(appConfig.getString("stringViewport")));
+                        builder.append(TextUtils.htmlEncode(appConfig.stringViewport));
                         builder.append("\" />");
                     }
-                    if (appConfig.containsKey("viewportWidth")) {
+                    if (!Double.isNaN(appConfig.forceViewportWidth)) {
                         // we want to use user-scalable=no, but android has a bug that sets scale to
                         // 1.0 if user-scalable=no. The workaround to is calculate the scale and set
                         // it for initial, minimum, and maximum.
                         // http://stackoverflow.com/questions/12723844/android-viewport-setting-user-scalable-no-breaks-width-zoom-level-of-viewpor
                         double webViewWidth = webview.getWidth() / mainActivity.getResources().getDisplayMetrics().density;
-                        double viewportWidth = appConfig.getDouble("viewportWidth");
+                        double viewportWidth = appConfig.forceViewportWidth;
                         double scale = webViewWidth / viewportWidth;
                         builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
                                 viewportWidth, scale, scale, scale));

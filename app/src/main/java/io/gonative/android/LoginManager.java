@@ -3,9 +3,14 @@ package io.gonative.android;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import org.json.JSONObject;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.Observable;
+import java.util.regex.Pattern;
 
 /**
  * Created by weiyin on 3/16/14.
@@ -19,6 +24,7 @@ public class LoginManager extends Observable {
     private CheckRedirectionTask task = null;
 
     private boolean loggedIn = false;
+    public String loginStatus;
 
     public static LoginManager getInstance(){
         if (instance == null) {
@@ -40,8 +46,14 @@ public class LoginManager extends Observable {
         if (task != null)
             task.cancel(true);
 
+        String loginDetectionUrl = AppConfig.getInstance(context).loginDetectionUrl;
+        if (loginDetectionUrl == null) {
+            Log.w(TAG, "Trying to detect login without a testURL");
+            return;
+        }
+
         task = new CheckRedirectionTask();
-        task.execute(AppConfig.getInstance(context).getString("loginDetectionURL"));
+        task.execute(AppConfig.getInstance(context).loginDetectionUrl);
     }
 
     public void checkIfNotAlreadyChecking() {
@@ -68,7 +80,7 @@ public class LoginManager extends Observable {
 
                     connection = (HttpURLConnection) parsedUrl.openConnection();
                     connection.setInstanceFollowRedirects(true);
-                    connection.setRequestProperty("User-Agent", AppConfig.getInstance(context).getUserAgent());
+                    connection.setRequestProperty("User-Agent", AppConfig.getInstance(context).userAgent);
 
                     connection.connect();
                     int responseCode = connection.getResponseCode();
@@ -97,16 +109,31 @@ public class LoginManager extends Observable {
         protected void onPostExecute(String finalUrl) {
             UrlInspector.getInstance().inspectUrl(finalUrl);
 
-            if (finalUrl == null)
+            if (finalUrl == null) {
                 loggedIn = false;
-            else if (LeanUtils.urlsMatchOnPath(finalUrl,
-                    AppConfig.getInstance(LoginManager.this.context).getString("loginDetectionURLnotloggedin")))
-                loggedIn = false;
-            else
-                loggedIn = true;
+                loginStatus = "default";
+                setChanged();
+                notifyObservers();
+            }
 
-            LoginManager.this.setChanged();
-            LoginManager.this.notifyObservers();
+            // iterate through loginDetectionRegexes
+            AppConfig appConfig = AppConfig.getInstance(LoginManager.this.context);
+
+            List<Pattern> regexes = appConfig.loginDetectRegexes;
+            for (int i = 0; i < regexes.size(); i++) {
+                Pattern regex = regexes.get(i);
+                if (regex.matcher(finalUrl).matches()) {
+                    JSONObject entry = appConfig.loginDetectLocations.get(i);
+                    loggedIn = entry.optBoolean("loggedIn", false);
+
+                    loginStatus = AppConfig.optString(entry, "menuName");
+                    if (loginStatus == null) loginStatus = loggedIn ? "loggedIn" : "default";
+
+                    setChanged();
+                    notifyObservers();
+                    break;
+                }
+            }
         }
 
     }

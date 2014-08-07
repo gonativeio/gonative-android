@@ -18,13 +18,11 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Created by weiyin on 3/13/14.
@@ -38,24 +36,57 @@ public class AppConfig {
 
     // instance variables
     private Context context;
-    private JSONObject json = null;
+    private JSONObject json;
 
-    private ArrayList<String> mInternalHosts = null;
-    private Integer sidebarBackgroundColor = null;
-    private Integer sidebarForegroundColor = null;
-    private String initialHost = null;
-    private boolean allowZoom = true;
-    private String userAgent = null;
-    private boolean interceptHtml = false;
-    private boolean loginIsFirstPage = false;
-    private boolean usesGeolocation = false;
-    private boolean showActionBar = true;
-    private ArrayList<Pattern> regexInternalExternal = null;
-    private ArrayList<Boolean> regexIsInternal = null;
-    private ArrayList<Pattern> navStructureLevelsRegex = null;
-    private ArrayList<Integer> navStructureLevels = null;
-    private ArrayList<HashMap<String,Object>> navTitles = null;
-    private HashMap<String,JSONArray> menus = null;
+    // general
+    public String initialUrl;
+    public String initialHost;
+    public String appName;
+    public String publicKey;
+    public String userAgent;
+
+    // navigation
+    public HashMap<String,JSONArray> menus;
+    public boolean showNavigationMenu;
+    public String userIdRegex;
+    public String loginDetectionUrl;
+    public ArrayList<Pattern> loginDetectRegexes;
+    public ArrayList<JSONObject> loginDetectLocations;
+    public ArrayList<Pattern> navStructureLevelsRegex;
+    public ArrayList<Integer> navStructureLevels;
+    public ArrayList<HashMap<String,Object>> navTitles;
+    public String profilePickerJS;
+    public ArrayList<Pattern> regexInternalExternal;
+    public ArrayList<Boolean> regexIsInternal;
+    public boolean useWebpageTitle;
+
+    // styling
+    public Integer sidebarBackgroundColor;
+    public Integer sidebarForegroundColor;
+    public String customCss;
+    public double forceViewportWidth;
+    public String androidTheme;
+    public boolean showActionBar = true;
+    public double interactiveDelay;
+    public String stringViewport;
+
+    // forms
+    public String searchTemplateUrl;
+    public String loginUrl;
+    public JSONObject loginConfig;
+    public boolean loginIsFirstPage;
+    public String signupUrl;
+    public JSONObject signupConfig;
+
+    // misc
+    public boolean allowZoom = true;
+    public boolean interceptHtml = false;
+    public boolean usesGeolocation = false;
+
+
+
+
+
 
 
     public File fileForOTAconfig() {
@@ -92,130 +123,247 @@ public class AppConfig {
                 this.json = new JSONObject(baos.toString("UTF-8"));
             }
 
-            // preprocess internalHosts
-            JSONArray hosts = json.getJSONArray("internalHosts");
-            mInternalHosts = new ArrayList<String>(hosts.length());
-            for (int i = 0; i < hosts.length(); i++){
-                mInternalHosts.add(hosts.getString(i));
+            // initialize some stuff
+            this.menus = new HashMap<String, JSONArray>();
+            this.loginDetectRegexes = new ArrayList<Pattern>();
+            this.loginDetectLocations = new ArrayList<JSONObject>();
+            this.navStructureLevelsRegex = new ArrayList<Pattern>();
+            this.navStructureLevels = new ArrayList<Integer>();
+            this.navTitles = new ArrayList<HashMap<String, Object>>();
+            this.regexInternalExternal = new ArrayList<Pattern>();
+            this.regexIsInternal = new ArrayList<Boolean>();
+
+
+            ////////////////////////////////////////////////////////////
+            // General
+            ////////////////////////////////////////////////////////////
+            JSONObject general = this.json.optJSONObject("general");
+            if (general != null) {
+                this.initialUrl = optString(general, "initialUrl");
+
+                // preprocess initialHost
+                initialHost = Uri.parse(this.initialUrl).getHost();
+                if (initialHost.startsWith("www.")) {
+                    initialHost = initialHost.substring("www.".length());
+                }
+
+                this.appName = optString(general, "appName");
+
+                // user agent for everything (webview, httprequest, httpurlconnection)
+                String userAgentAdd = optString(general, "userAgentAdd");
+                if (userAgentAdd == null) userAgentAdd = "gonative";
+                WebView wv = new WebView(context);
+                StringBuilder sb = new StringBuilder(wv.getSettings().getUserAgentString());
+                sb.append(" ");
+                sb.append(userAgentAdd);
+                this.userAgent = sb.toString();
+
+                this.publicKey = optString(general, "publicKey");
             }
 
-            // regexInternalExternal
-            if (json.has("regexInternalExternal")) {
-                JSONArray array = json.getJSONArray("regexInternalExternal");
-                int len = array.length();
-                this.regexInternalExternal = new ArrayList<Pattern>(len);
-                this.regexIsInternal = new ArrayList<Boolean>(len);
+            ////////////////////////////////////////////////////////////
+            // Navigation
+            ////////////////////////////////////////////////////////////
+            JSONObject navigation = this.json.optJSONObject("navigation");
+            if (navigation != null) {
+                int numActiveMenus = 0;
 
-                for (int i = 0; i < len; i++) {
-                    if (array.isNull(i)) continue;
-                    JSONObject entry = array.getJSONObject(i);
-                    if (entry != null && entry.has("regex") && entry.has("internal")) {
-                        this.regexInternalExternal.add(i, Pattern.compile(entry.getString("regex")));
-                        this.regexIsInternal.add(i, entry.getBoolean("internal"));
+                JSONObject sidebarNav = navigation.optJSONObject("sidebarNavigation");
+                if (sidebarNav != null) {
+                    // menus
+                    JSONArray menus = sidebarNav.optJSONArray("menus");
+                    if (menus != null) {
+                        for(int i = 0; i < menus.length(); i++){
+                            JSONObject menu = menus.optJSONObject(i);
+                            if (menu != null) {
+                                if (!menu.optBoolean("active", false)){
+                                    continue;
+                                }
+
+                                numActiveMenus++;
+
+                                String name = optString(menu, "name");
+                                JSONArray items = menu.optJSONArray("items");
+                                if (name != null && items != null) {
+                                    this.menus.put(name, items);
+
+                                    // show menu if the menu named "default" is active
+                                    if (name.equals("default")) {
+                                        this.showNavigationMenu = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    this.userIdRegex = optString(sidebarNav, "userIdRegex");
+
+                    // menu selection config
+                    JSONObject menuSelectionConfig = sidebarNav.optJSONObject("menuSelectionConfig");
+                    if (numActiveMenus > 1 && menuSelectionConfig != null) {
+                        this.loginDetectionUrl = optString(menuSelectionConfig, "testURL");
+
+                        JSONArray redirectLocations = menuSelectionConfig.optJSONArray("redirectLocations");
+                        if (redirectLocations != null) {
+                            for(int i = 0; i < redirectLocations.length(); i++) {
+                                JSONObject entry = redirectLocations.optJSONObject(i);
+                                if (entry != null) {
+                                    String regex = optString(entry, "regex");
+                                    if (regex != null) {
+                                        this.loginDetectRegexes.add(Pattern.compile(regex));
+                                        this.loginDetectLocations.add(entry);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-            }
-            else {
-                this.regexInternalExternal = new ArrayList<Pattern>();
-                this.regexIsInternal = new ArrayList<Boolean>();
-            }
+                // navigation levels
+                JSONObject navigationLevels = navigation.optJSONObject("navigationLevels");
+                if (navigationLevels != null && navigationLevels.optBoolean("active", false)) {
+                    JSONArray urlLevels = navigationLevels.optJSONArray("levels");
+                    if (urlLevels != null) {
+                        for (int i = 0; i < urlLevels.length(); i++){
+                            JSONObject entry = urlLevels.optJSONObject(i);
+                            if (entry != null) {
+                                String regex = optString(entry, "regex");
+                                int level = entry.optInt("level", -1);
 
-            // preprocess initialHost
-            initialHost = Uri.parse(getString("initialURL")).getHost();
-            if (initialHost.startsWith("www.")) {
-                initialHost = initialHost.substring("www.".length());
-            }
+                                if (regex != null && level != -1) {
+                                    this.navStructureLevelsRegex.add(Pattern.compile(regex));
+                                    this.navStructureLevels.add(level);
+                                }
 
-            // preprocess colors
-            if (getString("androidSidebarBackgroundColor") != null)
-                sidebarBackgroundColor = Color.parseColor(getString("androidSidebarBackgroundColor"));
-            if (getString("androidSidebarForegroundColor") != null)
-                this.sidebarForegroundColor = Color.parseColor(getString("androidSidebarForegroundColor"));
+                            }
+                        }
+                    }
+                }
 
-            // preprocess allow zoom
-            allowZoom = getBoolean("allowZoom", true);
+                // navigation titles
+                JSONObject navigationTitles = navigation.optJSONObject("navigationTitles");
+                if (navigationTitles != null && navigationTitles.optBoolean("active", false)) {
+                    JSONArray titles = navigationTitles.optJSONArray("titles");
+                    if (titles != null) {
+                        for (int i = 0; i < titles.length(); i++) {
+                            JSONObject entry = titles.optJSONObject(i);
+                            if (entry != null) {
+                                String regex = optString(entry, "regex");
+                                if (regex != null) {
+                                    try {
+                                        HashMap<String, Object> toAdd = new HashMap<String, Object>();
+                                        Pattern pattern = Pattern.compile(entry.getString("regex"));
+                                        toAdd.put("regex", pattern);
 
-            // user agent for everything (webview, httprequest, httpurlconnection)
-            WebView wv = new WebView(context);
-            this.setUserAgent(wv.getSettings().getUserAgentString() + " "
-                    + getString("userAgentAdd"));
+                                        String title = optString(entry, "title");
+                                        String urlRegex = optString(entry, "urlRegex");
+                                        int urlChompWords = entry.optInt("urlChompWords", -1);
 
-            // should intercept html
-            String css = getString("customCss");
-            this.interceptHtml = (getString("customCss") != null && getString("customCss").length() > 0)
-                    || (getString("stringViewport") != null && getString("stringViewport").length() > 0)
-                    || containsKey("viewportWidth");
+                                        if (title != null) {
+                                            toAdd.put("title", title);
+                                        }
+                                        if (urlRegex != null) {
+                                            Pattern urlRegexPattern = Pattern.compile(urlRegex);
+                                            toAdd.put("urlRegex", urlRegexPattern);
+                                        }
+                                        if (urlChompWords != -1) {
+                                            toAdd.put("urlChompWords", urlChompWords);
+                                        }
 
-            // login is first page
-            this.loginIsFirstPage = getBoolean("loginIsFirstPage", false);
+                                        this.navTitles.add(toAdd);
+                                    } catch (PatternSyntaxException e) {
+                                        Log.e(TAG, e.getMessage(), e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-            // geolocation. Also need to allow permissions in AndroidManifest.xml
-            this.usesGeolocation = getBoolean("usesGeolocation", false);
+                this.profilePickerJS = optString(navigation, "profilePickerJS");
 
-            this.showActionBar = getBoolean("showActionBar", true);
+                // regex for internal vs external links
+                // note that we ignore "active" here
+                JSONObject regexInternalExternal = navigation.optJSONObject("regexInternalExternal");
+                if (regexInternalExternal != null) {
+                    JSONArray rules = regexInternalExternal.optJSONArray("rules");
+                    if (rules != null) {
+                        for (int i = 0; i < rules.length(); i++) {
+                            JSONObject entry = rules.optJSONObject(i);
+                            if (entry != null && entry.has("regex") && entry.has("internal")) {
+                                String regex = optString(entry, "regex");
+                                boolean internal = entry.optBoolean("internal", true);
 
-            // navStructure
-            if (json.has("navStructure") && json.getJSONObject("navStructure").has("urlLevels")) {
-                JSONArray urlLevels = json.getJSONObject("navStructure").getJSONArray("urlLevels");
-                this.navStructureLevelsRegex = new ArrayList<Pattern>(urlLevels.length());
-                this.navStructureLevels = new ArrayList<Integer>(urlLevels.length());
-                for (int i = 0; i < urlLevels.length(); i++) {
-                    if (urlLevels.isNull(i)) continue;
-                    JSONObject entry = urlLevels.getJSONObject(i);
-                    if (entry.has("regex") && entry.has("level")) {
-                        try {
-                            this.navStructureLevelsRegex.add(Pattern.compile(entry.getString("regex")));
-                            this.navStructureLevels.add(entry.getInt("level"));
-                        } catch (PatternSyntaxException e) {
-                            Log.e(TAG, e.getMessage(), e);
+                                if (regex != null) {
+                                    this.regexInternalExternal.add(Pattern.compile(regex));
+                                    this.regexIsInternal.add(internal);
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            if (json.has("navStructure") && json.getJSONObject("navStructure").has("titles")) {
-                JSONArray titles = json.getJSONObject("navStructure").getJSONArray("titles");
-                this.navTitles = new ArrayList<HashMap<String,Object>>(titles.length());
-                for (int i = 0; i < titles.length(); i++) {
-                    if (titles.isNull(i)) continue;
-                    JSONObject entry = titles.getJSONObject(i);
-                    if (entry != null && entry.has("regex")) {
-                        try {
-                            HashMap<String, Object> toAdd = new HashMap<String, Object>();
-                            Pattern regex = Pattern.compile(entry.getString("regex"));
-                            toAdd.put("regex", regex);
-                            if (entry.has("title")) {
-                                toAdd.put("title", entry.getString("title"));
-                            }
-                            if (entry.has("urlRegex")) {
-                                Pattern urlRegex = Pattern.compile(entry.getString("urlRegex"));
-                                toAdd.put("urlRegex", urlRegex);
-                            }
-                            if (entry.has("urlChompWords")) {
-                                toAdd.put("urlChompWords", entry.getInt("urlChompWords"));
-                            }
-                            this.navTitles.add(toAdd);
-                        } catch (PatternSyntaxException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                        }
-                    }
+            ////////////////////////////////////////////////////////////
+            // Styling
+            ////////////////////////////////////////////////////////////
+            JSONObject styling = this.json.optJSONObject("styling");
+
+            this.customCss = optString(styling, "customCss");
+            this.forceViewportWidth = styling.optDouble("forceViewportWidth", Double.NaN);
+
+            this.interceptHtml = this.customCss != null || !Double.isNaN(this.forceViewportWidth);
+            this.showActionBar = styling.optBoolean("showActionBar", true);
+
+            this.androidTheme = optString(styling, "androidTheme");
+
+            this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
+
+
+            ////////////////////////////////////////////////////////////
+            // Forms
+            ////////////////////////////////////////////////////////////
+            JSONObject forms = this.json.optJSONObject("forms");
+            if (forms != null) {
+                // search
+                JSONObject search = forms.optJSONObject("search");
+                if (search != null && search.optBoolean("active", false)) {
+                    this.searchTemplateUrl = optString(search, "searchTemplateURL");
+                }
+
+                // login
+                JSONObject loginConfig = forms.optJSONObject("loginConfig");
+                if (loginConfig != null && loginConfig.optBoolean("active", false)) {
+                    this.loginConfig = loginConfig;
+                    this.loginUrl = optString(loginConfig, "interceptUrl");
+                    this.loginIsFirstPage = loginConfig.optBoolean("loginIsFirstPage", false);
+                }
+
+                // signup
+                JSONObject signupConfig = forms.optJSONObject("signupConfig");
+                if (signupConfig != null && signupConfig.optBoolean("active", false)) {
+                    this.signupConfig = signupConfig;
+                    this.signupUrl = optString(signupConfig, "interceptUrl");
                 }
             }
 
-            // menus
-            JSONObject menus = json.optJSONObject("menus");
-            if (menus != null) {
-                this.menus = new HashMap<String, JSONArray>();
-                Iterator keys = menus.keys();
-                while (keys.hasNext()) {
-                    String key = (String)keys.next();
-                    if (menus.optJSONObject(key) != null &&
-                            menus.optJSONObject(key).optJSONArray("items") != null) {
-                        this.menus.put(key, menus.optJSONObject(key).optJSONArray("items"));
-                    }
-                }
+
+
+            ////////////////////////////////////////////////////////////
+            // Permissions
+            ////////////////////////////////////////////////////////////
+            JSONObject permissions = this.json.optJSONObject("permissions");
+            if (permissions != null) {
+                // geolocation. Also need to allow permissions in AndroidManifest.xml
+                this.usesGeolocation = permissions.optBoolean("usesGeolocation", false);
             }
+
+
+            ////////////////////////////////////////////////////////////
+            // Miscellaneous stuff
+            ////////////////////////////////////////////////////////////
+            this.allowZoom = this.json.optBoolean("allowZoom", true);
+
 
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
@@ -233,128 +381,13 @@ public class AppConfig {
         return mInstance;
     }
 
-    public String getString(String key) {
-        if (json.isNull(key)) return null;
-        else return json.optString(key, null);
-    }
-
-    public double getDouble(String key) {
-        return json.optDouble(key, Double.NaN);
-    }
-
-    public boolean getBoolean(String key){
-        return json.optBoolean(key, false);
-    }
-
-    public boolean getBoolean(String key, boolean fallback) {
-        return json.optBoolean(key, fallback);
-    }
-
-    public JSONObject getJSONObject(String key) {
-        return json.optJSONObject(key);
-    }
-
-    public boolean containsKey(String key){
-        return !json.isNull(key);
-    }
-
-    public ArrayList<String> getInternalHosts(){
-        return mInternalHosts;
-    }
-
-    public Integer getSidebarBackgroundColor() {
-        return sidebarBackgroundColor;
-    }
-
-    public void setSidebarBackgroundColor(Integer sidebarBackgroundColor) {
-        this.sidebarBackgroundColor = sidebarBackgroundColor;
-    }
-
-    public Integer getSidebarForegroundColor() {
-        return sidebarForegroundColor;
-    }
-
-    public void setSidebarForegroundColor(Integer sidebarForegroundColor) {
-        this.sidebarForegroundColor = sidebarForegroundColor;
-    }
-
-    public String getInitialHost() {
-        return initialHost;
-    }
-
-    public void setInitialHost(String initialHost) {
-        this.initialHost = initialHost;
-    }
-
-    public boolean getAllowZoom() {
-        return allowZoom;
-    }
-
-    public void setAllowZoom(boolean allowZoom) {
-        this.allowZoom = allowZoom;
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
-
-    public boolean getInterceptHtml() {
-        return interceptHtml;
-    }
-
-    public void setInterceptHtml(boolean interceptHtml) {
-        this.interceptHtml = interceptHtml;
-    }
-
-    public boolean loginIsFirstPage() {
-        return loginIsFirstPage;
-    }
-
-    public void setLoginIsFirstPage(boolean loginIsFirstPage) {
-        this.loginIsFirstPage = loginIsFirstPage;
-    }
-
-    public boolean usesGeolocation() {
-        return usesGeolocation;
-    }
-
-    public void setUsesGeolocation(boolean usesGeolocation) {
-        this.usesGeolocation = usesGeolocation;
-    }
-
-    public boolean showActionBar() {
-        return showActionBar;
-    }
-
-    public void setShowActionBar(boolean showActionBar) {
-        this.showActionBar = showActionBar;
-    }
-
-    public ArrayList<Pattern> getRegexInternalExternal() {
-        return regexInternalExternal;
-    }
-
-    public ArrayList<Boolean> getRegexIsInternal() {
-        return regexIsInternal;
-    }
-
-    public ArrayList<Pattern> getNavStructureLevelsRegex() {
-        return navStructureLevelsRegex;
-    }
-
-    public ArrayList<Integer> getNavStructureLevels() {
-        return navStructureLevels;
-    }
-
-    public ArrayList<HashMap<String, Object>> getNavTitles() {
-        return navTitles;
-    }
-
-    public HashMap<String, JSONArray> getMenus() {
-        return menus;
+    /** Return the value mapped by the given key, or null if not present or null. */
+    public static String optString(JSONObject json, String key)
+    {
+        // http://code.google.com/p/android/issues/detail?id=13830
+        if (json.isNull(key))
+            return null;
+        else
+            return json.optString(key, null);
     }
 }

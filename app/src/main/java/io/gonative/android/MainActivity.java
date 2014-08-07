@@ -125,11 +125,13 @@ public class MainActivity extends Activity implements Observer {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+        AppConfig appConfig = AppConfig.getInstance(this);
+
         // theme
-        if (!AppConfig.getInstance(this).showActionBar())
+        if (!appConfig.showActionBar)
             setTheme(R.style.GoNativeNoActionBar);
-        else if (AppConfig.getInstance(this).containsKey("androidTheme") &&
-                AppConfig.getInstance(this).getString("androidTheme").equals("dark"))
+        else if (appConfig.androidTheme != null &&
+                appConfig.androidTheme.equals("dark"))
             setTheme(R.style.GoNativeDarkActionBar);
         else
             setTheme(R.style.GoNativeLight);
@@ -161,7 +163,7 @@ public class MainActivity extends Activity implements Observer {
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
 		requestWindowFeature(Window.FEATURE_PROGRESS);
-        if (isRoot && AppConfig.getInstance(this).getBoolean("checkNativeNav"))
+        if (isRoot && AppConfig.getInstance(this).showNavigationMenu)
 	    	setContentView(R.layout.activity_gonative);
         else
             setContentView(R.layout.activity_gonative_nonav);
@@ -171,7 +173,7 @@ public class MainActivity extends Activity implements Observer {
 		LeanWebView wv = (LeanWebView) findViewById(R.id.webview);
 
         // profile picker
-        if (isRoot && AppConfig.getInstance(this).getBoolean("checkNativeNav")) {
+        if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
             Spinner spinner = (Spinner) findViewById(R.id.profile_picker);
             profilePicker = new ProfilePicker(this, spinner);
         }
@@ -189,13 +191,13 @@ public class MainActivity extends Activity implements Observer {
         // load url
         String url = null;
         if (savedInstanceState != null) url = savedInstanceState.getString("url");
-        if (url == null && isRoot) url = AppConfig.getInstance(this).getString("initialURL");
+        if (url == null && isRoot) url = appConfig.initialUrl;
         if (url == null) url = getIntent().getStringExtra("url");
         if (url != null) wv.loadUrl(url);
 
-        if (isRoot && AppConfig.getInstance(this).getBoolean("checkNativeNav")) {
+        if (isRoot && appConfig.showNavigationMenu) {
             // do the list stuff
-            mDrawerTitle = AppConfig.getInstance(this).getString("appName");
+            mDrawerTitle = AppConfig.getInstance(this).appName;
             mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
             mDrawerView = findViewById(R.id.left_drawer);
             mDrawerList = (ExpandableListView) findViewById(R.id.drawer_list);
@@ -223,7 +225,7 @@ public class MainActivity extends Activity implements Observer {
             setupMenu();
 
             // update the menu
-            if (AppConfig.getInstance(this).getBoolean("checkUserAuth")) {
+            if (appConfig.loginDetectionUrl != null) {
                 LoginManager.getInstance().init(this);
                 LoginManager.getInstance().addObserver(this);
             }
@@ -231,13 +233,13 @@ public class MainActivity extends Activity implements Observer {
 
 		if (getActionBar() != null) {
             getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-            if (!isRoot ||  AppConfig.getInstance(this).getBoolean("checkNativeNav"))
+            if (!isRoot || AppConfig.getInstance(this).showNavigationMenu)
                 getActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
         // style sidebar
-        if (mDrawerView != null && AppConfig.getInstance(this).getSidebarBackgroundColor() != null) {
-            mDrawerView.setBackgroundColor(AppConfig.getInstance(this).getSidebarBackgroundColor());
+        if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
+            mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
         }
 	}
 
@@ -291,7 +293,7 @@ public class MainActivity extends Activity implements Observer {
 
         updateMenu(false);
         LoginManager.getInstance().checkLogin();
-        globalWebViews.peek().loadUrl(AppConfig.getInstance(this).getString("initialURL"));
+        globalWebViews.peek().loadUrl(AppConfig.getInstance(this).initialUrl);
     }
 
     public void loadUrl(String url) {
@@ -313,7 +315,7 @@ public class MainActivity extends Activity implements Observer {
 	private void setupWebview(WebView wv){
 		WebSettings webSettings = wv.getSettings();
 
-        if (AppConfig.getInstance(this).getAllowZoom()) {
+        if (AppConfig.getInstance(this).allowZoom) {
             webSettings.setBuiltInZoomControls(true);
         }
         else {
@@ -341,9 +343,9 @@ public class MainActivity extends Activity implements Observer {
 
 		webSettings.setSaveFormData(false);
 		webSettings.setSavePassword(false);
-		webSettings.setUserAgentString(AppConfig.getInstance(this).getUserAgent());
+		webSettings.setUserAgentString(AppConfig.getInstance(this).userAgent);
 		webSettings.setSupportMultipleWindows(true);
-        webSettings.setGeolocationEnabled(AppConfig.getInstance(this).usesGeolocation());
+        webSettings.setGeolocationEnabled(AppConfig.getInstance(this).usesGeolocation);
         wv.setWebChromeClient(new CustomWebChromeClient());
 		wv.setWebViewClient(new LeanWebviewClient(MainActivity.this));
         wv.setDownloadListener(fileDownloader);
@@ -422,7 +424,7 @@ public class MainActivity extends Activity implements Observer {
 	}
 
 	public void updatePageTitle() {
-        if (AppConfig.getInstance(this).getBoolean("useWebpageTitle")) {
+        if (AppConfig.getInstance(this).useWebpageTitle) {
             setTitle(globalWebViews.peek().getTitle());
         }
     }
@@ -499,7 +501,7 @@ public class MainActivity extends Activity implements Observer {
             else {
                 // go to initialURL without login/signup override
                 globalWebViews.peek().setCheckLoginSignup(false);
-                globalWebViews.peek().loadUrl(AppConfig.getInstance(this).getString("initialURL"));
+                globalWebViews.peek().loadUrl(AppConfig.getInstance(this).initialUrl);
             }
 
             updateMenu(data.getBooleanExtra("success", false));
@@ -625,7 +627,7 @@ public class MainActivity extends Activity implements Observer {
 		getMenuInflater().inflate(R.menu.topmenu, menu);
 		
 		final MenuItem searchItem = menu.findItem(R.id.action_search);
-        if (AppConfig.getInstance(this).containsKey("searchTemplateURL")) {
+        if (AppConfig.getInstance(this).searchTemplateUrl != null) {
             final SearchView searchView = (SearchView) searchItem.getActionView();
 
             // listener to process query
@@ -636,7 +638,7 @@ public class MainActivity extends Activity implements Observer {
 
                     try{
                         String q = URLEncoder.encode(query, "UTF-8");
-                        globalWebViews.peek().loadUrl(AppConfig.getInstance(getApplicationContext()).getString("searchTemplateURL") + q);
+                        globalWebViews.peek().loadUrl(AppConfig.getInstance(getApplicationContext()).searchTemplateUrl + q);
                     }
                     catch (UnsupportedEncodingException e){
                         return true;
@@ -700,24 +702,20 @@ public class MainActivity extends Activity implements Observer {
         }
     }
 
-    public void launchWebForm(String jsonConfig, String formUrl, String errorUrl,
-                              String title, boolean isLogin) {
+    public void launchWebForm(String formName, String title) {
         Intent intent = new Intent(getBaseContext(), WebFormActivity.class);
-        intent.putExtra(WebFormActivity.EXTRA_JSONCONFIG, jsonConfig);
-        intent.putExtra(WebFormActivity.EXTRA_FORMURL, formUrl);
-        intent.putExtra(WebFormActivity.EXTRA_ERRORURL, errorUrl);
+        intent.putExtra(WebFormActivity.EXTRA_FORMNAME, formName);
         intent.putExtra(WebFormActivity.EXTRA_TITLE, title);
-        intent.putExtra(WebFormActivity.EXTRA_IS_LOGIN, isLogin);
         startActivityForResult(intent, REQUEST_WEBFORM);
     }
 
     public int urlLevelForUrl(String url) {
-        ArrayList<Pattern> entries = AppConfig.getInstance(this).getNavStructureLevelsRegex();
+        ArrayList<Pattern> entries = AppConfig.getInstance(this).navStructureLevelsRegex;
         if (entries != null) {
             for (int i = 0; i < entries.size(); i++) {
                 Pattern regex = entries.get(i);
                 if (regex.matcher(url).matches()) {
-                    return AppConfig.getInstance(this).getNavStructureLevels().get(i);
+                    return AppConfig.getInstance(this).navStructureLevels.get(i);
                 }
             }
         }
@@ -727,7 +725,7 @@ public class MainActivity extends Activity implements Observer {
     }
 
     public String titleForUrl(String url) {
-        ArrayList<HashMap<String,Object>> entries = AppConfig.getInstance(this).getNavTitles();
+        ArrayList<HashMap<String,Object>> entries = AppConfig.getInstance(this).navTitles;
         String title = null;
 
         if (entries != null) {
@@ -790,7 +788,7 @@ public class MainActivity extends Activity implements Observer {
 
         @Override
         public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-            callback.invoke(origin, AppConfig.getInstance(MainActivity.this).usesGeolocation(), true);
+            callback.invoke(origin, AppConfig.getInstance(MainActivity.this).usesGeolocation, true);
         }
 
         // For Android > 4.1
@@ -934,9 +932,9 @@ public class MainActivity extends Activity implements Observer {
     public void checkReadyStatusResult(String status) {
         // if interactiveDelay is specified, then look for readyState=interactive, and show webview
         // with a delay. If not specified, wait for readyState=complete.
-        double interactiveDelay = AppConfig.getInstance(this).getDouble("interactiveDelay");
+        double interactiveDelay = AppConfig.getInstance(this).interactiveDelay;
 
-        if (status.equals("loading") || (interactiveDelay == Double.NaN && status.equals("interactive"))) {
+        if (status.equals("loading") || (Double.isNaN(interactiveDelay) && status.equals("interactive"))) {
             startedLoading = true;
         }
         else if ((!Double.isNaN(interactiveDelay) && status.equals("interactive"))
@@ -965,7 +963,7 @@ public class MainActivity extends Activity implements Observer {
     private class UpdateConfigTask extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... params) {
-            String appnumHashed = AppConfig.getInstance(MainActivity.this).getString("appnumHashed");
+            String appnumHashed = AppConfig.getInstance(MainActivity.this).publicKey;
             if (appnumHashed == null) return null;
 
             try {

@@ -31,7 +31,7 @@ public class UrlInspector {
     public void init(Context context) {
         this.context = context.getApplicationContext();
 
-        String regexString = AppConfig.getInstance(context).getString("authNavReplaceRegex");
+        String regexString = AppConfig.getInstance(context).userIdRegex;
         if (regexString != null && !regexString.isEmpty()) {
             try {
                 userIdRegex = Pattern.compile(regexString);
