@@ -504,7 +504,9 @@ public class MainActivity extends Activity implements Observer {
                 globalWebViews.peek().loadUrl(AppConfig.getInstance(this).initialUrl);
             }
 
-            updateMenu(data.getBooleanExtra("success", false));
+            if (AppConfig.getInstance(this).showNavigationMenu) {
+                updateMenu(data.getBooleanExtra("success", false));
+            }
         }
 
         if (requestCode == REQUEST_WEB_ACTIVITY && resultCode == RESULT_OK) {
