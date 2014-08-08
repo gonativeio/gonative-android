@@ -161,6 +161,36 @@ public class AppConfig {
                 this.publicKey = optString(general, "publicKey");
             }
 
+
+            ////////////////////////////////////////////////////////////
+            // Forms
+            ////////////////////////////////////////////////////////////
+            JSONObject forms = this.json.optJSONObject("forms");
+            if (forms != null) {
+                // search
+                JSONObject search = forms.optJSONObject("search");
+                if (search != null && search.optBoolean("active", false)) {
+                    this.searchTemplateUrl = optString(search, "searchTemplateURL");
+                }
+
+                // login
+                JSONObject loginConfig = forms.optJSONObject("loginConfig");
+                if (loginConfig != null && loginConfig.optBoolean("active", false)) {
+                    this.loginConfig = loginConfig;
+                    this.loginUrl = optString(loginConfig, "interceptUrl");
+                    this.loginIsFirstPage = loginConfig.optBoolean("loginIsFirstPage", false);
+                }
+
+                // signup
+                JSONObject signupConfig = forms.optJSONObject("signupConfig");
+                if (signupConfig != null && signupConfig.optBoolean("active", false)) {
+                    this.signupConfig = signupConfig;
+                    this.signupUrl = optString(signupConfig, "interceptUrl");
+                }
+            }
+
+
+
             ////////////////////////////////////////////////////////////
             // Navigation
             ////////////////////////////////////////////////////////////
@@ -200,7 +230,7 @@ public class AppConfig {
 
                     // menu selection config
                     JSONObject menuSelectionConfig = sidebarNav.optJSONObject("menuSelectionConfig");
-                    if (numActiveMenus > 1 && menuSelectionConfig != null) {
+                    if ((numActiveMenus > 1 || this.loginIsFirstPage) && menuSelectionConfig != null) {
                         this.loginDetectionUrl = optString(menuSelectionConfig, "testURL");
 
                         JSONArray redirectLocations = menuSelectionConfig.optJSONArray("redirectLocations");
@@ -318,34 +348,6 @@ public class AppConfig {
             this.androidTheme = optString(styling, "androidTheme");
 
             this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
-
-
-            ////////////////////////////////////////////////////////////
-            // Forms
-            ////////////////////////////////////////////////////////////
-            JSONObject forms = this.json.optJSONObject("forms");
-            if (forms != null) {
-                // search
-                JSONObject search = forms.optJSONObject("search");
-                if (search != null && search.optBoolean("active", false)) {
-                    this.searchTemplateUrl = optString(search, "searchTemplateURL");
-                }
-
-                // login
-                JSONObject loginConfig = forms.optJSONObject("loginConfig");
-                if (loginConfig != null && loginConfig.optBoolean("active", false)) {
-                    this.loginConfig = loginConfig;
-                    this.loginUrl = optString(loginConfig, "interceptUrl");
-                    this.loginIsFirstPage = loginConfig.optBoolean("loginIsFirstPage", false);
-                }
-
-                // signup
-                JSONObject signupConfig = forms.optJSONObject("signupConfig");
-                if (signupConfig != null && signupConfig.optBoolean("active", false)) {
-                    this.signupConfig = signupConfig;
-                    this.signupUrl = optString(signupConfig, "interceptUrl");
-                }
-            }
 
 
 

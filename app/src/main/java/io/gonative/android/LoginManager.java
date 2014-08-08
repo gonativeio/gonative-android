@@ -114,6 +114,7 @@ public class LoginManager extends Observable {
                 loginStatus = "default";
                 setChanged();
                 notifyObservers();
+                return;
             }
 
             // iterate through loginDetectionRegexes
