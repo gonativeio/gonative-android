@@ -364,8 +364,15 @@ public class WebFormActivity extends Activity implements Observer{
                 imm.hideSoftInputFromWindow(mLoginFormView.getWindowToken(), 0);
 
                 // submit the form
-                runJavascript(String.format("jQuery(%s).submit();",
-                        LeanUtils.jsWrapString(mJson.getString("formSelector"))));
+                String submitButtonSelector = AppConfig.optString(mJson, "submitButtonSelector");
+                if (submitButtonSelector != null && submitButtonSelector.length() > 0) {
+                    runJavascript(String.format("jQuery(%s).click();",
+                            LeanUtils.jsWrapString(submitButtonSelector)));
+                } else {
+                    runJavascript(String.format("jQuery(%s).submit();",
+                            LeanUtils.jsWrapString(mJson.getString("formSelector"))));
+                }
+
                 mSubmitted = true;
                 mSubmitButton.setEnabled(false);
 
