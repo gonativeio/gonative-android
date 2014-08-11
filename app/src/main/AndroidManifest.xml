@@ -14,12 +14,23 @@
     <!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
     <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
 
+    <!-- permissions for push messages -->
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <permission android:name="${packageName}.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="${packageName}.permission.C2D_MESSAGE" />
+
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:logo="@drawable/ic_actionbar"
         android:theme="@style/GoNativeLight" >
+
+        <meta-data android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
         <activity
             android:name="io.gonative.android.MainActivity"
             android:label="@string/app_name"
@@ -35,6 +46,24 @@
             android:label="@string/title_activity_web_form"
             android:windowSoftInputMode="adjustResize|stateHidden" >
         </activity>
+
+        <!--
+  WakefulBroadcastReceiver that will receive intents from GCM
+  services and hand them to the custom IntentService.
+
+  The com.google.android.c2dm.permission.SEND permission is necessary
+  so only GCM services can send data messages for the app.
+-->
+        <receiver
+            android:name=".GcmBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND" >
+            <intent-filter>
+                <!-- Receives the actual messages. -->
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="io.gonative.android" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

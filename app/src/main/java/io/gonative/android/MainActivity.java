@@ -81,10 +81,13 @@ public class MainActivity extends Activity implements Observer {
     public static final String webviewCacheSubdir = "webviewAppCache";
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
+    public static final String INTENT_TARGET_URL = "targetUrl";
 	private static final int REQUEST_SELECT_PICTURE = 100;
 	private static final int REQUEST_CROP_PICTURE = 200;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
+    public static final int REQUEST_PUSH_NOTIFICATION = 500;
+    public static final int REQUEST_PLAY_SERVICES_RESOLUTION = 9000;
 
 	public Stack<LeanWebView> globalWebViews = new Stack<LeanWebView>();
     private HashMap<LeanWebView,Stack<String>> backHistory = new HashMap<LeanWebView,Stack<String>>();
@@ -118,7 +121,8 @@ public class MainActivity extends Activity implements Observer {
         }
     };
     private FileDownloader fileDownloader = new FileDownloader(this);
-    private boolean startedLoading = false; // document readstate checker
+    private boolean startedLoading = false; // document readystate checker
+    private PushManager pushManager;
 	
 	private Uri cameraFileUri;
 	private Uri cropFileUri;
@@ -152,7 +156,17 @@ public class MainActivity extends Activity implements Observer {
             UrlInspector.getInstance().init(this);
 
             // OTA configs
-            new UpdateConfigTask().execute();
+            ConfigUpdater configUpdater = new ConfigUpdater(this);
+            configUpdater.updateConfig();
+
+            // Register launch
+            configUpdater.registerEvent();
+
+            // Push notifications
+            if (appConfig.pushNotifications) {
+                this.pushManager = new PushManager(this);
+                this.pushManager.register();
+            }
         }
 
         // WebView debugging
@@ -183,7 +197,6 @@ public class MainActivity extends Activity implements Observer {
 		
 		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
 		CookieHandler.setDefault(new WebkitCookieManagerProxy());
-
 
 		globalWebViews.add(wv);
 		setupWebview(wv);
@@ -585,7 +598,13 @@ public class MainActivity extends Activity implements Observer {
         }
     }
 
-	@Override
+    @Override
+    protected void onNewIntent(Intent intent) {
+        // TODO: handle notification
+
+    }
+
+    @Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if ((keyCode == KeyEvent.KEYCODE_BACK)) {
 			if (isDrawerOpen()){
@@ -959,45 +978,6 @@ public class MainActivity extends Activity implements Observer {
                     checkReadyStatusResult(state);
                 }
             });
-        }
-    }
-
-    private class UpdateConfigTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected Void doInBackground(Void... params) {
-            String appnumHashed = AppConfig.getInstance(MainActivity.this).publicKey;
-            if (appnumHashed == null) return null;
-
-            try {
-                URL url = new URL(String.format("https://gonative.io/static/appConfig/%s.json", appnumHashed));
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.connect();
-                int responseCode = connection.getResponseCode();
-                if (responseCode >= 400) return null;
-
-                // verify json
-                ByteArrayOutputStream baos;
-                if (connection.getContentLength() > 0) baos = new ByteArrayOutputStream(connection.getContentLength());
-                else baos = new ByteArrayOutputStream();
-
-                InputStream is = new BufferedInputStream(connection.getInputStream());
-                IOUtils.copy(is, baos);
-                is.close();
-                baos.close();
-                new JSONObject(baos.toString("UTF-8"));
-
-                // save file
-                File destination = AppConfig.getInstance(MainActivity.this).fileForOTAconfig();
-                OutputStream os = new BufferedOutputStream(new FileOutputStream(destination));
-                is = new BufferedInputStream(new ByteArrayInputStream(baos.toByteArray()));
-                IOUtils.copy(is, os);
-                is.close();
-                os.close();
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-
-            return null;
         }
     }
 }

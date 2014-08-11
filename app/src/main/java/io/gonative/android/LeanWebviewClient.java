@@ -29,7 +29,8 @@ public class LeanWebviewClient extends WebViewClient{
 
 	private MainActivity mainActivity;
 	private boolean isDialog = false;
-    private String profilePickerExec = null;
+    private String profilePickerExec;
+    private String analyticsExec;
 
     private boolean mVisitedLoginOrSignup = false;
 
@@ -42,14 +43,30 @@ public class LeanWebviewClient extends WebViewClient{
 		this.mainActivity = activity;
 		this.isDialog = isDialog;
 
+        AppConfig appConfig = AppConfig.getInstance(mainActivity);
+
         // profile picker
-        String profileJs = AppConfig.getInstance(mainActivity).profilePickerJS;
+        String profileJs = appConfig.profilePickerJS;
         if (profileJs != null) {
             StringBuilder sb = new StringBuilder();
             sb.append("javascript: gonative_profile_picker.parseJson(");
             sb.append(profileJs);
             sb.append(")");
             this.profilePickerExec = sb.toString();
+        }
+
+        // analytics
+        if (appConfig.analytics) {
+            this.analyticsExec = String.format("javascript:var _paq = _paq || [];\n" +
+                    "  _paq.push(['trackPageView']);\n" +
+                    "  _paq.push(['enableLinkTracking']);\n" +
+                    "  (function() {\n" +
+                    "    var u = 'https://analytics.gonative.io/';\n" +
+                    "    _paq.push(['setTrackerUrl', u+'piwik.php']);\n" +
+                    "    _paq.push(['setSiteId', %d]);\n" +
+                    "    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript';\n" +
+                    "    g.defer=true; g.async=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);\n" +
+                    "  })();", appConfig.idsite);
         }
 	}
 	
@@ -216,6 +233,7 @@ public class LeanWebviewClient extends WebViewClient{
 	@Override
 	public void onPageFinished(WebView view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
+
         mainActivity.showWebview();
 
         UrlInspector.getInstance().inspectUrl(url);
@@ -240,6 +258,11 @@ public class LeanWebviewClient extends WebViewClient{
         // profile picker
         if (this.profilePickerExec != null) {
             view.loadUrl(this.profilePickerExec);
+        }
+
+        // analytics
+        if (this.analyticsExec != null) {
+            view.loadUrl(this.analyticsExec);
         }
 		
 		mainActivity.clearProgress();
@@ -342,9 +365,9 @@ public class LeanWebviewClient extends WebViewClient{
                 if (insertPoint >= 0) {
                     StringBuilder builder = new StringBuilder(initialLength);
                     builder.append(origString.substring(0, insertPoint));
-                    if (appConfig.customCss != null) {
+                    if (appConfig.customCSS != null) {
                         builder.append("<style>");
-                        builder.append(appConfig.customCss);
+                        builder.append(appConfig.customCSS);
                         builder.append("</style>");
                     }
                     if (appConfig.stringViewport != null) {

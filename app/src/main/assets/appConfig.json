@@ -1,27 +1,70 @@
 {
-    "userAgentAdd":"gonative",
-    "appName":"GoNative.io",
-    "initialURL":"https://www.gonative.io",
-    "checkNativeNav":true,
-    "checkUserAuth":false,
-    "checkCustomStyling":true,
-    "checkNativeLoginSignup":false,
-    "checkNativeLogin":false,
-    "checkNativeSignup":false,
-    "customCss":null,
-    "loginDetectionURL":null,
-    "loginDetectionURLnotloggedin":null,
-    "loginURL":null,
-    "loginURLfail":null,
-    "signupURL":null,
-    "signupURLfail":null,
-    "forgotPasswordURL":null,
-    "login_config":{},
-    "signup_config":{},
-    "searchTemplateURL":"https://www.google.com/#q=",
-    "menuAnimationDuration":0.15,
-    "menuRefreshURLs":[],
-    "useWebpageTitle":false,
-    "internalHosts":["www.gonative.io", "gonative.io"],
-    "enableChromecast":false
+  "general": {
+    "userAgentAdd": "gonative",
+    "initialUrl": "https://gonative.io",
+    "appName": "GoNative.io"
+  },
+  "navigation": {
+    "sidebarNavigation": {
+      "menus": [{
+        "name": "default",
+        "items": [{
+          "url": "https://gonative.io/",
+          "label": "Home",
+          "subLinks": []
+        }, {
+          "url": "https://gonative.io/features/",
+          "label": "Features",
+          "subLinks": []
+        }, {
+          "url": "https://gonative.io/examples/",
+          "label": "Examples",
+          "subLinks": []
+        }],
+        "active": true
+      }]
+    },
+    "regexInternalExternal": {
+      "rules": [{
+        "regex": "https?://([-\\w]+\\.)*facebook\\.com/login.php.*",
+        "internal": true
+      }, {
+        "regex": "https?://([-\\w]+\\.)*facebook\\.com/pages/.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*facebook\\.com/sharer\\.php.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*plus\\.google\\.com/share.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*twitter\\.com/intent/.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*gonative\\.io/?.*",
+        "internal": true
+      }, {
+        "regex": "https?://([-\\w]+\\.)*google\\.com/?.*",
+        "internal": true
+      }],
+      "active": true
+    }
+  },
+  "forms": {
+    "search": {
+      "active": true,
+      "searchTemplateURL": "https://www.google.com/search?q="
+    }
+  },
+  "styling": {
+    "showActionBar": true,
+    "showNavigationBar": true,
+    "iosTitleColor": "#333333",
+    "iosTintColor": "#0091fe",
+    "androidTheme": "light",
+    "androidSidebarBackgroundColor": "#111111",
+    "androidSidebarForegroundColor": "#d0d0d0",
+    "menuAnimationDuration": 0.15,
+    "transitionInteractiveDelayMax": 0.2
+  }
 }

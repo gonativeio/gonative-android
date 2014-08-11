@@ -14,12 +14,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -43,6 +39,7 @@ public class AppConfig {
     public String initialHost;
     public String appName;
     public String publicKey;
+    public String deviceRegKey;
     public String userAgent;
 
     // navigation
@@ -63,7 +60,7 @@ public class AppConfig {
     // styling
     public Integer sidebarBackgroundColor;
     public Integer sidebarForegroundColor;
-    public String customCss;
+    public String customCSS;
     public double forceViewportWidth;
     public String androidTheme;
     public boolean showActionBar = true;
@@ -78,15 +75,17 @@ public class AppConfig {
     public String signupUrl;
     public JSONObject signupConfig;
 
+    // permissions
+    public boolean usesGeolocation = false;
+
+    // services
+    public boolean pushNotifications = false;
+    public boolean analytics = false;
+    public int idsite = Integer.MIN_VALUE;
+
     // misc
     public boolean allowZoom = true;
     public boolean interceptHtml = false;
-    public boolean usesGeolocation = false;
-
-
-
-
-
 
 
     public File fileForOTAconfig() {
@@ -159,6 +158,7 @@ public class AppConfig {
                 this.userAgent = sb.toString();
 
                 this.publicKey = optString(general, "publicKey");
+                this.deviceRegKey = optString(general, "deviceRegKey");
             }
 
 
@@ -339,16 +339,35 @@ public class AppConfig {
             ////////////////////////////////////////////////////////////
             JSONObject styling = this.json.optJSONObject("styling");
 
-            this.customCss = optString(styling, "customCss");
+            this.customCSS = optString(styling, "customCSS");
+
             this.forceViewportWidth = styling.optDouble("forceViewportWidth", Double.NaN);
 
-            this.interceptHtml = this.customCss != null || !Double.isNaN(this.forceViewportWidth);
+            this.interceptHtml = this.customCSS != null || !Double.isNaN(this.forceViewportWidth);
             this.showActionBar = styling.optBoolean("showActionBar", true);
 
             this.androidTheme = optString(styling, "androidTheme");
 
-            this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
+            // preprocess colors
+            String background = AppConfig.optString(styling, "androidSidebarBackgroundColor");
+            if (background != null){
+                try {
+                    this.sidebarBackgroundColor = Color.parseColor(background);
+                } catch (IllegalArgumentException e) {
+                    Log.e(TAG, "Bad androidSidebarBackgroundColor");
+                }
+            }
 
+            String foreground = AppConfig.optString(styling, "androidSidebarForegroundColor");
+            if (foreground != null){
+                try {
+                    this.sidebarForegroundColor = Color.parseColor(foreground);
+                } catch (IllegalArgumentException e) {
+                    Log.e(TAG, "Bad androidSidebarForegroundColor");
+                }
+            }
+
+            this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
 
 
             ////////////////////////////////////////////////////////////
@@ -360,6 +379,25 @@ public class AppConfig {
                 this.usesGeolocation = permissions.optBoolean("usesGeolocation", false);
             }
 
+            ////////////////////////////////////////////////////////////
+            // Services
+            ////////////////////////////////////////////////////////////
+            JSONObject services = this.json.optJSONObject("services");
+            if (services != null) {
+                JSONObject push = services.optJSONObject("push");
+                this.pushNotifications = push != null && push.optBoolean("active", false);
+
+                JSONObject analytics = services.optJSONObject("analytics");
+                if (analytics != null && analytics.optBoolean("active", false)) {
+                    this.idsite = analytics.optInt("idsite", Integer.MIN_VALUE);
+                    if (this.idsite == Integer.MIN_VALUE) {
+                        Log.w(TAG, "Analytics is enabled but there is no idsite");
+                        this.analytics = false;
+                    } else {
+                        this.analytics = true;
+                    }
+                }
+            }
 
             ////////////////////////////////////////////////////////////
             // Miscellaneous stuff
