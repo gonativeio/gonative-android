@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
+import android.webkit.URLUtil;
 import android.widget.Toast;
 
 import java.io.File;
@@ -108,9 +109,27 @@ public class FileDownloader implements DownloadListener{
                     File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                     downloadDir.mkdirs();
 
-                    String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(param.mimetype);
-                    if (extension != null) extension = "." + extension;
-                    File downloadFile = File.createTempFile("download_", extension, downloadDir);
+                    // guess file name and extension
+                    String guessedName = URLUtil.guessFileName(url.toString(),
+                            connection.getHeaderField("Content-Disposition"),
+                            param.mimetype);
+                    int pos = guessedName.lastIndexOf('.');
+                    String filename;
+                    String extension;
+                    if (pos == -1) {
+                        filename = guessedName;
+                        extension = "";
+                    } else if (pos == 0) {
+                        filename = "download";
+                        extension = guessedName.substring(1);
+                    } else {
+                        filename = guessedName.substring(0, pos);
+                        extension = guessedName.substring(pos+1);
+                    }
+
+                    if (!extension.isEmpty()) extension = "." + extension;
+
+                    File downloadFile = File.createTempFile(filename, extension, downloadDir);
 
                     downloadFile.createNewFile();
                     FileOutputStream os = new FileOutputStream(downloadFile);
@@ -163,7 +182,7 @@ public class FileDownloader implements DownloadListener{
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
                     String message = context.getResources().getString(R.string.file_handler_not_found,
-                            fileString);
+                            result.file.getName());
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show();
                 }
 
