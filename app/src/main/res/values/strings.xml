@@ -15,4 +15,5 @@
     <string name="form_error">Problem with submission. Check inputs and try again.</string>
     <string name="download">Download</string>
     <string name="download_canceled">Download canceled</string>
+    <string name="file_handler_not_found">Could not find an app that can open this file. File saved to %1$s  </string>
 </resources>

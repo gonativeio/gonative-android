@@ -1,11 +1,14 @@
 package io.gonative.android;
 
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.util.Log;
 import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
@@ -102,8 +105,9 @@ public class FileDownloader implements DownloadListener{
 
                 connection.connect();
                 if (connection.getResponseCode() < 400) {
-                    File downloadDir = context.getExternalFilesDir(null);
+                    File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                     downloadDir.mkdirs();
+
                     String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(param.mimetype);
                     if (extension != null) extension = "." + extension;
                     File downloadFile = File.createTempFile("download_", extension, downloadDir);
@@ -151,9 +155,22 @@ public class FileDownloader implements DownloadListener{
             progressDialog.dismiss();
 
             if (result != null && result.file != null) {
+                String fileString = result.file.toString();
+
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(Uri.fromFile(result.file), result.mimetype);
-                context.startActivity(intent);
+                try {
+                    context.startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    String message = context.getResources().getString(R.string.file_handler_not_found,
+                            fileString);
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+
+                MediaScannerConnection.scanFile(context,
+                        new String[] {fileString},
+                        new String[] {result.mimetype},
+                        null);
             }
         }
 
