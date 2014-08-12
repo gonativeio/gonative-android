@@ -203,10 +203,21 @@ public class MainActivity extends Activity implements Observer {
 
         // load url
         String url = null;
-        if (savedInstanceState != null) url = savedInstanceState.getString("url");
+        // first check intent in case it was created from push notification
+        String targetUrl = getIntent().getStringExtra("targetUrl");
+        if (targetUrl != null && !targetUrl.isEmpty()){
+            url = targetUrl;
+        }
+        if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
         if (url == null && isRoot) url = appConfig.initialUrl;
+        // url from intent (hub and spoke nav)
         if (url == null) url = getIntent().getStringExtra("url");
-        if (url != null) wv.loadUrl(url);
+
+        if (url != null) {
+            wv.loadUrl(url);
+        } else {
+            Log.e(TAG, "No url specified for MainActivity");
+        }
 
         if (isRoot && appConfig.showNavigationMenu) {
             // do the list stuff
@@ -600,8 +611,10 @@ public class MainActivity extends Activity implements Observer {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        // TODO: handle notification
-
+        String targetUrl = intent.getStringExtra("targetUrl");
+        if (targetUrl != null && !targetUrl.isEmpty()){
+            loadUrl(targetUrl);
+        }
     }
 
     @Override

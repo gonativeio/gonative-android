@@ -36,17 +36,31 @@ public class GcmBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void showNotification(Context context, Bundle extras) {
+        String title = extras.getString("title");
+        if (title == null) title = AppConfig.getInstance(context).appName;
+
+        String message = extras.getString("message");
+        if (message == null) return;
+
+        String targetUrl = extras.getString("targetUrl");
+
         Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (targetUrl != null && !targetUrl.isEmpty()) {
+            intent.putExtra("targetUrl", targetUrl);
+        }
+
         PendingIntent contentIntent = PendingIntent.getActivity(context,
                 MainActivity.REQUEST_PUSH_NOTIFICATION,
                 intent,
-                0);
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle(extras.getString("title"))
-                .setContentText(extras.getString("message"))
+                .setContentTitle(title)
+                .setContentText(message)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(message))
                 .setAutoCancel(true)
                 .setContentIntent(contentIntent);
 
