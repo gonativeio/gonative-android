@@ -81,7 +81,8 @@ public class AppConfig {
     // services
     public boolean pushNotifications = false;
     public boolean analytics = false;
-    public int idsite = Integer.MIN_VALUE;
+    public int idsite_test = Integer.MIN_VALUE;
+    public int idsite_prod = Integer.MIN_VALUE;
 
     // misc
     public boolean allowZoom = true;
@@ -389,9 +390,11 @@ public class AppConfig {
 
                 JSONObject analytics = services.optJSONObject("analytics");
                 if (analytics != null && analytics.optBoolean("active", false)) {
-                    this.idsite = analytics.optInt("idsite", Integer.MIN_VALUE);
-                    if (this.idsite == Integer.MIN_VALUE) {
-                        Log.w(TAG, "Analytics is enabled but there is no idsite");
+                    this.idsite_test = analytics.optInt("idsite_test", Integer.MIN_VALUE);
+                    this.idsite_prod = analytics.optInt("idsite_prod", Integer.MIN_VALUE);
+                    if (this.idsite_test == Integer.MIN_VALUE ||
+                            this.idsite_prod == Integer.MIN_VALUE) {
+                        Log.w(TAG, "Analytics requires idsite_test and idsite_prod");
                         this.analytics = false;
                     } else {
                         this.analytics = true;

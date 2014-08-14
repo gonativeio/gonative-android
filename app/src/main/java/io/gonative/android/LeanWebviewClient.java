@@ -57,6 +57,12 @@ public class LeanWebviewClient extends WebViewClient{
 
         // analytics
         if (appConfig.analytics) {
+            String distribution = (String)Installation.getInfo(mainActivity).get("distribution");
+            int idsite;
+            if (distribution != null && (distribution.equals("playstore") || distribution.equals("amazon")))
+                idsite = appConfig.idsite_prod;
+            else idsite = appConfig.idsite_test;
+
             this.analyticsExec = String.format("javascript:var _paq = _paq || [];\n" +
                     "  _paq.push(['trackPageView']);\n" +
                     "  _paq.push(['enableLinkTracking']);\n" +
@@ -66,7 +72,7 @@ public class LeanWebviewClient extends WebViewClient{
                     "    _paq.push(['setSiteId', %d]);\n" +
                     "    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript';\n" +
                     "    g.defer=true; g.async=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);\n" +
-                    "  })();", appConfig.idsite);
+                    "  })();", idsite);
         }
 	}
 	
