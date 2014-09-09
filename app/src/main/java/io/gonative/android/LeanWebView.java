@@ -11,7 +11,7 @@ import android.webkit.WebViewClient;
  * Pass calls WebViewClient.shouldOverrideUrlLoading when loadUrl, reload, or goBack are called.
  */
 public class LeanWebView extends WebView{
-    private LeanWebviewClient mClient = null;
+    private WebViewClient mClient = null;
     private boolean checkLoginSignup = true;
 
     public LeanWebView(Context context) {
@@ -28,7 +28,7 @@ public class LeanWebView extends WebView{
 
     @Override
     public void setWebViewClient(WebViewClient client) {
-        mClient = (LeanWebviewClient)client;
+        mClient = client;
         super.setWebViewClient(client);
     }
 
@@ -36,14 +36,15 @@ public class LeanWebView extends WebView{
     public void loadUrl(String url) {
         if (url.startsWith("javascript:"))
             loadUrlDirect(url);
-        else if (!mClient.shouldOverrideUrlLoading(this, url)) {
+        else if (mClient == null || !mClient.shouldOverrideUrlLoading(this, url)) {
             super.loadUrl(url);
         }
     }
 
     @Override
     public void reload() {
-        if (!mClient.shouldOverrideUrlLoading(this, getUrl(), true))
+        if (mClient == null || !(mClient instanceof LeanWebviewClient)) super.reload();
+        else if(!((LeanWebviewClient)mClient).shouldOverrideUrlLoading(this, getUrl(), true))
             super.reload();
     }
 
@@ -57,7 +58,7 @@ public class LeanWebView extends WebView{
         }
     }
 
-    // skip sholdOverrideUrlLoading, including its html override logic.
+    // skip shouldOverrideUrlLoading, including its html override logic.
     public void loadUrlDirect(String url) {
         super.loadUrl(url);
     }

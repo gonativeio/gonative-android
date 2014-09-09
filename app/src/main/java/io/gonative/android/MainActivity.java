@@ -89,8 +89,9 @@ public class MainActivity extends Activity implements Observer {
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
     public static final int REQUEST_PLAY_SERVICES_RESOLUTION = 9000;
 
-	public Stack<LeanWebView> globalWebViews = new Stack<LeanWebView>();
-    private HashMap<LeanWebView,Stack<String>> backHistory = new HashMap<LeanWebView,Stack<String>>();
+    private LeanWebView mWebview;
+    boolean isPoolWebview = false;
+    private Stack<String> backHistory = new Stack<String>();
 
 	private ArrayList<DrawerMenuItem> mItems = new ArrayList<DrawerMenuItem>();
 	private ValueCallback<Uri> mUploadMessage;
@@ -167,6 +168,9 @@ public class MainActivity extends Activity implements Observer {
                 this.pushManager = new PushManager(this);
                 this.pushManager.register();
             }
+
+            // webview pools
+            WebViewPool.getInstance().init(this);
         }
 
         // WebView debugging
@@ -198,7 +202,7 @@ public class MainActivity extends Activity implements Observer {
 		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
 		CookieHandler.setDefault(new WebkitCookieManagerProxy());
 
-		globalWebViews.add(wv);
+        this.mWebview = wv;
 		setupWebview(wv);
 
         // load url
@@ -273,42 +277,29 @@ public class MainActivity extends Activity implements Observer {
     }
 
     protected void onSaveInstanceState (Bundle outState) {
-        outState.putString("url", globalWebViews.peek().getUrl());
+        outState.putString("url", mWebview.getUrl());
         outState.putInt("urlLevel", urlLevel);
     }
 
     public void addToHistory(String url) {
         if (url == null) return;
 
-        LeanWebView wv = globalWebViews.peek();
-        Stack<String> history = backHistory.get(wv);
-        if (history == null) {
-            history = new Stack<String>();
-            backHistory.put(wv, history);
-        }
-
-        if (history.isEmpty() || !history.peek().equals(url)) {
-            history.push(url);
+        if (this.backHistory.isEmpty() || !this.backHistory.peek().equals(url)) {
+            this.backHistory.push(url);
         }
     }
 
     public boolean canGoBack() {
-        Stack<String> history = backHistory.get(globalWebViews.peek());
-        if (history != null) {
-            return history.size() >= 2;
-        }
-        return false;
+        return this.backHistory.size() >= 2;
     }
 
     public void goBack() {
-        Stack<String> history = backHistory.get(globalWebViews.peek());
-        history.pop();
-        String newUrl = history.pop();
-        loadUrl(newUrl);
+        this.backHistory.pop();
+        loadUrl(this.backHistory.pop());
     }
 
     public void logout() {
-        globalWebViews.peek().stopLoading();
+        this.mWebview.stopLoading();
 
         // log out by clearing all cookies and going to home page
         CookieManager cookieManager = CookieManager.getInstance();
@@ -317,14 +308,14 @@ public class MainActivity extends Activity implements Observer {
 
         updateMenu(false);
         LoginManager.getInstance().checkLogin();
-        globalWebViews.peek().loadUrl(AppConfig.getInstance(this).initialUrl);
+        this.mWebview.loadUrl(AppConfig.getInstance(this).initialUrl);
     }
 
     public void loadUrl(String url) {
         if (url.equalsIgnoreCase("gonative_logout"))
             logout();
         else
-            globalWebViews.peek().loadUrl(url);
+            this.mWebview.loadUrl(url);
     }
 	
 	public boolean isConnected(){
@@ -334,44 +325,11 @@ public class MainActivity extends Activity implements Observer {
 		
 	
 	// configures webview settings
-	@SuppressWarnings("deprecation")
-	@SuppressLint("SetJavaScriptEnabled")
 	private void setupWebview(WebView wv){
-		WebSettings webSettings = wv.getSettings();
+        LeanUtils.setupWebview(wv, this);
 
-        if (AppConfig.getInstance(this).allowZoom) {
-            webSettings.setBuiltInZoomControls(true);
-        }
-        else {
-            webSettings.setBuiltInZoomControls(false);
-        }
-        webSettings.setDisplayZoomControls(false);
-        webSettings.setLoadWithOverviewMode(true);
-        webSettings.setUseWideViewPort(true);
-
-		webSettings.setJavaScriptEnabled(true);
-		webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-
-        webSettings.setDomStorageEnabled(true);
-        File cachePath = new File(getCacheDir(), webviewCacheSubdir);
-        webSettings.setAppCachePath(cachePath.getAbsolutePath());
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setDatabaseEnabled(true);
-
-        //attempt to support persistent localStorage on 4.0 - 4.3
-        /*if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-			File databasePath = new File(getCacheDir(), webviewDatabaseSubdir);
-            webSettings.setDatabasePath(databasePath.getAbsolutePath());
-        }*/
-
-
-		webSettings.setSaveFormData(false);
-		webSettings.setSavePassword(false);
-		webSettings.setUserAgentString(AppConfig.getInstance(this).userAgent);
-		webSettings.setSupportMultipleWindows(true);
-        webSettings.setGeolocationEnabled(AppConfig.getInstance(this).usesGeolocation);
         wv.setWebChromeClient(new CustomWebChromeClient());
-		wv.setWebViewClient(new LeanWebviewClient(MainActivity.this));
+        wv.setWebViewClient(new LeanWebviewClient(MainActivity.this));
         wv.setDownloadListener(fileDownloader);
 
         if (profilePicker != null) {
@@ -385,7 +343,7 @@ public class MainActivity extends Activity implements Observer {
         mProgress.setAlpha(1.0f);
         mProgress.setVisibility(View.VISIBLE);
 
-        globalWebViews.peek().setVisibility(View.INVISIBLE);
+        this.mWebview.setVisibility(View.INVISIBLE);
     }
 
     public void showWebview(double delay) {
@@ -405,7 +363,7 @@ public class MainActivity extends Activity implements Observer {
         startedLoading = false;
         stopCheckingReadyStatus();
 
-        final WebView wv = globalWebViews.peek();
+        final WebView wv = this.mWebview;
         if (wv.getVisibility() == View.VISIBLE) {
             // don't animate if already visible
             return;
@@ -449,7 +407,7 @@ public class MainActivity extends Activity implements Observer {
 
 	public void updatePageTitle() {
         if (AppConfig.getInstance(this).useWebpageTitle) {
-            setTitle(globalWebViews.peek().getTitle());
+            setTitle(this.mWebview.getTitle());
         }
     }
 
@@ -521,11 +479,11 @@ public class MainActivity extends Activity implements Observer {
         if (requestCode == REQUEST_WEBFORM && resultCode == RESULT_OK) {
             String url = data.getStringExtra("url");
             if (url != null)
-                globalWebViews.peek().loadUrl(url);
+                loadUrl(url);
             else {
                 // go to initialURL without login/signup override
-                globalWebViews.peek().setCheckLoginSignup(false);
-                globalWebViews.peek().loadUrl(AppConfig.getInstance(this).initialUrl);
+                this.mWebview.setCheckLoginSignup(false);
+                this.mWebview.loadUrl(AppConfig.getInstance(this).initialUrl);
             }
 
             if (AppConfig.getInstance(this).showNavigationMenu) {
@@ -628,32 +586,30 @@ public class MainActivity extends Activity implements Observer {
                 goBack();
                 return true;
             }
-			else if(globalWebViews.size() > 1){
-                popWebView();
-				return true;
-			}
 		}
 
 		return super.onKeyDown(keyCode, event);
 	}
 
-    public void popWebView() {
-        WebView prev = globalWebViews.pop();
-        backHistory.remove(prev);
+    public void switchToWebview(LeanWebView newWebview, boolean isPoolWebview) {
+        setupWebview(newWebview);
 
-        // replace webview with next one on the stack
-        ViewGroup parent = (ViewGroup) prev.getParent();
-        int index = parent.indexOfChild(prev);
-        parent.removeView(prev);
-        parent.addView(globalWebViews.peek(), index);
-        clearProgress();
+        LeanWebView prev = this.mWebview;
 
-        // title in actionbar should be the new webview
-        updatePageTitle();
+        // replace the current web view in the parent with the new view
+        if (newWebview != prev) {
+            ViewGroup parent = (ViewGroup) prev.getParent();
+            int index = parent.indexOfChild(prev);
+            parent.removeView(prev);
+            parent.addView(newWebview, index);
+            newWebview.setLayoutParams(prev.getLayoutParams());
 
-        prev.destroy();
+            if (!this.isPoolWebview) prev.destroy();
+        }
+
+        this.isPoolWebview = isPoolWebview;
+        this.mWebview = newWebview;
     }
-
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -672,7 +628,7 @@ public class MainActivity extends Activity implements Observer {
 
                     try{
                         String q = URLEncoder.encode(query, "UTF-8");
-                        globalWebViews.peek().loadUrl(AppConfig.getInstance(getApplicationContext()).searchTemplateUrl + q);
+                        loadUrl(AppConfig.getInstance(getApplicationContext()).searchTemplateUrl + q);
                     }
                     catch (UnsupportedEncodingException e){
                         return true;
@@ -723,12 +679,12 @@ public class MainActivity extends Activity implements Observer {
 	        case R.id.action_search:
 	        	return true;
 	        case R.id.action_refresh:
-	        	if (globalWebViews.peek().getUrl() != null && globalWebViews.peek().getUrl().startsWith("data:")){
-	        		globalWebViews.peek().goBack();
+	        	if (this.mWebview.getUrl() != null && this.mWebview.getUrl().startsWith("data:")){
+                    this.mWebview.goBack();
 	        		updateMenu();
 	        	}
 	        	else {
-	        		globalWebViews.peek().reload();
+                    this.mWebview.reload();
 	        	}
 	        	return true;
         	default:
@@ -872,51 +828,6 @@ public class MainActivity extends Activity implements Observer {
 
     	    startActivityForResult(chooserIntent, REQUEST_SELECT_PICTURE);
         }
-
-        @Override
-        public boolean onCreateWindow (WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg){
-        	//Log.d(TAG, "onCreateWindow isdialog: " + isDialog + " isUserGesture: " + isUserGesture + " originalurl:" + view.getOriginalUrl());
-            LeanWebView wv = new LeanWebView(view.getContext());
-            
-            setupWebview(wv);
-
-        	if (!isDialog){
-    		//if (true){
-        		// dialogs are social media share buttons, where we don't want to add to the view because it
-        		// creates an extra blank page. TODO: This may create memory leaks for dialog boxes.
-	    		globalWebViews.add(wv);
-	    		
-	    		// replace the current web view in the parent with the new view
-	            ViewGroup parent = (ViewGroup) view.getParent();
-	            int index = parent.indexOfChild(view);
-	            parent.removeView(view);
-	            parent.addView(wv, index);
-        	}
-        	
-            WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-            transport.setWebView(wv);
-            resultMsg.sendToTarget();
-            return true;
-        }
-        
-        @Override
-        public void onCloseWindow (WebView view){
-        	//Log.d(TAG, "onclosewindow: " + (view == globalWebViews.peek()));
-        	
-        	// remove from webview stack if this is the top view
-        	if (view == globalWebViews.peek() && globalWebViews.size() > 1){
-        		globalWebViews.pop();
-        		
-    			ViewGroup parent = (ViewGroup) view.getParent();
-    			int index = parent.indexOfChild(view);
-    			
-    			parent.removeView(view);
-    			parent.addView(globalWebViews.peek(), index);
-    			clearProgress();
-    			
-    			view.destroy();
-        	}
-        }
         
         @Override
         public void onReceivedTitle(WebView view, String title){
@@ -960,7 +871,7 @@ public class MainActivity extends Activity implements Observer {
     }
 
     public void checkReadyStatus() {
-        globalWebViews.peek().loadUrl("javascript: gonative_status_checker.onReadyState(document.readyState)");
+        this.mWebview.loadUrl("javascript: gonative_status_checker.onReadyState(document.readyState)");
     }
 
     public void checkReadyStatusResult(String status) {

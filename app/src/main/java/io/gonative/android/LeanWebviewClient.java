@@ -4,26 +4,24 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.text.TextUtils;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.util.Pair;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 
 public class LeanWebviewClient extends WebViewClient{
-	private static final String TAG = LeanWebviewClient.class.getName();
+    public static final String STARTED_LOADING_MESSAGE = "io.gonative.android.webview.started";
+    public static final String FINISHED_LOADING_MESSAGE = "io.gonative.android.webview.finished";
+
+    private static final String TAG = LeanWebviewClient.class.getName();
 
     public static final int DEFAULT_HTML_SIZE = 10 * 1024; // 10 kilobytes
 
@@ -140,11 +138,6 @@ public class LeanWebviewClient extends WebViewClient{
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             view.getContext().startActivity(intent);
 
-            // pop this webview if the first page loaded is external
-            if (!view.canGoBack() && mainActivity.globalWebViews.size() > 1) {
-                mainActivity.popWebView();
-            }
-
             return true;
 		}
 
@@ -161,11 +154,6 @@ public class LeanWebviewClient extends WebViewClient{
                 intent.putExtra("url", url);
                 intent.putExtra("parentUrlLevel", currentLevel);
                 mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
-
-                // pop this webview if the first page loaded is higher nav level
-                if (!view.canGoBack() && mainActivity.globalWebViews.size() > 1) {
-                    mainActivity.popWebView();
-                }
 
                 return true;
             }
@@ -190,13 +178,41 @@ public class LeanWebviewClient extends WebViewClient{
             mainActivity.setTitle(newTitle);
         }
 
+        // check to see if the webview exists in pool.
+        Pair<LeanWebView, WebViewPoolDisownPolicy> pair = WebViewPool.getInstance().webviewForUrl(url);
+        LeanWebView poolWebview = pair.first;
+        WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
+        if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Always) {
+            this.mainActivity.switchToWebview(poolWebview, true);
+            WebViewPool.getInstance().disownWebview(poolWebview);
+            LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
+            return true;
+        }
+
+        if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Never) {
+            this.mainActivity.switchToWebview(poolWebview, true);
+            return true;
+        }
+
+        if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Reload &&
+                !LeanUtils.urlsMatchOnPath(url, view.getUrl())) {
+            this.mainActivity.switchToWebview(poolWebview, true);
+            return true;
+        }
+
+        if (this.mainActivity.isPoolWebview) {
+            // if we are here, either the policy is reload and we are reloading the page, or policy is never but we are going to a different page. So take ownership of the webview.
+            WebViewPool.getInstance().disownWebview(view);
+            this.mainActivity.isPoolWebview = false;
+        }
+
         // intercept html
         if (AppConfig.getInstance(mainActivity).interceptHtml) {
             try {
                 URL parsedUrl = new URL(url);
                 if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
                     mainActivity.setProgress(0);
-                    new DownloadPageTask().execute(new WebViewAndUrl(view, parsedUrl, isReload));
+                    new WebviewInterceptTask(this.mainActivity).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, isReload));
                     mainActivity.hideWebview();
                     return true;
                 }
@@ -224,7 +240,6 @@ public class LeanWebviewClient extends WebViewClient{
 
 		String path = uri.getPath();
 
-
         // reload menu if internal url
         if (AppConfig.getInstance(mainActivity).loginDetectionUrl != null && isInternalUri(uri)) {
             mainActivity.updateMenu();
@@ -234,7 +249,10 @@ public class LeanWebviewClient extends WebViewClient{
 
         // check ready status
         mainActivity.startCheckingReadyStatus();
-	}
+
+        // send broadcast message
+        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.STARTED_LOADING_MESSAGE));
+    }
 
 	@Override
 	public void onPageFinished(WebView view, String url) {
@@ -272,6 +290,10 @@ public class LeanWebviewClient extends WebViewClient{
         }
 		
 		mainActivity.clearProgress();
+
+        // send broadcast message
+        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
+
 	}
 
     @Override
@@ -291,150 +313,5 @@ public class LeanWebviewClient extends WebViewClient{
 		}
 	}
 
-    private class DownloadPageTask extends AsyncTask<WebViewAndUrl, Void, String> {
-        private WebView webview;
-        private URL parsedUrl;
-        private URL finalUrl;
 
-        protected String doInBackground(WebViewAndUrl... inputs) {
-            AppConfig appConfig = AppConfig.getInstance(mainActivity);
-
-            InputStream is = null;
-            ByteArrayOutputStream baos = null;
-            try {
-                parsedUrl = inputs[0].url;
-                webview = inputs[0].webview;
-                boolean isReload = inputs[0].isReload;
-
-                // assume Url we got was http or https, since we have already checked in shouldOverrideUrl
-                HttpURLConnection.setFollowRedirects(true);
-                HttpURLConnection connection = null;
-                boolean wasRedirected = false;
-                int numRedirects = 0;
-                do {
-                    connection = (HttpURLConnection) parsedUrl.openConnection();
-                    connection.setInstanceFollowRedirects(true);
-                    connection.setRequestProperty("User-Agent", appConfig.userAgent);
-                    if (isReload)
-                        connection.setRequestProperty("Cache-Control", "no-cache");
-
-                    connection.connect();
-                    int responseCode = connection.getResponseCode();
-
-                    if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
-                            responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-                        wasRedirected = true;
-                        parsedUrl = new URL(connection.getHeaderField("Location"));
-                        numRedirects++;
-                    } else {
-                        wasRedirected = false;
-                    }
-                } while (wasRedirected && numRedirects < 10);
-
-                finalUrl = connection.getURL();
-
-                String mimetype = connection.getContentType();
-                if (mimetype == null) {
-                    is = new BufferedInputStream(connection.getInputStream());
-                    mimetype = HttpURLConnection.guessContentTypeFromStream(is);
-                }
-
-                // if not html, then return null so that webview loads directly.
-                if (mimetype == null || !mimetype.startsWith("text/html"))
-                    return null;
-
-                // get and intercept the data
-                String encoding = connection.getContentEncoding();
-                if (encoding == null)
-                    encoding = "UTF-8";
-
-                if (is == null)
-                    is = new BufferedInputStream(connection.getInputStream());
-
-                int initialLength = connection.getContentLength();
-                if (initialLength < 0)
-                    initialLength = DEFAULT_HTML_SIZE;
-
-                baos = new ByteArrayOutputStream(initialLength);
-                IOUtils.copy(is, baos);
-                String origString;
-                try {
-                    origString = baos.toString(encoding);
-                } catch (UnsupportedEncodingException e){
-                    // Everything should support UTF-8
-                    origString = baos.toString("UTF-8");
-                }
-
-                // modify the string!
-                String newString = null;
-                int insertPoint = origString.indexOf("</head>");
-                if (insertPoint >= 0) {
-                    StringBuilder builder = new StringBuilder(initialLength);
-                    builder.append(origString.substring(0, insertPoint));
-                    if (appConfig.customCSS != null) {
-                        builder.append("<style>");
-                        builder.append(appConfig.customCSS);
-                        builder.append("</style>");
-                    }
-                    if (appConfig.stringViewport != null) {
-                        builder.append("<meta name=\"viewport\" content=\"");
-                        builder.append(TextUtils.htmlEncode(appConfig.stringViewport));
-                        builder.append("\" />");
-                    }
-                    if (!Double.isNaN(appConfig.forceViewportWidth)) {
-                        // we want to use user-scalable=no, but android has a bug that sets scale to
-                        // 1.0 if user-scalable=no. The workaround to is calculate the scale and set
-                        // it for initial, minimum, and maximum.
-                        // http://stackoverflow.com/questions/12723844/android-viewport-setting-user-scalable-no-breaks-width-zoom-level-of-viewpor
-                        double webViewWidth = webview.getWidth() / mainActivity.getResources().getDisplayMetrics().density;
-                        double viewportWidth = appConfig.forceViewportWidth;
-                        double scale = webViewWidth / viewportWidth;
-                        builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
-                                viewportWidth, scale, scale, scale));
-                    }
-
-                    builder.append(origString.substring(insertPoint));
-                    newString = builder.toString();
-                }
-                else {
-                    Log.d(TAG, "could not find closing </head> tag");
-                    newString = origString;
-                }
-
-                return newString;
-            } catch (Exception e) {
-                Log.e(TAG, e.toString(), e);
-                return null;
-            } finally {
-                IOUtils.close(is);
-                IOUtils.close(baos);
-            }
-        }
-
-        protected void onPostExecute(String data) {
-//            Log.d(TAG, "urlconnection settled on url " + finalUrl.toString());
-
-            if (data == null) {
-                // load directly
-                if (finalUrl != null)
-                    ((LeanWebView)webview).loadUrlDirect(finalUrl.toString());
-                else
-                    mainActivity.clearProgress();
-            } else {
-                webview.loadDataWithBaseURL(finalUrl.toString(), data, "text/html", null, finalUrl.toString());
-            }
-        }
-    }
-
-    private class WebViewAndUrl {
-        WebView webview;
-        URL url;
-        boolean isReload;
-
-        private WebViewAndUrl(WebView webview, URL url, boolean isReload) {
-            this.webview = webview;
-            this.url = url;
-            this.isReload = isReload;
-        }
-    }
 }

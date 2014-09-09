@@ -84,6 +84,9 @@ public class AppConfig {
     public int idsite_test = Integer.MIN_VALUE;
     public int idsite_prod = Integer.MIN_VALUE;
 
+    // performance
+    public JSONArray webviewPools;
+
     // misc
     public boolean allowZoom = true;
     public boolean interceptHtml = false;
@@ -400,6 +403,14 @@ public class AppConfig {
                         this.analytics = true;
                     }
                 }
+            }
+
+            ////////////////////////////////////////////////////////////
+            // Performance
+            ////////////////////////////////////////////////////////////
+            JSONObject performance = this.json.optJSONObject("performance");
+            if (performance != null) {
+                this.webviewPools = performance.optJSONArray("webviewPools");
             }
 
             ////////////////////////////////////////////////////////////

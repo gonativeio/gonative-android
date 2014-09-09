@@ -1,9 +1,15 @@
 package io.gonative.android;
 
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.util.Log;
 import android.net.Uri;
+import android.view.ViewGroup;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -78,5 +84,37 @@ public class LeanUtils {
         }
 
         return sb.toString();
+    }
+
+    @SuppressWarnings("deprecation")
+    @SuppressLint("SetJavaScriptEnabled")
+    public static void setupWebview(WebView wv, Context context) {
+        WebSettings webSettings = wv.getSettings();
+
+        if (AppConfig.getInstance(context).allowZoom) {
+            webSettings.setBuiltInZoomControls(true);
+        }
+        else {
+            webSettings.setBuiltInZoomControls(false);
+        }
+
+        webSettings.setDisplayZoomControls(false);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
+
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+        webSettings.setDomStorageEnabled(true);
+        File cachePath = new File(context.getCacheDir(), MainActivity.webviewCacheSubdir);
+        webSettings.setAppCachePath(cachePath.getAbsolutePath());
+        webSettings.setAppCacheEnabled(true);
+        webSettings.setDatabaseEnabled(true);
+
+        webSettings.setSaveFormData(false);
+        webSettings.setSavePassword(false);
+        webSettings.setUserAgentString(AppConfig.getInstance(context).userAgent);
+        webSettings.setSupportMultipleWindows(true);
+        webSettings.setGeolocationEnabled(AppConfig.getInstance(context).usesGeolocation);
     }
 }
