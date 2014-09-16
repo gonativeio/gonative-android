@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -175,7 +176,11 @@ public class MainActivity extends Activity implements Observer {
 
         // WebView debugging
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true);
+            Map<String,Object> installation = Installation.getInfo(this);
+            String dist = (String)installation.get("distribution");
+            if (dist != null && (dist.equals("debug") || dist.equals("adhoc"))) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
         }
 		
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -593,6 +598,9 @@ public class MainActivity extends Activity implements Observer {
 
     public void switchToWebview(LeanWebView newWebview, boolean isPoolWebview) {
         setupWebview(newWebview);
+
+        // scroll to top
+        newWebview.scrollTo(0, 0);
 
         LeanWebView prev = this.mWebview;
 
