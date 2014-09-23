@@ -288,6 +288,9 @@ public class LeanWebviewClient extends WebViewClient{
         if (this.analyticsExec != null) {
             view.loadUrl(this.analyticsExec);
         }
+
+        // tabs
+        mainActivity.checkTabs(url);
 		
 		mainActivity.clearProgress();
 

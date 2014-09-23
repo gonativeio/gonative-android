@@ -57,6 +57,10 @@ public class AppConfig {
     public ArrayList<Boolean> regexIsInternal;
     public boolean useWebpageTitle;
 
+    public HashMap<String,JSONArray> tabMenus;
+    public ArrayList<Pattern> tabMenuRegexes;
+    public ArrayList<String> tabMenuIDs;
+
     // styling
     public Integer sidebarBackgroundColor;
     public Integer sidebarForegroundColor;
@@ -336,6 +340,12 @@ public class AppConfig {
                         }
                     }
                 }
+
+                // tab menus
+                JSONObject tabNavigation = navigation.optJSONObject("tabNavigation");
+                if (tabNavigation != null) {
+                    processTabNavigation(tabNavigation);
+                }
             }
 
             ////////////////////////////////////////////////////////////
@@ -425,6 +435,49 @@ public class AppConfig {
         finally {
             IOUtils.close(is);
             IOUtils.close(jsonIs);
+        }
+    }
+
+    private void processTabNavigation(JSONObject tabNavigation) {
+        if (tabNavigation == null) return;
+
+        this.tabMenus = new HashMap<String, JSONArray>();
+        this.tabMenuIDs = new ArrayList<String>();
+        this.tabMenuRegexes = new ArrayList<Pattern>();
+
+        JSONArray tabMenus = tabNavigation.optJSONArray("tabMenus");
+        if (tabMenus != null) {
+            for (int i = 0; i < tabMenus.length(); i++) {
+                JSONObject entry = tabMenus.optJSONObject(i);
+                if (entry != null) {
+                    String id = optString(entry, "id");
+                    JSONArray items = entry.optJSONArray("items");
+                    if (id != null && items != null) {
+                        this.tabMenus.put(id, items);
+                    }
+                }
+            }
+        }
+
+        JSONArray tabSelection = tabNavigation.optJSONArray("tabSelectionConfig");
+        if (tabSelection != null) {
+            for (int i = 0; i < tabSelection.length(); i++) {
+                JSONObject entry = tabSelection.optJSONObject(i);
+                if (entry != null) {
+                    String regex = optString(entry, "regex");
+                    String id = optString(entry, "id");
+
+                    if (regex != null && id != null) {
+                        try {
+                            Pattern pattern = Pattern.compile(regex);
+                            this.tabMenuRegexes.add(pattern);
+                            this.tabMenuIDs.add(id);
+                        } catch (PatternSyntaxException e) {
+                            Log.d(TAG, "Problem with tabSelectionConfig pattern. " + e.getMessage());
+                        }
+                    }
+                }
+            }
         }
     }
 

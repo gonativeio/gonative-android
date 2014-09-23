@@ -106,6 +106,7 @@ public class MainActivity extends Activity implements Observer {
 	private Boolean isLoggedIn = null;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
+    private TabManager tabManager;
     private boolean isRoot;
     private int urlLevel = -1;
     private int parentUrlLevel = -1;
@@ -269,6 +270,9 @@ public class MainActivity extends Activity implements Observer {
             if (!isRoot || AppConfig.getInstance(this).showNavigationMenu)
                 getActionBar().setDisplayHomeAsUpEnabled(true);
         }
+
+        // tab navigation
+        this.tabManager = new TabManager(this);
 
         // style sidebar
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
@@ -705,6 +709,12 @@ public class MainActivity extends Activity implements Observer {
         intent.putExtra(WebFormActivity.EXTRA_FORMNAME, formName);
         intent.putExtra(WebFormActivity.EXTRA_TITLE, title);
         startActivityForResult(intent, REQUEST_WEBFORM);
+    }
+
+    public void checkTabs(String url) {
+        if (this.tabManager != null) {
+            this.tabManager.checkTabs(url);
+        }
     }
 
     public int urlLevelForUrl(String url) {
