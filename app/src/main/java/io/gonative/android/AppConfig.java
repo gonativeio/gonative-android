@@ -1,12 +1,16 @@
 package io.gonative.android;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -21,9 +25,14 @@ import java.util.regex.PatternSyntaxException;
 
 
 /**
- * Created by weiyin on 3/13/14.
+ * Created by Weiyin He on 3/13/14.
+ * Copyright 2014 GoNative.io LLC
  */
 public class AppConfig {
+    public static final String PROCESSED_MENU_MESSAGE = "io.gonative.android.AppConfig.processedMenu";
+    public static final String PROCESSED_TAB_NAVIGATION_MESSAGE = "io.gonative.android.AppConfig.processedTabNavigation";
+    public static final String PROCESSED_WEBVIEW_POOLS_MESSAGE = "io.gonative.android.AppConfig.processedWebViewPools";
+
     private static final String TAG = AppConfig.class.getName();
 
 
@@ -33,6 +42,8 @@ public class AppConfig {
     // instance variables
     private Context context;
     private JSONObject json;
+    private String lastConfigUpdate;
+    private AppConfigJsBridge appConfigJsBridge;
 
     // general
     public String initialUrl;
@@ -94,6 +105,7 @@ public class AppConfig {
     // misc
     public boolean allowZoom = true;
     public boolean interceptHtml = false;
+    public String updateConfigJS;
 
 
     public File fileForOTAconfig() {
@@ -102,6 +114,7 @@ public class AppConfig {
 
     private AppConfig(Context context){
         this.context = context;
+        this.appConfigJsBridge = new AppConfigJsBridge();
 
         InputStream is = null;
         InputStream jsonIs = null;
@@ -131,12 +144,6 @@ public class AppConfig {
             }
 
             // initialize some stuff
-            this.menus = new HashMap<String, JSONArray>();
-            this.loginDetectRegexes = new ArrayList<Pattern>();
-            this.loginDetectLocations = new ArrayList<JSONObject>();
-            this.navStructureLevelsRegex = new ArrayList<Pattern>();
-            this.navStructureLevels = new ArrayList<Integer>();
-            this.navTitles = new ArrayList<HashMap<String, Object>>();
             this.regexInternalExternal = new ArrayList<Pattern>();
             this.regexIsInternal = new ArrayList<Boolean>();
 
@@ -204,119 +211,17 @@ public class AppConfig {
             ////////////////////////////////////////////////////////////
             JSONObject navigation = this.json.optJSONObject("navigation");
             if (navigation != null) {
-                int numActiveMenus = 0;
-
+                // sidebar
                 JSONObject sidebarNav = navigation.optJSONObject("sidebarNavigation");
-                if (sidebarNav != null) {
-                    // menus
-                    JSONArray menus = sidebarNav.optJSONArray("menus");
-                    if (menus != null) {
-                        for(int i = 0; i < menus.length(); i++){
-                            JSONObject menu = menus.optJSONObject(i);
-                            if (menu != null) {
-                                if (!menu.optBoolean("active", false)){
-                                    continue;
-                                }
-
-                                numActiveMenus++;
-
-                                String name = optString(menu, "name");
-                                JSONArray items = menu.optJSONArray("items");
-                                if (name != null && items != null) {
-                                    this.menus.put(name, items);
-
-                                    // show menu if the menu named "default" is active
-                                    if (name.equals("default")) {
-                                        this.showNavigationMenu = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    this.userIdRegex = optString(sidebarNav, "userIdRegex");
-
-                    // menu selection config
-                    JSONObject menuSelectionConfig = sidebarNav.optJSONObject("menuSelectionConfig");
-                    if ((numActiveMenus > 1 || this.loginIsFirstPage) && menuSelectionConfig != null) {
-                        this.loginDetectionUrl = optString(menuSelectionConfig, "testURL");
-
-                        JSONArray redirectLocations = menuSelectionConfig.optJSONArray("redirectLocations");
-                        if (redirectLocations != null) {
-                            for(int i = 0; i < redirectLocations.length(); i++) {
-                                JSONObject entry = redirectLocations.optJSONObject(i);
-                                if (entry != null) {
-                                    String regex = optString(entry, "regex");
-                                    if (regex != null) {
-                                        this.loginDetectRegexes.add(Pattern.compile(regex));
-                                        this.loginDetectLocations.add(entry);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                processSidebarNavigation(sidebarNav);
 
                 // navigation levels
                 JSONObject navigationLevels = navigation.optJSONObject("navigationLevels");
-                if (navigationLevels != null && navigationLevels.optBoolean("active", false)) {
-                    JSONArray urlLevels = navigationLevels.optJSONArray("levels");
-                    if (urlLevels != null) {
-                        for (int i = 0; i < urlLevels.length(); i++){
-                            JSONObject entry = urlLevels.optJSONObject(i);
-                            if (entry != null) {
-                                String regex = optString(entry, "regex");
-                                int level = entry.optInt("level", -1);
-
-                                if (regex != null && level != -1) {
-                                    this.navStructureLevelsRegex.add(Pattern.compile(regex));
-                                    this.navStructureLevels.add(level);
-                                }
-
-                            }
-                        }
-                    }
-                }
+                processNavigationLevels(navigationLevels);
 
                 // navigation titles
                 JSONObject navigationTitles = navigation.optJSONObject("navigationTitles");
-                if (navigationTitles != null && navigationTitles.optBoolean("active", false)) {
-                    JSONArray titles = navigationTitles.optJSONArray("titles");
-                    if (titles != null) {
-                        for (int i = 0; i < titles.length(); i++) {
-                            JSONObject entry = titles.optJSONObject(i);
-                            if (entry != null) {
-                                String regex = optString(entry, "regex");
-                                if (regex != null) {
-                                    try {
-                                        HashMap<String, Object> toAdd = new HashMap<String, Object>();
-                                        Pattern pattern = Pattern.compile(entry.getString("regex"));
-                                        toAdd.put("regex", pattern);
-
-                                        String title = optString(entry, "title");
-                                        String urlRegex = optString(entry, "urlRegex");
-                                        int urlChompWords = entry.optInt("urlChompWords", -1);
-
-                                        if (title != null) {
-                                            toAdd.put("title", title);
-                                        }
-                                        if (urlRegex != null) {
-                                            Pattern urlRegexPattern = Pattern.compile(urlRegex);
-                                            toAdd.put("urlRegex", urlRegexPattern);
-                                        }
-                                        if (urlChompWords != -1) {
-                                            toAdd.put("urlChompWords", urlChompWords);
-                                        }
-
-                                        this.navTitles.add(toAdd);
-                                    } catch (PatternSyntaxException e) {
-                                        Log.e(TAG, e.getMessage(), e);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                processNavigationTitles(navigationTitles);
 
                 this.profilePickerJS = optString(navigation, "profilePickerJS");
 
@@ -343,9 +248,7 @@ public class AppConfig {
 
                 // tab menus
                 JSONObject tabNavigation = navigation.optJSONObject("tabNavigation");
-                if (tabNavigation != null) {
-                    processTabNavigation(tabNavigation);
-                }
+                processTabNavigation(tabNavigation);
             }
 
             ////////////////////////////////////////////////////////////
@@ -420,14 +323,14 @@ public class AppConfig {
             ////////////////////////////////////////////////////////////
             JSONObject performance = this.json.optJSONObject("performance");
             if (performance != null) {
-                this.webviewPools = performance.optJSONArray("webviewPools");
+                processWebViewPools(performance.optJSONArray("webviewPools"));
             }
 
             ////////////////////////////////////////////////////////////
             // Miscellaneous stuff
             ////////////////////////////////////////////////////////////
             this.allowZoom = this.json.optBoolean("allowZoom", true);
-
+            this.updateConfigJS = optString(this.json, "updateConfigJS");
 
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
@@ -438,12 +341,178 @@ public class AppConfig {
         }
     }
 
+    public void processDynamicUpdate(String json) {
+        if (json == null || json.isEmpty() || json.equals("null") || json.equals(this.lastConfigUpdate)) {
+            return;
+        }
+
+        this.lastConfigUpdate = json;
+
+        JSONObject parsedJson = null;
+        try {
+            parsedJson = new JSONObject(json);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error processing config update:"+e.getMessage(), e);
+            return;
+        }
+
+        if (parsedJson != null) {
+            processTabNavigation(parsedJson.optJSONObject("tabNavigation"));
+            processSidebarNavigation(parsedJson.optJSONObject("sidebarNavigation"));
+            processNavigationLevels(parsedJson.optJSONObject("navigationLevels"));
+            processNavigationTitles(parsedJson.optJSONObject("navigationTitles"));
+            processWebViewPools(parsedJson.optJSONArray("webviewPools"));
+        }
+    }
+
+    private void processWebViewPools(JSONArray webviewPools) {
+        if (webviewPools == null) return;
+
+        this.webviewPools = webviewPools;
+        LocalBroadcastManager.getInstance(this.context).sendBroadcast(new Intent(PROCESSED_WEBVIEW_POOLS_MESSAGE));
+    }
+
+    private void processNavigationTitles(JSONObject navigationTitles) {
+        if (navigationTitles == null) return;
+
+        this.navTitles = new ArrayList<HashMap<String, Object>>();
+
+        if (!navigationTitles.optBoolean("active")) return;
+
+        JSONArray titles = navigationTitles.optJSONArray("titles");
+        if (titles != null) {
+            for (int i = 0; i < titles.length(); i++) {
+                JSONObject entry = titles.optJSONObject(i);
+
+                if (entry == null) continue;
+                String regex = optString(entry, "regex");
+                if (regex == null) continue;
+
+                try {
+                    HashMap<String, Object> toAdd = new HashMap<String, Object>();
+                    Pattern pattern = Pattern.compile(regex);
+                    toAdd.put("regex", pattern);
+
+                    String title = optString(entry, "title");
+                    String urlRegex = optString(entry, "urlRegex");
+                    int urlChompWords = entry.optInt("urlChompWords", -1);
+
+                    if (title != null) {
+                        toAdd.put("title", title);
+                    }
+                    if (urlRegex != null) {
+                        Pattern urlRegexPattern = Pattern.compile(urlRegex);
+                        toAdd.put("urlRegex", urlRegexPattern);
+                    }
+                    if (urlChompWords > -1) {
+                        toAdd.put("urlChompWords", urlChompWords);
+                    }
+
+                    this.navTitles.add(toAdd);
+                } catch (PatternSyntaxException e) {
+                    Log.e(TAG, e.getMessage(), e);
+                }
+
+            }
+        }
+
+    }
+
+    private void processNavigationLevels(JSONObject navigationLevels) {
+        if (navigationLevels == null) return;
+
+        this.navStructureLevelsRegex = new ArrayList<Pattern>();
+        this.navStructureLevels = new ArrayList<Integer>();
+
+        if (!navigationLevels.optBoolean("active")) return;
+
+        JSONArray urlLevels = navigationLevels.optJSONArray("levels");
+        if (urlLevels != null) {
+            for (int i = 0; i < urlLevels.length(); i++) {
+                JSONObject entry = urlLevels.optJSONObject(i);
+                if (entry != null) {
+                    String regex = optString(entry, "regex");
+                    int level = entry.optInt("level", -1);
+
+                    if (regex != null && level != -1) {
+                        this.navStructureLevelsRegex.add(Pattern.compile(regex));
+                        this.navStructureLevels.add(level);
+                    }
+
+                }
+            }
+        }
+    }
+
+    private void processSidebarNavigation(JSONObject sidebarNav){
+        if (sidebarNav == null) return;
+
+        this.menus = new HashMap<String, JSONArray>();
+        this.loginDetectRegexes = new ArrayList<Pattern>();
+        this.loginDetectLocations = new ArrayList<JSONObject>();
+
+        int numActiveMenus = 0;
+
+        // menus
+        JSONArray menus = sidebarNav.optJSONArray("menus");
+        if (menus != null) {
+            for(int i = 0; i < menus.length(); i++){
+                JSONObject menu = menus.optJSONObject(i);
+                if (menu != null) {
+                    if (!menu.optBoolean("active", false)){
+                        continue;
+                    }
+
+                    numActiveMenus++;
+
+                    String name = optString(menu, "name");
+                    JSONArray items = menu.optJSONArray("items");
+                    if (name != null && items != null) {
+                        this.menus.put(name, items);
+
+                        // show menu if the menu named "default" is active
+                        if (name.equals("default")) {
+                            this.showNavigationMenu = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        LocalBroadcastManager.getInstance(this.context).sendBroadcast(new Intent(PROCESSED_MENU_MESSAGE));
+
+        this.userIdRegex = optString(sidebarNav, "userIdRegex");
+
+        // menu selection config
+        JSONObject menuSelectionConfig = sidebarNav.optJSONObject("menuSelectionConfig");
+        if ((numActiveMenus > 1 || this.loginIsFirstPage) && menuSelectionConfig != null) {
+            this.loginDetectionUrl = optString(menuSelectionConfig, "testURL");
+
+            JSONArray redirectLocations = menuSelectionConfig.optJSONArray("redirectLocations");
+            if (redirectLocations != null) {
+                for(int i = 0; i < redirectLocations.length(); i++) {
+                    JSONObject entry = redirectLocations.optJSONObject(i);
+                    if (entry != null) {
+                        String regex = optString(entry, "regex");
+                        if (regex != null) {
+                            this.loginDetectRegexes.add(Pattern.compile(regex));
+                            this.loginDetectLocations.add(entry);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
     private void processTabNavigation(JSONObject tabNavigation) {
         if (tabNavigation == null) return;
 
         this.tabMenus = new HashMap<String, JSONArray>();
         this.tabMenuIDs = new ArrayList<String>();
         this.tabMenuRegexes = new ArrayList<Pattern>();
+
+        if (!tabNavigation.optBoolean("active")) return;
 
         JSONArray tabMenus = tabNavigation.optJSONArray("tabMenus");
         if (tabMenus != null) {
@@ -473,12 +542,14 @@ public class AppConfig {
                             this.tabMenuRegexes.add(pattern);
                             this.tabMenuIDs.add(id);
                         } catch (PatternSyntaxException e) {
-                            Log.d(TAG, "Problem with tabSelectionConfig pattern. " + e.getMessage());
+                            Log.w(TAG, "Problem with tabSelectionConfig pattern. " + e.getMessage());
                         }
                     }
                 }
             }
         }
+
+        LocalBroadcastManager.getInstance(this.context).sendBroadcast(new Intent(PROCESSED_TAB_NAVIGATION_MESSAGE));
     }
 
     public synchronized static AppConfig getInstance(Context context){
@@ -496,5 +567,17 @@ public class AppConfig {
             return null;
         else
             return json.optString(key, null);
+    }
+
+    // bridge for dynamic update
+    public class AppConfigJsBridge {
+        @JavascriptInterface
+        public void parseJson(String s) {
+            processDynamicUpdate(s);
+        }
+    }
+
+    public AppConfigJsBridge getJsBridge(){
+        return this.appConfigJsBridge;
     }
 }

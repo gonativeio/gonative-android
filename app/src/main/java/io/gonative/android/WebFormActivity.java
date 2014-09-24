@@ -1,12 +1,5 @@
 package io.gonative.android;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Observable;
-import java.util.Observer;
-
-import org.json.*;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -36,6 +29,14 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Observable;
+import java.util.Observer;
 
 
 /**

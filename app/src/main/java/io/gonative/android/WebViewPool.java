@@ -10,7 +10,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Display;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -28,7 +27,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by weiyin on 9/3/14.
+ * Created by Weiyin He on 9/3/14.
+ * Copyright 2014 GoNative.io LLC
  */
 
 public class WebViewPool {
@@ -77,6 +77,8 @@ public class WebViewPool {
         this.messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                if (intent == null || intent.getAction() == null) return;
+
                 if (intent.getAction().equals(LeanWebviewClient.STARTED_LOADING_MESSAGE)) {
                     WebViewPool pool = WebViewPool.this;
                     pool.isMainActivityLoading = true;
@@ -88,6 +90,8 @@ public class WebViewPool {
                     WebViewPool pool = WebViewPool.this;
                     pool.isMainActivityLoading = false;
                     pool.resumeLoading();
+                } else if (intent.getAction().equals(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE)) {
+                    processConfig();
                 }
             }
         };
@@ -95,6 +99,8 @@ public class WebViewPool {
                 this.messageReceiver, new IntentFilter(LeanWebviewClient.STARTED_LOADING_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
                 this.messageReceiver, new IntentFilter(LeanWebviewClient.FINISHED_LOADING_MESSAGE));
+        LocalBroadcastManager.getInstance(this.context).registerReceiver(
+                this.messageReceiver, new IntentFilter(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE));
 
         this.webviewClient = new WebViewClient(){
             @Override
@@ -179,6 +185,13 @@ public class WebViewPool {
 
             }
         }
+
+        // if config changed, we may have to load webviews corresponding to the previously requested url
+        if (this.lastUrlRequest != null) {
+            webviewForUrl(this.lastUrlRequest);
+        }
+
+        resumeLoading();
     }
 
     private void resumeLoading() {
@@ -223,6 +236,7 @@ public class WebViewPool {
     }
 
     public Pair<LeanWebView, WebViewPoolDisownPolicy> webviewForUrl(String url) {
+        this.lastUrlRequest = url;
         HashSet<String> urlSet = urlSetForUrl(url);
         if (urlSet.size() > 0) {
             HashSet<String> newUrls = (HashSet<String>)urlSet.clone();

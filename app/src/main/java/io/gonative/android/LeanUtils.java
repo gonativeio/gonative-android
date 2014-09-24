@@ -3,9 +3,8 @@ package io.gonative.android;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.util.Log;
 import android.net.Uri;
-import android.view.ViewGroup;
+import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 

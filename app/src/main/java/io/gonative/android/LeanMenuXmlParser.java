@@ -1,11 +1,11 @@
 package io.gonative.android;
 
-import java.io.InputStream;
-import java.util.ArrayList;
+import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import android.util.Xml;
+import java.io.InputStream;
+import java.util.ArrayList;
 
 public class LeanMenuXmlParser {
 	public LeanMenuXmlResult parse(InputStream in) throws Exception{

@@ -29,6 +29,7 @@ public class LeanWebviewClient extends WebViewClient{
 	private boolean isDialog = false;
     private String profilePickerExec;
     private String analyticsExec;
+    private String dynamicUpdateExec;
 
     private boolean mVisitedLoginOrSignup = false;
 
@@ -71,6 +72,15 @@ public class LeanWebviewClient extends WebViewClient{
                     "    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript';\n" +
                     "    g.defer=true; g.async=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);\n" +
                     "  })();", idsite);
+        }
+
+        // dynamic config updates
+        if (appConfig.updateConfigJS != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("javascript: gonative_dynamic_update.parseJson(");
+            sb.append(appConfig.updateConfigJS);
+            sb.append(")");
+            this.dynamicUpdateExec = sb.toString();
         }
 	}
 	
@@ -277,6 +287,11 @@ public class LeanWebviewClient extends WebViewClient{
 
             mVisitedLoginOrSignup = LeanUtils.urlsMatchOnPath(url, appConfig.loginUrl) ||
                     LeanUtils.urlsMatchOnPath(url, appConfig.signupUrl);
+        }
+
+        // dynamic config updater
+        if (this.dynamicUpdateExec != null) {
+            view.loadUrl(this.dynamicUpdateExec);
         }
 
         // profile picker

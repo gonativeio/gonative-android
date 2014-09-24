@@ -1,32 +1,5 @@
 package io.gonative.android;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.CookieHandler;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -39,14 +12,13 @@ import android.content.res.TypedArray;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -64,7 +36,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ExpandableListView;
 import android.widget.ProgressBar;
@@ -72,8 +43,22 @@ import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import org.apache.http.util.ByteArrayBuffer;
-import org.json.JSONObject;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.CookieHandler;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity implements Observer {
 	private static final String MENU_CACHED = "menu_cached.xml";
@@ -242,6 +227,9 @@ public class MainActivity extends Activity implements Observer {
             int drawerIcon = a.getResourceId(0, R.drawable.ic_drawer_light);
             a.recycle();
 
+            // set shadow
+            mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+
             mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
                     drawerIcon, R.string.drawer_open, R.string.drawer_close){
                 //Called when a drawer has settled in a completely closed state.
@@ -343,6 +331,10 @@ public class MainActivity extends Activity implements Observer {
 
         if (profilePicker != null) {
             wv.addJavascriptInterface(profilePicker.getProfileJsBridge(), "gonative_profile_picker");
+        }
+
+        if (AppConfig.getInstance(this).updateConfigJS != null) {
+            wv.addJavascriptInterface(AppConfig.getInstance(this).getJsBridge(), "gonative_dynamic_update");
         }
 
         wv.addJavascriptInterface(new StatusCheckerBridge(), "gonative_status_checker");

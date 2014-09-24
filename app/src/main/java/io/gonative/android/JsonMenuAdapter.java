@@ -1,5 +1,10 @@
 package io.gonative.android;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,12 +18,7 @@ import com.joanzapata.android.iconify.IconDrawable;
 import com.joanzapata.android.iconify.Iconify;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Created by weiyin on 4/14/14.
@@ -32,6 +32,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
     private boolean groupsHaveIcons = false;
     private boolean childrenHaveIcons = false;
+    private String status;
+    private BroadcastReceiver broadcastReceiver;
 
     private JsonMenuAdapter() {
     }
@@ -39,11 +41,28 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     public JsonMenuAdapter(MainActivity activity) {
         this.mainActivity = activity;
         menuItems = null;
+
+        // broadcast messages
+        this.broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction() != null && intent.getAction().equals(AppConfig.PROCESSED_MENU_MESSAGE)) {
+                    update();
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this.mainActivity)
+                .registerReceiver(this.broadcastReceiver,
+                        new IntentFilter(AppConfig.PROCESSED_MENU_MESSAGE));
     }
 
+    public synchronized void update (){
+        update(this.status);
+    }
 
     public synchronized void update(String status) {
         if (status == null) status = "default";
+        this.status = status;
 
         menuItems = AppConfig.getInstance(mainActivity).menus.get(status);
         if (menuItems == null) menuItems = new JSONArray();

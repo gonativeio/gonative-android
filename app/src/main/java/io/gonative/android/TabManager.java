@@ -2,6 +2,11 @@ package io.gonative.android;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,13 +22,34 @@ public class TabManager implements ActionBar.TabListener {
     private MainActivity mainActivity;
     private boolean isFirstSelection;
     private String currentMenuId;
+    private String currentUrl;
+    private BroadcastReceiver broadcastReceiver;
+
+    private TabManager(){
+        // disable instantiation without mainActivity
+    }
 
     public TabManager(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
+
+        this.broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction() != null && intent.getAction().equals(AppConfig.PROCESSED_TAB_NAVIGATION_MESSAGE)) {
+                    currentMenuId = null;
+                    checkTabs(currentUrl);
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this.mainActivity)
+                .registerReceiver(this.broadcastReceiver,
+                        new IntentFilter(AppConfig.PROCESSED_TAB_NAVIGATION_MESSAGE));
     }
 
     public void checkTabs(String url) {
-        if (this.mainActivity == null || this.mainActivity.getActionBar() == null) {
+        this.currentMenuId = url;
+
+        if (this.mainActivity == null || this.mainActivity.getActionBar() == null || url == null) {
             return;
         }
 
