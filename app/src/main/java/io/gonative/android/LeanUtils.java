@@ -50,18 +50,22 @@ public class LeanUtils {
         return m.matches();
     }
 
-    public static String jsWrapString(String s) {
+    public static String urlEncode(String s) {
         try {
             // urlencoder replaces spaces with pluses. Need to revert it.
             String encoded = URLEncoder.encode(s, "UTF-8");
-            encoded = encoded.replace("+", " ");
-
-            return "decodeURIComponent(\"" + encoded + "\")";
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, e.toString(), e);
+            return encoded.replace("+", " ");
+        } catch (UnsupportedEncodingException e){
+            Log.e(TAG, e.getMessage(), e);
+            return null;
         }
+    }
 
-        return null;
+    public static String jsWrapString(String s) {
+        return new StringBuilder("decodeURIComponent(\"")
+                .append(urlEncode(s))
+                .append("\")")
+                .toString();
     }
 
     public static String capitalizeWords(String s) {
@@ -113,7 +117,7 @@ public class LeanUtils {
         webSettings.setSaveFormData(false);
         webSettings.setSavePassword(false);
         webSettings.setUserAgentString(AppConfig.getInstance(context).userAgent);
-        webSettings.setSupportMultipleWindows(true);
+        webSettings.setSupportMultipleWindows(false);
         webSettings.setGeolocationEnabled(AppConfig.getInstance(context).usesGeolocation);
     }
 }

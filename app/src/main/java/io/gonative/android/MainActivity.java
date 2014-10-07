@@ -111,6 +111,7 @@ public class MainActivity extends Activity implements Observer {
     private FileDownloader fileDownloader = new FileDownloader(this);
     private boolean startedLoading = false; // document readystate checker
     private PushManager pushManager;
+    protected String postLoadJavascript;
 	
 	private Uri cameraFileUri;
 	private Uri cropFileUri;
@@ -196,10 +197,12 @@ public class MainActivity extends Activity implements Observer {
         this.mWebview = wv;
 		setupWebview(wv);
 
+        this.postLoadJavascript = getIntent().getStringExtra("postLoadJavascript");
+
         // load url
         String url = null;
         // first check intent in case it was created from push notification
-        String targetUrl = getIntent().getStringExtra("targetUrl");
+        String targetUrl = getIntent().getStringExtra(INTENT_TARGET_URL);
         if (targetUrl != null && !targetUrl.isEmpty()){
             url = targetUrl;
         }
@@ -313,6 +316,25 @@ public class MainActivity extends Activity implements Observer {
             logout();
         else
             this.mWebview.loadUrl(url);
+    }
+
+    public void loadUrlAndJavascript(String url, String javascript) {
+        String currentUrl = this.mWebview.getUrl();
+
+        if (url != null && currentUrl != null && url.equals(currentUrl)) {
+            hideWebview();
+            runJavascript(javascript);
+            showWebview();
+        } else {
+            this.postLoadJavascript = javascript;
+            loadUrl(url);
+        }
+    }
+
+    public void runJavascript(String javascript) {
+        if (javascript == null) return;
+
+        this.mWebview.loadUrl("javascript:" + javascript);
     }
 	
 	public boolean isConnected(){
@@ -498,6 +520,7 @@ public class MainActivity extends Activity implements Observer {
                 int urlLevel = data.getIntExtra("urlLevel", -1);
                 if (urlLevel == -1 || parentUrlLevel == -1 || urlLevel > parentUrlLevel) {
                     // open in this activity
+                    this.postLoadJavascript = data.getStringExtra("postLoadJavascript");
                     loadUrl(url);
                 } else {
                     // urlLevel <= parentUrlLevel, so pass up the chain
@@ -570,7 +593,7 @@ public class MainActivity extends Activity implements Observer {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        String targetUrl = intent.getStringExtra("targetUrl");
+        String targetUrl = intent.getStringExtra(INTENT_TARGET_URL);
         if (targetUrl != null && !targetUrl.isEmpty()){
             loadUrl(targetUrl);
         }
@@ -613,6 +636,11 @@ public class MainActivity extends Activity implements Observer {
 
         this.isPoolWebview = isPoolWebview;
         this.mWebview = newWebview;
+
+        if (this.postLoadJavascript != null) {
+            runJavascript(this.postLoadJavascript);
+            this.postLoadJavascript = null;
+        }
     }
 
 	@Override
@@ -853,6 +881,10 @@ public class MainActivity extends Activity implements Observer {
 
     public boolean isRoot() {
         return isRoot;
+    }
+
+    public int getParentUrlLevel() {
+        return parentUrlLevel;
     }
 
     public int getUrlLevel() {

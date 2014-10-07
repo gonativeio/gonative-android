@@ -116,6 +116,7 @@ public class WebFormActivity extends Activity implements Observer{
         webSettings.setJavaScriptEnabled(true);
         webSettings.setSaveFormData(false);
         webSettings.setSavePassword(false);
+        webSettings.setUserAgentString(appConfig.userAgent);
         mHiddenWebView.setWebViewClient(new WebFormWebViewClient());
         mHiddenWebView.setWebChromeClient(new WebFormWebChromeClient());
         mHiddenWebView.addJavascriptInterface(new jsBridge(), "gonative_js_bridge");
@@ -323,7 +324,7 @@ public class WebFormActivity extends Activity implements Observer{
     public void submit() {
         try {
             if (validateForm()){
-                //setContentView(mHiddenWebView);
+//                setContentView(mHiddenWebView);
 
                 for (int i = 0; i < fields.size(); i++) {
                     JSONObject field = fields.get(i);

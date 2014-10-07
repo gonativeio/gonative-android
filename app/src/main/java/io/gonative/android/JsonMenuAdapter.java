@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -132,12 +133,17 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         return itemString("label", groupPosition, childPosition);
     }
 
-    String getUrl(int groupPosition) {
-        return itemString("url", groupPosition);
+    Pair<String,String> getUrlAndJavascript(int groupPosition) {
+        String url = itemString("url", groupPosition);
+        String js = itemString("javascript", groupPosition);
+        return new Pair<String, String>(url, js);
+
     }
 
-    String getUrl(int groupPosition, int childPosition) {
-        return itemString("url", groupPosition, childPosition);
+    Pair<String,String> getUrlAndJavascript(int groupPosition, int childPosition) {
+        String url = itemString("url", groupPosition, childPosition);
+        String js = itemString("javascript", groupPosition, childPosition);
+        return new Pair<String, String>(url, js);
     }
 
     boolean isGrouping(int groupPosition) {
@@ -320,7 +326,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 // return false for default handling behavior
                 return false;
             } else {
-                loadUrl(getUrl(groupPosition));
+                Pair<String,String> urlAndJavascript = getUrlAndJavascript(groupPosition);
+                loadUrlAndJavascript(urlAndJavascript.first, urlAndJavascript.second);
                 return true; // tell android that we have handled it
             }
         } catch (Exception e) {
@@ -332,17 +339,20 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
     @Override
     public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        loadUrl(getUrl(groupPosition, childPosition));
+        Pair<String,String> urlAndJavascript = getUrlAndJavascript(groupPosition, childPosition);
+        loadUrlAndJavascript(urlAndJavascript.first, urlAndJavascript.second);
         return true;
     }
 
-    void loadUrl(String url) {
+    void loadUrlAndJavascript(String url, String javascript) {
         // check for GONATIVE_USERID
         if (UrlInspector.getInstance().getUserId() != null) {
             url = url.replaceAll("GONATIVE_USERID", UrlInspector.getInstance().getUserId());
         }
 
-        mainActivity.loadUrl(url);
+        if (javascript == null) mainActivity.loadUrl(url);
+        else mainActivity.loadUrlAndJavascript(url, javascript);
+
         mainActivity.closeDrawers();
     }
 

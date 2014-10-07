@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,7 +48,7 @@ public class TabManager implements ActionBar.TabListener {
     }
 
     public void checkTabs(String url) {
-        this.currentMenuId = url;
+        this.currentUrl = url;
 
         if (this.mainActivity == null || this.mainActivity.getActionBar() == null || url == null) {
             return;
@@ -100,13 +101,13 @@ public class TabManager implements ActionBar.TabListener {
             if (entry != null) {
                 String label = entry.optString("label");
                 String url = entry.optString("url");
+                String javascript = entry.optString("javascript");
 
                 if (label != null) {
                     ActionBar.Tab tab = actionBar.newTab().setText(label).setTabListener(this);
                     actionBar.addTab(tab);
-                    if (url != null) {
-                        tab.setTag(url);
-                    }
+
+                    tab.setTag(new Pair<String,String>(url, javascript));
                 }
             }
         }
@@ -127,11 +128,15 @@ public class TabManager implements ActionBar.TabListener {
     }
 
     private void selectedTab(ActionBar.Tab tab) {
-        Object url = tab.getTag();
-        if (url instanceof String) {
-            String urlString = (String) url;
-            if (!urlString.isEmpty()) {
-                mainActivity.loadUrl(urlString);
+        Object tag = tab.getTag();
+        if (tag instanceof Pair) {
+            Pair<String,String> urlJavascript = (Pair<String,String>)tag;
+            String url = urlJavascript.first;
+            String javascript = urlJavascript.second;
+
+            if (url != null) {
+                if (javascript != null) mainActivity.loadUrlAndJavascript(url, javascript);
+                else mainActivity.loadUrl(url);
             }
         }
     }

@@ -164,13 +164,18 @@ public class AppConfig {
                 this.appName = optString(general, "appName");
 
                 // user agent for everything (webview, httprequest, httpurlconnection)
-                String userAgentAdd = optString(general, "userAgentAdd");
-                if (userAgentAdd == null) userAgentAdd = "gonative";
-                WebView wv = new WebView(context);
-                StringBuilder sb = new StringBuilder(wv.getSettings().getUserAgentString());
-                sb.append(" ");
-                sb.append(userAgentAdd);
-                this.userAgent = sb.toString();
+                String forceUserAgent = optString(general, "forceUserAgent");
+                if (forceUserAgent != null && !forceUserAgent.isEmpty()) {
+                    this.userAgent = forceUserAgent;
+                } else {
+                    String userAgentAdd = optString(general, "userAgentAdd");
+                    if (userAgentAdd == null) userAgentAdd = "gonative";
+                    WebView wv = new WebView(context);
+                    StringBuilder sb = new StringBuilder(wv.getSettings().getUserAgentString());
+                    sb.append(" ");
+                    sb.append(userAgentAdd);
+                    this.userAgent = sb.toString();
+                }
 
                 this.publicKey = optString(general, "publicKey");
                 this.deviceRegKey = optString(general, "deviceRegKey");

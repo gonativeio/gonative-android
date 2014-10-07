@@ -77,10 +77,12 @@ public class LeanWebviewClient extends WebViewClient{
         // dynamic config updates
         if (appConfig.updateConfigJS != null) {
             StringBuilder sb = new StringBuilder();
-            sb.append("javascript: gonative_dynamic_update.parseJson(");
-            sb.append(appConfig.updateConfigJS);
-            sb.append(")");
-            this.dynamicUpdateExec = sb.toString();
+            sb.append("gonative_dynamic_update.parseJson(eval(");
+            sb.append(LeanUtils.jsWrapString(appConfig.updateConfigJS));
+            sb.append("))");
+
+            String encoded = LeanUtils.urlEncode(sb.toString());
+            if (encoded != null) this.dynamicUpdateExec = "javascript:" + encoded;
         }
 	}
 	
@@ -163,15 +165,17 @@ public class LeanWebviewClient extends WebViewClient{
                 intent.putExtra("isRoot", false);
                 intent.putExtra("url", url);
                 intent.putExtra("parentUrlLevel", currentLevel);
+                intent.putExtra("postLoadJavascript", mainActivity.postLoadJavascript);
                 mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
 
                 return true;
             }
-            else if (newLevel < currentLevel) {
+            else if (newLevel < currentLevel && newLevel <= mainActivity.getParentUrlLevel()) {
                 // pop activity
                 Intent returnIntent = new Intent();
                 returnIntent.putExtra("url", url);
                 returnIntent.putExtra("urlLevel", newLevel);
+                returnIntent.putExtra("postLoadJavascript", mainActivity.postLoadJavascript);
                 mainActivity.setResult(Activity.RESULT_OK, returnIntent);
                 mainActivity.finish();
                 return true;
@@ -194,6 +198,7 @@ public class LeanWebviewClient extends WebViewClient{
         WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Always) {
             this.mainActivity.switchToWebview(poolWebview, true);
+            this.mainActivity.checkTabs(url);
             WebViewPool.getInstance().disownWebview(poolWebview);
             LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
             return true;
@@ -201,12 +206,14 @@ public class LeanWebviewClient extends WebViewClient{
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Never) {
             this.mainActivity.switchToWebview(poolWebview, true);
+            this.mainActivity.checkTabs(url);
             return true;
         }
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Reload &&
                 !LeanUtils.urlsMatchOnPath(url, view.getUrl())) {
             this.mainActivity.switchToWebview(poolWebview, true);
+            this.mainActivity.checkTabs(url);
             return true;
         }
 
@@ -306,6 +313,13 @@ public class LeanWebviewClient extends WebViewClient{
 
         // tabs
         mainActivity.checkTabs(url);
+
+        // post-load javascript
+        if (mainActivity.postLoadJavascript != null) {
+            String js = mainActivity.postLoadJavascript;
+            mainActivity.postLoadJavascript = null;
+            mainActivity.runJavascript(js);
+        }
 		
 		mainActivity.clearProgress();
 
