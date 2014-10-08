@@ -45,13 +45,14 @@ public class LeanWebviewClient extends WebViewClient{
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
         // profile picker
-        String profileJs = appConfig.profilePickerJS;
-        if (profileJs != null) {
+        if (appConfig.profilePickerJS != null) {
             StringBuilder sb = new StringBuilder();
-            sb.append("javascript: gonative_profile_picker.parseJson(");
-            sb.append(profileJs);
-            sb.append(")");
-            this.profilePickerExec = sb.toString();
+            sb.append("gonative_profile_picker.parseJson(eval(");
+            sb.append(LeanUtils.jsWrapString(appConfig.profilePickerJS));
+            sb.append("))");
+
+            String encoded = LeanUtils.urlEncode(sb.toString());
+            if (encoded != null) this.profilePickerExec = "javascript:" + encoded;
         }
 
         // analytics
