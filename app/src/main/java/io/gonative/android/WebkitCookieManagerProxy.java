@@ -1,16 +1,22 @@
 package io.gonative.android;
 
+import org.apache.http.impl.cookie.DateUtils;
+
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.CookieStore;
+import java.net.HttpCookie;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 // this syncs cookies between webkit (webview) and java.net classes
 public class WebkitCookieManagerProxy extends CookieManager {
+    private static final String TAG = WebkitCookieManagerProxy.class.getName();
 	private android.webkit.CookieManager webkitCookieManager;
 
     public WebkitCookieManagerProxy()
@@ -35,6 +41,9 @@ public class WebkitCookieManagerProxy extends CookieManager {
         // save our url once
         String url = uri.toString();
 
+        String expiryString = null;
+        int sessionExpiry = AppConfig.getInstance(null).forceSessionCookieExpiry;
+
         // go over the headers
         for (String headerKey : responseHeaders.keySet()) 
         {
@@ -44,7 +53,43 @@ public class WebkitCookieManagerProxy extends CookieManager {
             // process each of the headers
             for (String headerValue : responseHeaders.get(headerKey))
             {
-                this.webkitCookieManager.setCookie(url, headerValue);
+                boolean passOriginalHeader = true;
+                if (sessionExpiry > 0) {
+                    List<HttpCookie> cookies = HttpCookie.parse(headerValue);
+                    for (HttpCookie cookie : cookies) {
+                        if (cookie.getMaxAge() < 0 || cookie.getDiscard()) {
+                            // this is a session cookie. Modify it and pass it to the webview.
+                            cookie.setMaxAge(sessionExpiry);
+                            cookie.setDiscard(false);
+                            if (expiryString == null) {
+                                Calendar calendar = Calendar.getInstance();
+                                calendar.add(Calendar.SECOND, sessionExpiry);
+                                Date expiryDate = calendar.getTime();
+                                expiryString = String.format("; expires=%s; Max-Age=%d", DateUtils.formatDate(expiryDate), sessionExpiry);
+                            }
+
+                            StringBuilder newHeader = new StringBuilder();
+                            newHeader.append(cookie.toString());
+                            newHeader.append(expiryString);
+                            if (cookie.getPath() != null) {
+                                newHeader.append("; path=");
+                                newHeader.append(cookie.getPath());
+                            }
+                            if (cookie.getDomain() != null) {
+                                newHeader.append("; domain=");
+                                newHeader.append(cookie.getDomain());
+                            }
+                            if (cookie.getSecure()) {
+                                newHeader.append("; secure");
+                            }
+
+                            this.webkitCookieManager.setCookie(url, newHeader.toString());
+                            passOriginalHeader = false;
+                        }
+                    }
+                }
+
+                if (passOriginalHeader) this.webkitCookieManager.setCookie(url, headerValue);
             }
         }
     }

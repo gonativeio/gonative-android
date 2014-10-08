@@ -52,6 +52,7 @@ public class AppConfig {
     public String publicKey;
     public String deviceRegKey;
     public String userAgent;
+    public int forceSessionCookieExpiry;
 
     // navigation
     public HashMap<String,JSONArray> menus;
@@ -179,6 +180,7 @@ public class AppConfig {
 
                 this.publicKey = optString(general, "publicKey");
                 this.deviceRegKey = optString(general, "deviceRegKey");
+                this.forceSessionCookieExpiry = general.optInt("forceSessionCookieExpiry", 0);
             }
 
 
@@ -265,7 +267,13 @@ public class AppConfig {
 
             this.forceViewportWidth = styling.optDouble("forceViewportWidth", Double.NaN);
 
-            this.interceptHtml = this.customCSS != null || !Double.isNaN(this.forceViewportWidth);
+            // css and viewport require manipulation of html before it is sent to the webview
+            // forceSessionCookieExpiry requires direct parsing of http headers, which webview
+            // does not allow.
+            this.interceptHtml = this.customCSS != null
+                    || !Double.isNaN(this.forceViewportWidth)
+                    || this.forceSessionCookieExpiry > 0;
+
             this.showActionBar = styling.optBoolean("showActionBar", true);
 
             this.androidTheme = optString(styling, "androidTheme");
