@@ -134,7 +134,7 @@ public class TabManager implements ActionBar.TabListener {
             String url = urlJavascript.first;
             String javascript = urlJavascript.second;
 
-            if (url != null) {
+            if (url != null && !url.isEmpty()) {
                 if (javascript != null) mainActivity.loadUrlAndJavascript(url, javascript);
                 else mainActivity.loadUrl(url);
             }

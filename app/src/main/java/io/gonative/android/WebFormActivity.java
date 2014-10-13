@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -82,10 +83,6 @@ public class WebFormActivity extends Activity implements Observer{
     protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
 
-        if (appConfig.androidTheme != null && appConfig.androidTheme.equals("dark")){
-            setTheme(R.style.GoNativeDarkActionBar);
-        }
-
         super.onCreate(savedInstanceState);
 
         mFormName = getIntent().getStringExtra(EXTRA_FORMNAME);
@@ -137,6 +134,12 @@ public class WebFormActivity extends Activity implements Observer{
             LoginManager.getInstance().addObserver(this);
 //            LoginManager.getInstance().checkLogin();
             LoginManager.getInstance().checkIfNotAlreadyChecking();
+        }
+
+        if (getActionBar() != null) {
+            if (appConfig.hideTitleInActionBar) {
+                getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+            }
         }
 
         processForm(mFormName);

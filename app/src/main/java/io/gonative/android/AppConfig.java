@@ -76,12 +76,14 @@ public class AppConfig {
     // styling
     public Integer sidebarBackgroundColor;
     public Integer sidebarForegroundColor;
+    public Integer tintColor;
     public String customCSS;
     public double forceViewportWidth;
     public String androidTheme;
     public boolean showActionBar = true;
     public double interactiveDelay;
     public String stringViewport;
+    public boolean hideTitleInActionBar;
 
     // forms
     public String searchTemplateUrl;
@@ -279,25 +281,16 @@ public class AppConfig {
             this.androidTheme = optString(styling, "androidTheme");
 
             // preprocess colors
-            String background = AppConfig.optString(styling, "androidSidebarBackgroundColor");
-            if (background != null){
-                try {
-                    this.sidebarBackgroundColor = Color.parseColor(background);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "Bad androidSidebarBackgroundColor");
-                }
-            }
 
-            String foreground = AppConfig.optString(styling, "androidSidebarForegroundColor");
-            if (foreground != null){
-                try {
-                    this.sidebarForegroundColor = Color.parseColor(foreground);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "Bad androidSidebarForegroundColor");
-                }
-            }
+            String sideBackColor = AppConfig.optString(styling, "androidSidebarBackgroundColor");
+            this.sidebarBackgroundColor = LeanUtils.parseColor(sideBackColor);
+            String sideForeColor = AppConfig.optString(styling, "androidSidebarForegroundColor");
+            this.sidebarForegroundColor = LeanUtils.parseColor(sideForeColor);
+            String tintColor = AppConfig.optString(styling, "androidTintColor");
+            this.tintColor = LeanUtils.parseColor(tintColor);
 
             this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
+            this.hideTitleInActionBar = styling.optBoolean("androidHideTitleInActionBar", false);
 
 
             ////////////////////////////////////////////////////////////

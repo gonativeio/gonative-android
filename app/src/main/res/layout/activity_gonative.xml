@@ -88,7 +88,7 @@
 			android:scrollbars="vertical"
             android:scrollbarStyle="insideOverlay"
             android:groupIndicator="@null"
-			android:divider="#30808080"
+			android:divider="@color/sidebarSeparatorColor"
 			android:dividerHeight="1dp"
 			android:footerDividersEnabled="false"
 			android:headerDividersEnabled="false"

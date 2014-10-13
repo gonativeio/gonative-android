@@ -3,6 +3,7 @@ package io.gonative.android;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
 import android.webkit.WebSettings;
@@ -119,5 +120,20 @@ public class LeanUtils {
         webSettings.setUserAgentString(AppConfig.getInstance(context).userAgent);
         webSettings.setSupportMultipleWindows(false);
         webSettings.setGeolocationEnabled(AppConfig.getInstance(context).usesGeolocation);
+    }
+
+    public static Integer parseColor(String colorString) {
+        if (colorString == null) return null;
+
+        try {
+            return Color.parseColor(colorString);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Bad color string:" + colorString, e);
+            return null;
+        }
+    }
+
+    public static String colorString(int color) {
+        return String.format("#%06X", (0xFFFFFF & color));
     }
 }

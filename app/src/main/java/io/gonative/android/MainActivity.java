@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
+import android.graphics.PorterDuff;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -37,7 +38,10 @@ import android.webkit.JsResult;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Spinner;
@@ -119,15 +123,6 @@ public class MainActivity extends Activity implements Observer {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
-
-        // theme
-        if (!appConfig.showActionBar)
-            setTheme(R.style.GoNativeNoActionBar);
-        else if (appConfig.androidTheme != null &&
-                appConfig.androidTheme.equals("dark"))
-            setTheme(R.style.GoNativeDarkActionBar);
-        else
-            setTheme(R.style.GoNativeLight);
 
         super.onCreate(savedInstanceState);
 
@@ -258,8 +253,13 @@ public class MainActivity extends Activity implements Observer {
 
 		if (getActionBar() != null) {
             getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-            if (!isRoot || AppConfig.getInstance(this).showNavigationMenu)
+            if (!isRoot || AppConfig.getInstance(this).showNavigationMenu) {
                 getActionBar().setDisplayHomeAsUpEnabled(true);
+            }
+
+            if (appConfig.hideTitleInActionBar) {
+                getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+            }
         }
 
         // tab navigation
@@ -647,10 +647,72 @@ public class MainActivity extends Activity implements Observer {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.topmenu, menu);
+
+        AppConfig appConfig = AppConfig.getInstance(this);
 		
 		final MenuItem searchItem = menu.findItem(R.id.action_search);
-        if (AppConfig.getInstance(this).searchTemplateUrl != null) {
+        if (appConfig.searchTemplateUrl != null) {
             final SearchView searchView = (SearchView) searchItem.getActionView();
+
+            // style it
+            searchView.setIconifiedByDefault(false);
+            searchView.setQueryHint(getString(R.string.search_hint));
+
+            int searchMagId = searchView.getContext().getResources().getIdentifier("android:id/search_mag_icon", null, null);
+            if (searchMagId != 0) {
+                View searchMagIcon = searchView.findViewById(searchMagId);
+                if (searchMagIcon != null) {
+                    searchMagIcon.setLayoutParams(new LinearLayout.LayoutParams(0, 0));
+                    searchMagIcon.setVisibility(View.GONE);
+                }
+            }
+
+            if (appConfig.tintColor != null) {
+                // see http://stackoverflow.com/questions/11085308/changing-the-background-drawable-of-the-searchview-widget/11669808#11669808
+                int searchCloseIconId = searchView.getContext().getResources().getIdentifier("android:id/search_close_btn", null, null);
+                if (searchCloseIconId != 0) {
+                    View searchCloseIcon = searchView.findViewById(searchCloseIconId);
+                    if (searchCloseIcon instanceof ImageView) {
+                        ImageView icon = (ImageView)searchCloseIcon;
+                        icon.setColorFilter(appConfig.tintColor, PorterDuff.Mode.SRC_ATOP);
+                    }
+                }
+            }
+
+            {
+                // make the search text the same color as action bar title color
+                int actionBarStyleResource = 0;
+                int actionBarTitleStyleResource = 0;
+                int titleColor = Integer.MIN_VALUE;
+
+                TypedArray ta = obtainStyledAttributes(new int[] {android.R.attr.actionBarStyle});
+                actionBarStyleResource = ta.getResourceId(0, 0);
+                ta.recycle();
+
+                if (actionBarStyleResource != 0) {
+                    ta = obtainStyledAttributes(actionBarStyleResource, new int[]{android.R.attr.titleTextStyle});
+                    actionBarTitleStyleResource = ta.getResourceId(0, 0);
+                    ta.recycle();
+                }
+
+                if (actionBarTitleStyleResource != 0) {
+                    ta = obtainStyledAttributes(actionBarTitleStyleResource, new int[]{android.R.attr.textColor});
+                    titleColor = ta.getColor(0, Integer.MIN_VALUE);
+                    ta.recycle();
+                }
+
+                if (titleColor != Integer.MIN_VALUE) {
+                    int searchTextId = searchView.getContext().getResources().getIdentifier("android:id/search_src_text", null, null);
+                    if (searchTextId != 0) {
+                        View searchText = searchView.findViewById(searchTextId);
+                        if (searchText instanceof EditText) {
+                            EditText editText = (EditText)searchText;
+                            editText.setHintTextColor(titleColor);
+                            editText.setTextColor(titleColor);
+                        }
+                    }
+                }
+            }
 
             // listener to process query
             searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -709,6 +771,7 @@ public class MainActivity extends Activity implements Observer {
                 finish();
                 return true;
 	        case R.id.action_search:
+                if (getActionBar() != null) getActionBar().setIcon(R.drawable.ic_actionbar);
 	        	return true;
 	        case R.id.action_refresh:
 	        	if (this.mWebview.getUrl() != null && this.mWebview.getUrl().startsWith("data:")){
