@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -149,7 +150,11 @@ public class LeanWebviewClient extends WebViewClient{
 		if (!isInternalUri(uri)){
             // launch browser
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            view.getContext().startActivity(intent);
+            try {
+                view.getContext().startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
 
             return true;
 		}
@@ -331,7 +336,7 @@ public class LeanWebviewClient extends WebViewClient{
 
     @Override
     public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
-        if (!isReload) {
+        if (!isReload && !url.equals("file:///android_asset/offline.html")) {
             mainActivity.addToHistory(url);
         }
     }
@@ -341,8 +346,8 @@ public class LeanWebviewClient extends WebViewClient{
         mainActivity.showWebview();
 
 		// first check connectivity
-		if (!mainActivity.isConnected()){			
-			view.loadData(mainActivity.getString(R.string.not_connected), "text/html", "utf-8");
+		if (!mainActivity.isConnected()){
+            ((LeanWebView)view).loadUrlDirect("file:///android_asset/offline.html");
 		}
 	}
 

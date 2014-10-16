@@ -3,8 +3,11 @@ package io.gonative.android;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
@@ -115,6 +118,7 @@ public class MainActivity extends Activity implements Observer {
     private FileDownloader fileDownloader = new FileDownloader(this);
     private boolean startedLoading = false; // document readystate checker
     private PushManager pushManager;
+    private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
 	
 	private Uri cameraFileUri;
@@ -274,6 +278,42 @@ public class MainActivity extends Activity implements Observer {
     protected void onPause() {
         super.onPause();
         stopCheckingReadyStatus();
+        this.mWebview.onPause();
+
+        // unregister connectivity
+        if (this.connectivityReceiver != null) {
+            unregisterReceiver(this.connectivityReceiver);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        this.mWebview.onResume();
+
+        retryFailedPage();
+        // register to listen for connectivity changes
+        this.connectivityReceiver = new ConnectivityChangeReceiver();
+        registerReceiver(this.connectivityReceiver,
+                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    }
+
+    private void retryFailedPage() {
+        // skip if webview is currently loading
+        if (this.mWebview.getProgress() < 100) return;
+
+        // skip if webview has a page loaded
+        String currentUrl = this.mWebview.getUrl();
+        if (currentUrl != null && !currentUrl.equals("file:///android_asset/offline.html")) return;
+
+        // skip if there is nothing in history
+        if (this.backHistory.isEmpty()) return;
+
+        // skip if no network connectivity
+        if (!this.isConnected()) return;
+
+        // finally, retry loading the page
+        this.loadUrl(this.backHistory.pop());
     }
 
     protected void onSaveInstanceState (Bundle outState) {
@@ -1007,6 +1047,13 @@ public class MainActivity extends Activity implements Observer {
                     checkReadyStatusResult(state);
                 }
             });
+        }
+    }
+
+    private class ConnectivityChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            retryFailedPage();
         }
     }
 }
