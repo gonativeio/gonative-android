@@ -8,7 +8,6 @@ import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.util.Pair;
-import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -90,6 +89,11 @@ public class LeanWebviewClient extends WebViewClient{
 	
 	
 	private boolean isInternalUri(Uri uri) {
+        String scheme = uri.getScheme();
+        if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+            return false;
+        }
+
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
         String urlString = uri.toString();
 
@@ -252,16 +256,7 @@ public class LeanWebviewClient extends WebViewClient{
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 //        Log.d(TAG, "onpagestarted " + url);
         UrlInspector.getInstance().inspectUrl(url);
-
-		// clear all cookies (including facebook) if at logout page
 		Uri uri = Uri.parse(url);
-		if (isInternalUri(uri) && uri.getPath().equals("/user/logout")){
-			Log.d(TAG, "clearing cookies");
-			CookieManager cookieManager = CookieManager.getInstance();
-			cookieManager.removeAllCookie();
-		}
-
-		String path = uri.getPath();
 
         // reload menu if internal url
         if (AppConfig.getInstance(mainActivity).loginDetectionUrl != null && isInternalUri(uri)) {

@@ -2,14 +2,10 @@ package io.gonative.android;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.PorterDuff;
@@ -19,8 +15,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Parcelable;
-import android.provider.MediaStore;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -54,12 +48,8 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
@@ -68,15 +58,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainActivity extends Activity implements Observer {
-	private static final String MENU_CACHED = "menu_cached.xml";
-	
-	public static final String userAgentAdd = "gonative";
     public static final String webviewCacheSubdir = "webviewAppCache";
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
-	private static final int REQUEST_SELECT_PICTURE = 100;
-	private static final int REQUEST_CROP_PICTURE = 200;
+	private static final int REQUEST_SELECT_FILE = 100;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
@@ -536,7 +522,7 @@ public class MainActivity extends Activity implements Observer {
 	
 	@Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(data != null && data.getBooleanExtra("exit", false))
+        if (data != null && data.getBooleanExtra("exit", false))
             finish();
 
         if (requestCode == REQUEST_WEBFORM && resultCode == RESULT_OK) {
@@ -570,64 +556,15 @@ public class MainActivity extends Activity implements Observer {
             }
         }
 
-        if (requestCode == REQUEST_SELECT_PICTURE) {
+        if (requestCode == REQUEST_SELECT_FILE) {
             if (null == mUploadMessage)
                 return;
-            
-			if(resultCode == RESULT_OK){
-				boolean isCamera;
-	            if (data == null)
-	                isCamera = true;
-	            else
-	            {
-	                final String action = data.getAction();
-	                if (action == null)
-	                    isCamera = false;
-	                else
-	                    isCamera = action.equals(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-	            }
-	            
-	            Uri selectedImageUri;
-	            if (isCamera)
-	                selectedImageUri = cameraFileUri;
-	            else
-	                selectedImageUri = data == null ? null : data.getData();
-	            
-	            // now try cropping
-	            try{
-		            Intent cropIntent = new Intent("com.android.camera.action.CROP");
-			        cropIntent.setDataAndType(selectedImageUri, "image/*");
-			        cropIntent.putExtra("aspectX", 1);
-			        cropIntent.putExtra("aspectY", 1);
 
-			        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-		            File outFile = new File(getExternalFilesDir(null), "imgcrop_" + timeStamp + ".jpg");
-					cropFileUri = Uri.fromFile(outFile);
-			        
-			        cropIntent.putExtra(MediaStore.EXTRA_OUTPUT, cropFileUri);
-
-			        startActivityForResult(cropIntent, REQUEST_CROP_PICTURE);
-			        Toast.makeText(getApplicationContext(), getString(R.string.crop_square), Toast.LENGTH_SHORT).show();
-	            }
-	            catch (ActivityNotFoundException e){
-	            	// just upload the file specified by selectedImageUri
-		            mUploadMessage.onReceiveValue(selectedImageUri);
-		            mUploadMessage = null;
-            	}
-			}
-			else{
-				mUploadMessage.onReceiveValue(null);
-				mUploadMessage = null;
-			}
-        }
-        
-        if (requestCode == REQUEST_CROP_PICTURE){
-        	if(resultCode == RESULT_OK)
-        		mUploadMessage.onReceiveValue(cropFileUri);
-        	else
-        		mUploadMessage.onReceiveValue(null);
-        	
-        	mUploadMessage = null;
+            if (resultCode == RESULT_OK) {
+                Uri selectedImageUri = data == null ? null : data.getData();
+                mUploadMessage.onReceiveValue(selectedImageUri);
+                mUploadMessage = null;
+            }
         }
     }
 
@@ -924,50 +861,27 @@ public class MainActivity extends Activity implements Observer {
 
         // For Android > 4.1
         public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture) {
-            openFileChooser(uploadMsg);
+            mUploadMessage = uploadMsg;
+
+            if (acceptType == null) acceptType = "*/*";
+
+            // Filesystem.
+            final Intent galleryIntent = new Intent();
+            galleryIntent.setType(acceptType);
+            galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
+            galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
+
+            startActivityForResult(galleryIntent, REQUEST_SELECT_FILE);
         }
 
         // Android 3.0 + 
         public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType) {
-            openFileChooser(uploadMsg);
+            openFileChooser(uploadMsg, acceptType, null);
         }
 
         //Android 3.0
         public void openFileChooser(ValueCallback<Uri> uploadMsg) {
-            mUploadMessage = uploadMsg;
-            
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            
-            File outFile = new File(getExternalFilesDir(null), "img_" + timeStamp + ".jpg"); 
-    		cameraFileUri = Uri.fromFile(outFile);
-    		
-    		 // Camera.
-    	    final List<Intent> cameraIntents = new ArrayList<Intent>();
-    	    final Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-    	    final PackageManager packageManager = getPackageManager();
-    	    final List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
-    	    for(ResolveInfo res : listCam) {
-    	        final String packageName = res.activityInfo.packageName;
-    	        final Intent intent = new Intent(captureIntent);
-    	        intent.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
-    	        intent.setPackage(packageName);
-    	        intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraFileUri);
-    	        cameraIntents.add(intent);
-    	    }
-
-    	    // Filesystem.
-    	    final Intent galleryIntent = new Intent();
-    	    galleryIntent.setType("image/*");
-    	    galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
-    	    galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
-
-    	    // Chooser of filesystem options.
-    	    final Intent chooserIntent = Intent.createChooser(galleryIntent, getString(R.string.pick_photo));
-
-    	    // Add the camera options.
-    	    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, cameraIntents.toArray(new Parcelable[]{}));
-
-    	    startActivityForResult(chooserIntent, REQUEST_SELECT_PICTURE);
+            openFileChooser(uploadMsg, null, null);
         }
         
         @Override

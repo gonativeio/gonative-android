@@ -5,10 +5,9 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Environment;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
@@ -26,6 +25,7 @@ import java.net.URL;
  */
 public class FileDownloader implements DownloadListener{
     private static final String TAG = DownloadListener.class.getName();
+    public static final String AUTHORITY = BuildConfig.PACKAGE_NAME + ".fileprovider";
     private Context context;
     private ProgressDialog progressDialog;
 
@@ -105,7 +105,7 @@ public class FileDownloader implements DownloadListener{
 
                 connection.connect();
                 if (connection.getResponseCode() < 400) {
-                    File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    File downloadDir = new File(context.getCacheDir(), "downloads");
                     downloadDir.mkdirs();
 
                     // guess file name and extension
@@ -175,8 +175,17 @@ public class FileDownloader implements DownloadListener{
             if (result != null && result.file != null) {
                 String fileString = result.file.toString();
 
+                Uri content = null;
+                try {
+                    content = FileProvider.getUriForFile(context, AUTHORITY, result.file);
+                } catch (IllegalArgumentException e) {
+                    Log.e(TAG, "Unable to get content url from FileProvider", e);
+                    return;
+                }
+
                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(Uri.fromFile(result.file), result.mimetype);
+                intent.setDataAndType(content, result.mimetype);
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 try {
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
@@ -184,11 +193,6 @@ public class FileDownloader implements DownloadListener{
                             result.file.getName());
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show();
                 }
-
-                MediaScannerConnection.scanFile(context,
-                        new String[] {fileString},
-                        new String[] {result.mimetype},
-                        null);
             }
         }
 
