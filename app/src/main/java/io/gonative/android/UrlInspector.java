@@ -14,7 +14,6 @@ public class UrlInspector {
     private static final String TAG = UrlInspector.class.getName();
     // singleton
     private static UrlInspector instance = null;
-    private Context context;
 
     private Pattern userIdRegex = null;
 
@@ -29,8 +28,6 @@ public class UrlInspector {
     }
 
     public void init(Context context) {
-        this.context = context.getApplicationContext();
-
         String regexString = AppConfig.getInstance(context).userIdRegex;
         if (regexString != null && !regexString.isEmpty()) {
             try {

@@ -34,48 +34,12 @@
         android:dividerHeight="0dp"
         android:paddingTop="11dp"
         android:background="?android:colorBackground">
-        
-        <ImageView
-            android:id="@+id/user_avatar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_alignParentTop="true"
-            android:layout_marginLeft="15dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginRight="10dp"
-            android:src="@drawable/ic_launcher"
-            android:contentDescription="@string/avatar"
-            android:visibility="gone" />
-        <TextView
-			android:id="@+id/user_name"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_toRightOf="@id/user_avatar"
-			android:text="@string/not_logged_in"
-			android:textColor="#d0d0d0"
-			android:textAppearance="?android:attr/textAppearanceMedium"
-			android:paddingTop="18dp"
-			android:paddingBottom="15dp"
-			android:maxLines="2"
-			android:ellipsize="end" 
-			android:visibility="gone"/>
-        <TextView
-			android:id="@+id/user_bio"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_toRightOf="@id/user_avatar"
-			android:layout_below="@id/user_name"
-			android:textColor="?android:textColorSecondaryInverse"
-			android:textSize="12sp"
-			android:maxLines="3"
-			android:ellipsize="end"
-			android:visibility="gone" />
+
         <Spinner
             android:id="@+id/profile_picker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/user_avatar"
+            android:layout_marginTop="10dp"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:visibility="gone"/>

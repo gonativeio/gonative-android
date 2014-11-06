@@ -72,7 +72,6 @@ public class MainActivity extends Activity implements Observer {
     boolean isPoolWebview = false;
     private Stack<String> backHistory = new Stack<String>();
 
-	private ArrayList<DrawerMenuItem> mItems = new ArrayList<DrawerMenuItem>();
 	private ValueCallback<Uri> mUploadMessage;
 	private DrawerLayout mDrawerLayout;
 	private View mDrawerView;
@@ -80,8 +79,6 @@ public class MainActivity extends Activity implements Observer {
     private ProgressBar mProgress;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
-	private CharSequence mDrawerTitle;
-	private Boolean isLoggedIn = null;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private TabManager tabManager;
@@ -106,9 +103,6 @@ public class MainActivity extends Activity implements Observer {
     private PushManager pushManager;
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
-	
-	private Uri cameraFileUri;
-	private Uri cropFileUri;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -204,7 +198,6 @@ public class MainActivity extends Activity implements Observer {
 
         if (isRoot && appConfig.showNavigationMenu) {
             // do the list stuff
-            mDrawerTitle = AppConfig.getInstance(this).appName;
             mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
             mDrawerView = findViewById(R.id.left_drawer);
             mDrawerList = (ExpandableListView) findViewById(R.id.drawer_list);

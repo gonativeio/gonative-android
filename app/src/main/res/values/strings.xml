@@ -3,16 +3,12 @@
 
 	<string name="app_name">GoNative</string>
 	<string name="action_search">Search</string>
-	<string name="avatar">Avatar</string>
-	<string name="not_logged_in">Not logged in</string>
 	<string name="action_refresh">Refresh</string>
 	<string name="drawer_open">Open drawer</string>
 	<string name="drawer_close">Close drawer</string>
 	<string name="search_hint">Search</string>
-	<string name="pick_photo">Pick a photo</string>
-	<string name="crop_square">Crop to a square when ready</string>
     <string name="form_error">Problem with submission. Check inputs and try again.</string>
     <string name="download">Download</string>
     <string name="download_canceled">Download canceled</string>
-    <string name="file_handler_not_found">Could not find an app to open this file. Saved to Downloads/%1$s</string>
+    <string name="file_handler_not_found">Could not find an app to open this file.</string>
 </resources>

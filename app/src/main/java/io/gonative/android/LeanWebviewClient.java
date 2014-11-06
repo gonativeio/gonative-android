@@ -26,7 +26,6 @@ public class LeanWebviewClient extends WebViewClient{
     public static final int DEFAULT_HTML_SIZE = 10 * 1024; // 10 kilobytes
 
 	private MainActivity mainActivity;
-	private boolean isDialog = false;
     private String profilePickerExec;
     private String analyticsExec;
     private String dynamicUpdateExec;
@@ -34,13 +33,8 @@ public class LeanWebviewClient extends WebViewClient{
     private boolean mVisitedLoginOrSignup = false;
 
 	public LeanWebviewClient(MainActivity activity) {
-		this(activity, false);
-	}
-	
-	public LeanWebviewClient(MainActivity activity, boolean isDialog) {
 		super();
 		this.mainActivity = activity;
-		this.isDialog = isDialog;
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 

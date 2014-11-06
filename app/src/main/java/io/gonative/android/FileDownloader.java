@@ -189,8 +189,7 @@ public class FileDownloader implements DownloadListener{
                 try {
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
-                    String message = context.getResources().getString(R.string.file_handler_not_found,
-                            result.file.getName());
+                    String message = context.getResources().getString(R.string.file_handler_not_found);
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show();
                 }
             }

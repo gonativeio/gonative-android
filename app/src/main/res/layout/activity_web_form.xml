@@ -2,36 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".WebFormActivity" >
 
-    <!-- Login progress -->
-
-    <LinearLayout
-        android:id="@+id/login_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:visibility="gone" >
-
-        <ProgressBar
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/login_status_message"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:fontFamily="sans-serif-light"
-            android:text="@string/checking_login"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-    </LinearLayout>
-
     <!-- Login form -->
-
-
     <ScrollView
         android:id="@+id/login_form"
         android:layout_width="match_parent"

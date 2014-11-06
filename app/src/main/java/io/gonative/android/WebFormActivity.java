@@ -60,23 +60,15 @@ public class WebFormActivity extends Activity implements Observer{
     private String mForgotPasswordUrl;
     private String mTitle;
 
-    private boolean checkingLogin;
     private ArrayList<View> mFieldRefs;
     private WebView mHiddenWebView;
     private Handler handler;
 
     private boolean mSubmitted = false;
 
-    // Values for email and password at the time of the login attempt.
-    private String mEmail;
-    private String mPassword;
-
     // UI references.
-    private EditText mEmailView;
-    private EditText mPasswordView;
     private View mLoginFormView;
     private View mLoginStatusView;
-    private TextView mLoginStatusMessageView;
     private Button mSubmitButton;
 
     @Override
@@ -121,8 +113,6 @@ public class WebFormActivity extends Activity implements Observer{
         setContentView(R.layout.activity_web_form);
 
         mLoginFormView = findViewById(R.id.login_form);
-        mLoginStatusView = findViewById(R.id.login_status);
-        mLoginStatusMessageView = (TextView) findViewById(R.id.login_status_message);
         mSubmitButton = (Button) findViewById(R.id.submit_button);
 
         // if login is the first page that loads. Hide form until login check is done.

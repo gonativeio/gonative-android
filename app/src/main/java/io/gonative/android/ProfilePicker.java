@@ -26,7 +26,6 @@ public class ProfilePicker implements AdapterView.OnItemSelectedListener {
     private ArrayList<String> names;
     private ArrayList<String> links;
     private int selectedIndex;
-    private boolean isFirstSelection = true;
 
     private ArrayAdapter<String> adapter;
     private Spinner spinner;
