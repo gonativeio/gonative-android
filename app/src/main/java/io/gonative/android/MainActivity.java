@@ -24,6 +24,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -595,6 +596,13 @@ public class MainActivity extends Activity implements Observer {
 
         // replace the current web view in the parent with the new view
         if (newWebview != prev) {
+            // a view can only have one parent, and attempting to add newWebview if it already has
+            // a parent will cause a runtime exception. So be extra safe by removing it from its parent.
+            ViewParent temp = newWebview.getParent();
+            if (temp instanceof  ViewGroup) {
+                ((ViewGroup) temp).removeView(newWebview);
+            }
+
             ViewGroup parent = (ViewGroup) prev.getParent();
             int index = parent.indexOfChild(prev);
             parent.removeView(prev);

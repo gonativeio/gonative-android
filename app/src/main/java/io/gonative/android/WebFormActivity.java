@@ -68,6 +68,7 @@ public class WebFormActivity extends Activity implements Observer{
 
     // UI references.
     private View mLoginFormView;
+    private View mLoginStatusView;
     private Button mSubmitButton;
 
     @Override
@@ -112,10 +113,12 @@ public class WebFormActivity extends Activity implements Observer{
         setContentView(R.layout.activity_web_form);
 
         mLoginFormView = findViewById(R.id.login_form);
+        mLoginStatusView = findViewById(R.id.login_status);
         mSubmitButton = (Button) findViewById(R.id.submit_button);
 
         // if login is the first page that loads. Hide form until login check is done.
         if (mIsLogin && AppConfig.getInstance(this).loginIsFirstPage) {
+            mLoginStatusView.setVisibility(View.VISIBLE);
             mLoginFormView.setVisibility(View.GONE);
 
             // observe login manager
@@ -164,6 +167,7 @@ public class WebFormActivity extends Activity implements Observer{
                 finish();
             } else {
                 mHiddenWebView.loadUrl(this.mJson.optString("interceptUrl", ""));
+                mLoginStatusView.setVisibility(View.GONE);
                 mLoginFormView.setVisibility(View.VISIBLE);
             }
         }
