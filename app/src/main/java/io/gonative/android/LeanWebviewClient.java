@@ -316,8 +316,6 @@ public class LeanWebviewClient extends WebViewClient{
             mainActivity.runJavascript(js);
         }
 		
-		mainActivity.clearProgress();
-
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
 

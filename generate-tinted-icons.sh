@@ -2,23 +2,17 @@
 set -e
 
 DARK_ICONS=(
-ic_action_back_dark.png
-ic_action_overflow_dark.png
-ic_action_refresh_dark.png
-ic_action_search_dark.png
-ic_drawer_dark.png
+ic_refresh_white_24dp.png
+ic_search_white_24dp.png
 )
 
 LIGHT_ICONS=(
-ic_action_back_light.png
-ic_action_overflow_light.png
-ic_action_refresh_light.png
-ic_action_search_light.png
-ic_drawer_light.png
+ic_refresh_black_24dp.png
+ic_search_black_24dp.png
 )
 
-DARK_DEFAULT_COLOR=cbcbcb
-LIGHT_DEFAULT_COLOR=777777
+DARK_DEFAULT_COLOR=ffffff
+LIGHT_DEFAULT_COLOR=000000
 
 BASEDIR=$(dirname $0)
 
@@ -60,7 +54,9 @@ for drawable in `ls -d $BASEDIR/app/src/main/res/drawable*`; do
         filePath=$drawable/$file
         if [[ -s "$filePath" ]]; then
             echo Tinting $filePath
-            convert $filePath -fill "#$tintColor" +opaque "" $filePath
+            convert $filePath -alpha extract temp_alpha_extract.png
+            convert temp_alpha_extract.png -background "#$tintColor" -alpha shape $filePath
+            rm -f temp_alpha_extract.png
             pngcrush -q -rem allb -brute -reduce -ow $filePath
         fi
     done

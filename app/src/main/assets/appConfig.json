@@ -64,6 +64,7 @@
     "androidTheme": "light",
     "androidSidebarBackgroundColor": "#111111",
     "androidSidebarForegroundColor": "#d0d0d0",
+    "androidHideTitleInActionBar": false,
     "menuAnimationDuration": 0.15,
     "transitionInteractiveDelayMax": 0.2
   }

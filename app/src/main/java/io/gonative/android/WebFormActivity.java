@@ -1,11 +1,11 @@
 package io.gonative.android;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
 import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -44,7 +44,7 @@ import java.util.Observer;
  * Activity which displays a login screen to the user, offering registration as
  * well.
  */
-public class WebFormActivity extends Activity implements Observer{
+public class WebFormActivity extends ActionBarActivity implements Observer{
 
     private static final String TAG = WebFormActivity.class.getName();
 
@@ -96,8 +96,6 @@ public class WebFormActivity extends Activity implements Observer{
         mFormUrl = AppConfig.optString(mJson, "interceptUrl");
         mErrorUrl = AppConfig.optString(mJson, "errorUrl");
 
-
-
         this.setTitle(mTitle);
 
         mHiddenWebView = new WebView(this);
@@ -123,13 +121,12 @@ public class WebFormActivity extends Activity implements Observer{
 
             // observe login manager
             LoginManager.getInstance().addObserver(this);
-//            LoginManager.getInstance().checkLogin();
             LoginManager.getInstance().checkIfNotAlreadyChecking();
         }
 
-        if (getActionBar() != null) {
+        if (getSupportActionBar() != null) {
             if (appConfig.hideTitleInActionBar) {
-                getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+                getSupportActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
             }
         }
 
@@ -183,6 +180,7 @@ public class WebFormActivity extends Activity implements Observer{
             JSONObject lastPasswordField = null;
 
             LinearLayout formLayout = (LinearLayout) findViewById(R.id.form_layout);
+            LayoutInflater layoutInflater = getLayoutInflater();
             for (int i = 0; i < jsonFields.length(); i++){
                 JSONObject field = jsonFields.optJSONObject(i);
                 if (field == null) continue;
@@ -192,7 +190,7 @@ public class WebFormActivity extends Activity implements Observer{
                 if (type.equals("email") || type.equals("name") ||
                         type.equals("text") || type.equals("number")){
 
-                    LayoutInflater.from(getBaseContext()).inflate(R.layout.form_text, formLayout, true);
+                    layoutInflater.inflate(R.layout.form_text, formLayout, true);
                     EditText textField = (EditText) formLayout.getChildAt(formLayout.getChildCount() - 1);
                     textField.setHint(field.optString("label"));
 
@@ -209,7 +207,7 @@ public class WebFormActivity extends Activity implements Observer{
                     mFieldRefs.add(textField);
                 }
                 else if (type.equals("password")) {
-                    LayoutInflater.from(getBaseContext()).inflate(R.layout.form_password, formLayout, true);
+                    layoutInflater.inflate(R.layout.form_password, formLayout, true);
                     final EditText textField = (EditText) formLayout.getChildAt(formLayout.getChildCount() - 2);
                     CheckBox checkBox = (CheckBox) formLayout.getChildAt(formLayout.getChildCount() - 1);
 
@@ -237,7 +235,7 @@ public class WebFormActivity extends Activity implements Observer{
                     }
                 }
                 else if (type.equals("options")) {
-                    LayoutInflater.from(getBaseContext()).inflate(R.layout.form_option, formLayout, true);
+                    layoutInflater.inflate(R.layout.form_option, formLayout, true);
                     TextView label = (TextView) formLayout.getChildAt(formLayout.getChildCount() - 2);
                     label.setText(field.getString("label"));
 
@@ -254,7 +252,7 @@ public class WebFormActivity extends Activity implements Observer{
                     mFieldRefs.add(rg);
                 }
                 else if (type.equals("list")) {
-                    LayoutInflater.from(getBaseContext()).inflate(R.layout.form_list, formLayout, true);
+                    layoutInflater.inflate(R.layout.form_list, formLayout, true);
                     TextView label = (TextView) formLayout.getChildAt(formLayout.getChildCount() - 2);
                     label.setText(field.getString("label"));
 
@@ -270,13 +268,7 @@ public class WebFormActivity extends Activity implements Observer{
                     fields.add(field);
                     mFieldRefs.add(rg);
                 }
-
-
-
             }
-
-
-
         } catch (Exception e) {
             Log.e(TAG, e.toString());
         }

@@ -1,12 +1,12 @@
 package io.gonative.android;
 
-import android.app.ActionBar;
-import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBar;
 import android.util.Pair;
 
 import org.json.JSONArray;
@@ -50,7 +50,7 @@ public class TabManager implements ActionBar.TabListener {
     public void checkTabs(String url) {
         this.currentUrl = url;
 
-        if (this.mainActivity == null || this.mainActivity.getActionBar() == null || url == null) {
+        if (this.mainActivity == null || this.mainActivity.getSupportActionBar() == null || url == null) {
             return;
         }
 
@@ -88,7 +88,7 @@ public class TabManager implements ActionBar.TabListener {
     }
 
     private void setTabs(JSONArray tabs) {
-        ActionBar actionBar = this.mainActivity.getActionBar();
+        ActionBar actionBar = this.mainActivity.getSupportActionBar();
         if (actionBar == null) {
             return;
         }
@@ -114,16 +114,16 @@ public class TabManager implements ActionBar.TabListener {
     }
 
     private void showTabs() {
-        if (this.mainActivity.getActionBar() != null
-                && this.mainActivity.getActionBar().getNavigationMode() != ActionBar.NAVIGATION_MODE_TABS) {
-            this.mainActivity.getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+        if (this.mainActivity.getSupportActionBar() != null
+                && this.mainActivity.getSupportActionBar().getNavigationMode() != ActionBar.NAVIGATION_MODE_TABS) {
+            this.mainActivity.getSupportActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         }
     }
 
     private void hideTabs() {
-        if (this.mainActivity.getActionBar() != null) {
-            this.mainActivity.getActionBar().removeAllTabs();
-            this.mainActivity.getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        if (this.mainActivity.getSupportActionBar() != null) {
+            this.mainActivity.getSupportActionBar().removeAllTabs();
+            this.mainActivity.getSupportActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         }
     }
 

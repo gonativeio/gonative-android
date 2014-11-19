@@ -1,23 +1,22 @@
 package io.gonative.android;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
-import android.content.res.TypedArray;
-import android.graphics.PorterDuff;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -36,12 +35,9 @@ import android.webkit.JsResult;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
-import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -58,7 +54,7 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MainActivity extends Activity implements Observer {
+public class MainActivity extends ActionBarActivity implements Observer {
     public static final String webviewCacheSubdir = "webviewAppCache";
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -152,7 +148,6 @@ public class MainActivity extends Activity implements Observer {
 		
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
-		requestWindowFeature(Window.FEATURE_PROGRESS);
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu)
 	    	setContentView(R.layout.activity_gonative);
         else
@@ -203,17 +198,11 @@ public class MainActivity extends Activity implements Observer {
             mDrawerView = findViewById(R.id.left_drawer);
             mDrawerList = (ExpandableListView) findViewById(R.id.drawer_list);
 
-            // programatically set drawer icon
-            int[] drawerAttribute = new int[] {R.attr.ic_drawer};
-            TypedArray a = obtainStyledAttributes(drawerAttribute);
-            int drawerIcon = a.getResourceId(0, R.drawable.ic_drawer_light);
-            a.recycle();
-
             // set shadow
             mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
             mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                    drawerIcon, R.string.drawer_open, R.string.drawer_close){
+                    R.string.drawer_open, R.string.drawer_close){
                 //Called when a drawer has settled in a completely closed state.
                 public void onDrawerClosed(View view) {
                     invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
@@ -235,14 +224,22 @@ public class MainActivity extends Activity implements Observer {
             }
         }
 
-		if (getActionBar() != null) {
-            getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+		if (getSupportActionBar() != null) {
             if (!isRoot || AppConfig.getInstance(this).showNavigationMenu) {
-                getActionBar().setDisplayHomeAsUpEnabled(true);
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             }
 
             if (appConfig.hideTitleInActionBar) {
-                getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+                getSupportActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+            }
+
+            if (appConfig.showLogoInActionBar) {
+                // why use a custom view and not setDisplayUseLogoEnabled and setLogo?
+                // Because logo doesn't work!
+                getSupportActionBar().setDisplayShowCustomEnabled(true);
+                ImageView iv = new ImageView(this);
+                iv.setImageResource(R.drawable.ic_actionbar);
+                getSupportActionBar().setCustomView(iv);
             }
         }
 
@@ -443,10 +440,7 @@ public class MainActivity extends Activity implements Observer {
         mProgress.startAnimation(fadeout);
         wv.startAnimation(fadein);
     }
-	
-	public void clearProgress(){
-		setProgress(10000);
-	}
+
 
 	public void updatePageTitle() {
         if (AppConfig.getInstance(this).useWebpageTitle) {
@@ -627,106 +621,48 @@ public class MainActivity extends Activity implements Observer {
 		getMenuInflater().inflate(R.menu.topmenu, menu);
 
         AppConfig appConfig = AppConfig.getInstance(this);
-		
+
+        // search item in action bar
 		final MenuItem searchItem = menu.findItem(R.id.action_search);
         if (appConfig.searchTemplateUrl != null) {
+            // make it visible
+            searchItem.setVisible(true);
+
             final SearchView searchView = (SearchView) searchItem.getActionView();
+            if (searchView != null) {
+                // listener to process query
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        searchItem.collapseActionView();
 
-            // style it
-            searchView.setIconifiedByDefault(false);
-            searchView.setQueryHint(getString(R.string.search_hint));
-
-            int searchMagId = searchView.getContext().getResources().getIdentifier("android:id/search_mag_icon", null, null);
-            if (searchMagId != 0) {
-                View searchMagIcon = searchView.findViewById(searchMagId);
-                if (searchMagIcon != null) {
-                    searchMagIcon.setLayoutParams(new LinearLayout.LayoutParams(0, 0));
-                    searchMagIcon.setVisibility(View.GONE);
-                }
-            }
-
-            if (appConfig.tintColor != null) {
-                // see http://stackoverflow.com/questions/11085308/changing-the-background-drawable-of-the-searchview-widget/11669808#11669808
-                int searchCloseIconId = searchView.getContext().getResources().getIdentifier("android:id/search_close_btn", null, null);
-                if (searchCloseIconId != 0) {
-                    View searchCloseIcon = searchView.findViewById(searchCloseIconId);
-                    if (searchCloseIcon instanceof ImageView) {
-                        ImageView icon = (ImageView)searchCloseIcon;
-                        icon.setColorFilter(appConfig.tintColor, PorterDuff.Mode.SRC_ATOP);
-                    }
-                }
-            }
-
-            {
-                // make the search text the same color as action bar title color
-                int actionBarStyleResource = 0;
-                int actionBarTitleStyleResource = 0;
-                int titleColor = Integer.MIN_VALUE;
-
-                TypedArray ta = obtainStyledAttributes(new int[] {android.R.attr.actionBarStyle});
-                actionBarStyleResource = ta.getResourceId(0, 0);
-                ta.recycle();
-
-                if (actionBarStyleResource != 0) {
-                    ta = obtainStyledAttributes(actionBarStyleResource, new int[]{android.R.attr.titleTextStyle});
-                    actionBarTitleStyleResource = ta.getResourceId(0, 0);
-                    ta.recycle();
-                }
-
-                if (actionBarTitleStyleResource != 0) {
-                    ta = obtainStyledAttributes(actionBarTitleStyleResource, new int[]{android.R.attr.textColor});
-                    titleColor = ta.getColor(0, Integer.MIN_VALUE);
-                    ta.recycle();
-                }
-
-                if (titleColor != Integer.MIN_VALUE) {
-                    int searchTextId = searchView.getContext().getResources().getIdentifier("android:id/search_src_text", null, null);
-                    if (searchTextId != 0) {
-                        View searchText = searchView.findViewById(searchTextId);
-                        if (searchText instanceof EditText) {
-                            EditText editText = (EditText)searchText;
-                            editText.setHintTextColor(titleColor);
-                            editText.setTextColor(titleColor);
+                        try {
+                            String q = URLEncoder.encode(query, "UTF-8");
+                            loadUrl(AppConfig.getInstance(getApplicationContext()).searchTemplateUrl + q);
+                        } catch (UnsupportedEncodingException e) {
+                            return true;
                         }
-                    }
-                }
-            }
 
-            // listener to process query
-            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String query) {
-                    searchItem.collapseActionView();
-
-                    try{
-                        String q = URLEncoder.encode(query, "UTF-8");
-                        loadUrl(AppConfig.getInstance(getApplicationContext()).searchTemplateUrl + q);
-                    }
-                    catch (UnsupportedEncodingException e){
                         return true;
                     }
 
-                    return true;
-                }
-                @Override
-                public boolean onQueryTextChange(String newText) {
-                    // do nothing
-                    return true;
-                }
-            });
-
-            // listener to collapse action view when soft keyboard is closed
-            searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    if(!hasFocus){
-                        searchItem.collapseActionView();
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        // do nothing
+                        return true;
                     }
-                }
-            });
+                });
 
-            // make it visible
-            searchItem.setVisible(true);
+                // listener to collapse action view when soft keyboard is closed
+                searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
+                    @Override
+                    public void onFocusChange(View v, boolean hasFocus) {
+                        if (!hasFocus) {
+                            searchItem.collapseActionView();
+                        }
+                    }
+                });
+            }
         }
 
 		return true;
@@ -749,7 +685,6 @@ public class MainActivity extends Activity implements Observer {
                 finish();
                 return true;
 	        case R.id.action_search:
-                if (getActionBar() != null) getActionBar().setIcon(R.drawable.ic_actionbar);
 	        	return true;
 	        case R.id.action_refresh:
 	        	if (this.mWebview.getUrl() != null && this.mWebview.getUrl().startsWith("data:")){
@@ -889,12 +824,6 @@ public class MainActivity extends Activity implements Observer {
         public void onReceivedTitle(WebView view, String title){
             updatePageTitle();
         }
-        
-        @Override
-        public void onProgressChanged(WebView view, int newProgress){
-        	setProgress(newProgress * 100);
-        }
-
     }
 
     public boolean isRoot() {
@@ -917,8 +846,8 @@ public class MainActivity extends Activity implements Observer {
     public void setTitle(CharSequence title) {
         super.setTitle(title);
 
-        if (getActionBar() != null) {
-            getActionBar().setTitle(title);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(title);
         }
     }
 

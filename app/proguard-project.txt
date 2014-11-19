@@ -54,3 +54,8 @@
 -keepnames class * implements android.os.Parcelable {
     public static final ** CREATOR;
 }
+
+# appcompat library
+-dontwarn android.support.v7.**
+-keep class android.support.v7.** { *; }
+-keep interface android.support.v7.** { *; }
