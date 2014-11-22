@@ -351,7 +351,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     public void runJavascript(String javascript) {
         if (javascript == null) return;
 
-        this.mWebview.loadUrl("javascript:" + javascript);
+        LeanUtils.runJavascriptOnWebView(this.mWebview, javascript);
     }
 	
 	public boolean isConnected(){
@@ -868,7 +868,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     }
 
     public void checkReadyStatus() {
-        this.mWebview.loadUrl("javascript: gonative_status_checker.onReadyState(document.readyState)");
+        LeanUtils.runJavascriptOnWebView(this.mWebview, "gonative_status_checker.onReadyState(document.readyState)");
     }
 
     public void checkReadyStatusResult(String status) {

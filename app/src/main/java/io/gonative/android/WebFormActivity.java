@@ -508,8 +508,7 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
     }
 
     private void runJavascript(String js) {
-        js = js.replace("%5C", "%5C%5C");
-        mHiddenWebView.loadUrl("javascript:" + js);
+        LeanUtils.runJavascriptOnWebView(this.mHiddenWebView, js);
     }
 
 
@@ -533,7 +532,7 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
             CookieSyncManager.getInstance().sync();
 
             // add jquery if it is not already loaded
-            view.loadUrl("javascript: if (!window.jQuery) {\n" +
+            LeanUtils.runJavascriptOnWebView(view, "if (!window.jQuery) {\n" +
                     "  gonativejq = document.createElement('script');\n" +
                     "  gonativejq.type = 'text/javascript';\n" +
                     "  gonativejq.src = '//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js';\n" +

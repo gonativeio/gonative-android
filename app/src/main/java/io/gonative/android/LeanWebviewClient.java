@@ -45,8 +45,7 @@ public class LeanWebviewClient extends WebViewClient{
             sb.append(LeanUtils.jsWrapString(appConfig.profilePickerJS));
             sb.append("))");
 
-            String encoded = LeanUtils.urlEncode(sb.toString());
-            if (encoded != null) this.profilePickerExec = "javascript:" + encoded;
+            this.profilePickerExec = sb.toString();
         }
 
         // analytics
@@ -57,7 +56,7 @@ public class LeanWebviewClient extends WebViewClient{
                 idsite = appConfig.idsite_prod;
             else idsite = appConfig.idsite_test;
 
-            this.analyticsExec = String.format("javascript:var _paq = _paq || [];\n" +
+            this.analyticsExec = String.format("var _paq = _paq || [];\n" +
                     "  _paq.push(['trackPageView']);\n" +
                     "  _paq.push(['enableLinkTracking']);\n" +
                     "  (function() {\n" +
@@ -76,8 +75,7 @@ public class LeanWebviewClient extends WebViewClient{
             sb.append(LeanUtils.jsWrapString(appConfig.updateConfigJS));
             sb.append("))");
 
-            String encoded = LeanUtils.urlEncode(sb.toString());
-            if (encoded != null) this.dynamicUpdateExec = "javascript:" + encoded;
+            this.dynamicUpdateExec = sb.toString();
         }
 	}
 	
@@ -314,17 +312,17 @@ public class LeanWebviewClient extends WebViewClient{
 
         // dynamic config updater
         if (this.dynamicUpdateExec != null) {
-            view.loadUrl(this.dynamicUpdateExec);
+            LeanUtils.runJavascriptOnWebView(view, this.dynamicUpdateExec);
         }
 
         // profile picker
         if (this.profilePickerExec != null) {
-            view.loadUrl(this.profilePickerExec);
+            LeanUtils.runJavascriptOnWebView(view, this.profilePickerExec);
         }
 
         // analytics
         if (this.analyticsExec != null) {
-            view.loadUrl(this.analyticsExec);
+            LeanUtils.runJavascriptOnWebView(view, this.analyticsExec);
         }
 
         // tabs

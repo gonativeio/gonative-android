@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -67,6 +68,18 @@ public class LeanUtils {
                 .append(urlEncode(s))
                 .append("\")")
                 .toString();
+    }
+
+    public static void runJavascriptOnWebView(WebView webview, String js) {
+        // before Kitkat, the only way to run javascript was to load a url that starts with "javascript:".
+        // Starting in Kitkat, the "javascript:" method still works, but it expects the rest of the string
+        // to be URL encoded, unlike previous versions. Rather than URL encode for Kitkat and above,
+        // use the new evaluateJavascript method.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            webview.loadUrl("javascript:" + js);
+        } else {
+            webview.evaluateJavascript(js, null);
+        }
     }
 
     public static String capitalizeWords(String s) {
