@@ -399,6 +399,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
         }
     }
 
+    public void showWebviewImmediately() {
+        startedLoading = false;
+        stopCheckingReadyStatus();
+        this.mWebview.setVisibility(View.VISIBLE);
+        this.mProgress.setVisibility(View.INVISIBLE);
+    }
+
     public void showWebview() {
         startedLoading = false;
         stopCheckingReadyStatus();
@@ -406,6 +413,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
         final WebView wv = this.mWebview;
         if (wv.getVisibility() == View.VISIBLE) {
             // don't animate if already visible
+            mProgress.setVisibility(View.INVISIBLE);
             return;
         }
 
@@ -428,7 +436,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                mProgress.setVisibility(View.INVISIBLE);
+
             }
 
             @Override

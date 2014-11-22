@@ -61,12 +61,9 @@ public class WebViewPool {
         // prevent external instantiation
     }
 
-    public void init(Context context) {
-        if (!(context instanceof Activity)) {
-            throw new RuntimeException("WebViews require instantiation from an Activity context");
-        }
-
-        this.context = context;
+    public void init(Activity activity) {
+        // webviews must be instantiated from activity context
+        this.context = activity;
 
         this.urlToWebview = new HashMap<String, LeanWebView>();
         this.urlToDisownPolicy = new HashMap<String, WebViewPoolDisownPolicy>();
@@ -126,7 +123,7 @@ public class WebViewPool {
                     try {
                         URL parsedUrl = new URL(url);
                         if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
-                            new WebviewInterceptTask(pool.context).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, true));
+                            new WebviewInterceptTask(pool.context, null).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, true));
                             return true;
                         }
                     } catch (Exception e) {

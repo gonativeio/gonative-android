@@ -115,7 +115,7 @@ public class LeanWebviewClient extends WebViewClient{
         return shouldOverrideUrlLoading(view, url, false);
     }
 
-	public boolean shouldOverrideUrlLoading(WebView view, String url, boolean isReload) {
+    public boolean shouldOverrideUrlLoadingNoIntercept(WebView view, String url) {
 //		Log.d(TAG, "shouldOverrideUrl: " + url);
 
         // return if url is null (can happen if clicking refresh when there is no page loaded)
@@ -126,7 +126,7 @@ public class LeanWebviewClient extends WebViewClient{
         boolean checkLoginSignup = ((LeanWebView)view).checkLoginSignup();
         ((LeanWebView)view).setCheckLoginSignup(true);
 
-		Uri uri = Uri.parse(url);
+        Uri uri = Uri.parse(url);
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
@@ -144,8 +144,8 @@ public class LeanWebviewClient extends WebViewClient{
             mainActivity.launchWebForm("signup", "Sign Up");
             return true;
         }
-		
-		if (!isInternalUri(uri)){
+
+        if (!isInternalUri(uri)){
             // launch browser
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             try {
@@ -155,7 +155,7 @@ public class LeanWebviewClient extends WebViewClient{
             }
 
             return true;
-		}
+        }
 
         // Starting here, we are going to load the request, but possibly in a
         // different activity depending on the structured nav level
@@ -227,13 +227,20 @@ public class LeanWebviewClient extends WebViewClient{
             this.mainActivity.isPoolWebview = false;
         }
 
+        return false;
+    }
+
+	public boolean shouldOverrideUrlLoading(WebView view, String url, boolean isReload) {
+        boolean shouldOverride = shouldOverrideUrlLoadingNoIntercept(view, url);
+        if (shouldOverride) return shouldOverride;
+
         // intercept html
         if (AppConfig.getInstance(mainActivity).interceptHtml) {
             try {
                 URL parsedUrl = new URL(url);
                 if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
                     mainActivity.setProgress(0);
-                    new WebviewInterceptTask(this.mainActivity).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, isReload));
+                    new WebviewInterceptTask(this.mainActivity, this).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, isReload));
                     mainActivity.hideWebview();
                     return true;
                 }
@@ -264,6 +271,15 @@ public class LeanWebviewClient extends WebViewClient{
 
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.STARTED_LOADING_MESSAGE));
+    }
+
+    public void showWebViewImmediately() {
+        mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.showWebviewImmediately();
+            }
+        });
     }
 
 	@Override

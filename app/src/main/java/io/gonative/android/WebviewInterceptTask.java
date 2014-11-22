@@ -20,12 +20,14 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
     private static final String TAG = WebviewInterceptTask.class.getName();
 
     private Context context;
+    private LeanWebviewClient leanWebviewClient;
     private WebView webview;
     private URL parsedUrl;
     private URL finalUrl;
 
-    public WebviewInterceptTask(Context context) {
+    public WebviewInterceptTask(Context context, LeanWebviewClient leanWebviewClient) {
         this.context = context;
+        this.leanWebviewClient = leanWebviewClient;
     }
 
     private WebviewInterceptTask(){
@@ -47,8 +49,10 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
             boolean wasRedirected = false;
             int numRedirects = 0;
             do {
+                if (isCancelled()) return null;
+
                 connection = (HttpURLConnection) parsedUrl.openConnection();
-                connection.setInstanceFollowRedirects(true);
+                connection.setInstanceFollowRedirects(false);
                 connection.setRequestProperty("User-Agent", appConfig.userAgent);
                 if (isReload)
                     connection.setRequestProperty("Cache-Control", "no-cache");
@@ -60,6 +64,18 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
                         responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                     wasRedirected = true;
                     parsedUrl = new URL(connection.getHeaderField("Location"));
+
+                    // check if this page should be intercepted
+                    if (this.leanWebviewClient != null
+                            && this.leanWebviewClient.shouldOverrideUrlLoadingNoIntercept(this.webview, parsedUrl.toString())) {
+
+                        leanWebviewClient.showWebViewImmediately();
+                        connection.disconnect();
+                        this.cancel(true);
+
+                        return null;
+                    }
+
                     numRedirects++;
                 } else {
                     wasRedirected = false;
