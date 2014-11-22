@@ -286,7 +286,12 @@ public class LeanWebviewClient extends WebViewClient{
 	public void onPageFinished(WebView view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
 
-        mainActivity.showWebview();
+        mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.showWebview();
+            }
+        });
 
         UrlInspector.getInstance().inspectUrl(url);
 		super.onPageFinished(view, url);
@@ -346,7 +351,12 @@ public class LeanWebviewClient extends WebViewClient{
 	
 	@Override
 	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl){
-        mainActivity.showWebview();
+        mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.showWebview();
+            }
+        });
 
 		// first check connectivity
 		if (!mainActivity.isConnected()){

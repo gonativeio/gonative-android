@@ -436,7 +436,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-
+                mProgress.setVisibility(View.INVISIBLE);
             }
 
             @Override
