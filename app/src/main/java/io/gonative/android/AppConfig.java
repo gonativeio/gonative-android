@@ -85,6 +85,7 @@ public class AppConfig {
     public String stringViewport;
     public boolean hideTitleInActionBar;
     public boolean showLogoInActionBar;
+    public boolean showRefreshButton;
 
     // forms
     public String searchTemplateUrl;
@@ -293,6 +294,7 @@ public class AppConfig {
             this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
             this.hideTitleInActionBar = styling.optBoolean("androidHideTitleInActionBar", false);
             this.showLogoInActionBar = styling.optBoolean("androidShowLogoInActionBar", this.hideTitleInActionBar);
+            this.showRefreshButton = styling.optBoolean("androidShowRefreshButton", true);
 
 
             ////////////////////////////////////////////////////////////

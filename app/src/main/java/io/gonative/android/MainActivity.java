@@ -673,6 +673,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
             }
         }
 
+        if (!appConfig.showRefreshButton) {
+            MenuItem refreshItem = menu.findItem(R.id.action_refresh);
+            if (refreshItem != null) {
+                refreshItem.setVisible(false);
+            }
+        }
+
 		return true;
 	}
 	
