@@ -260,6 +260,9 @@ public class AppConfig {
                 // tab menus
                 JSONObject tabNavigation = navigation.optJSONObject("tabNavigation");
                 processTabNavigation(tabNavigation);
+
+                // refresh button
+                this.showRefreshButton = navigation.optBoolean("androidShowRefreshButton", true);
             }
 
             ////////////////////////////////////////////////////////////
@@ -294,7 +297,6 @@ public class AppConfig {
             this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
             this.hideTitleInActionBar = styling.optBoolean("androidHideTitleInActionBar", false);
             this.showLogoInActionBar = styling.optBoolean("androidShowLogoInActionBar", this.hideTitleInActionBar);
-            this.showRefreshButton = styling.optBoolean("androidShowRefreshButton", true);
 
 
             ////////////////////////////////////////////////////////////
