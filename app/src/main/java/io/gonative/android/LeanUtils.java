@@ -76,7 +76,11 @@ public class LeanUtils {
         // to be URL encoded, unlike previous versions. Rather than URL encode for Kitkat and above,
         // use the new evaluateJavascript method.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            webview.loadUrl("javascript:" + js);
+            if (webview instanceof LeanWebView) {
+                ((LeanWebView)webview).loadUrlDirect("javascript:" + js);
+            } else {
+                webview.loadUrl("javascript:" + js);
+            }
         } else {
             webview.evaluateJavascript(js, null);
         }

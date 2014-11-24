@@ -62,7 +62,8 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
 
     private ArrayList<View> mFieldRefs;
     private WebView mHiddenWebView;
-    private Handler handler;
+    private Handler checkAjaxHandler;
+    private Handler checkLoginStatusHandler;
 
     private boolean mSubmitted = false;
 
@@ -122,6 +123,11 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
             // observe login manager
             LoginManager.getInstance().addObserver(this);
             LoginManager.getInstance().checkIfNotAlreadyChecking();
+        } else {
+            // show back button
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            }
         }
 
         if (getSupportActionBar() != null) {
@@ -153,16 +159,37 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
             LoginManager.getInstance().checkIfNotAlreadyChecking();
     }
 
+    protected void onDestroy() {
+        super.onDestroy();
+        // stop timers
+        if (this.checkLoginStatusHandler != null) {
+            this.checkLoginStatusHandler.removeCallbacksAndMessages(null);
+        }
+
+        if (this.checkAjaxHandler != null) {
+            this.checkAjaxHandler.removeCallbacksAndMessages(null);
+        }
+
+        LoginManager.getInstance().deleteObserver(this);
+    }
+
     public void update (Observable sender, Object data) {
-        if (sender instanceof LoginManager) {
+        if (sender instanceof LoginManager && mIsLogin) {
             sender.deleteObserver(this);
+
             if (((LoginManager) sender).isLoggedIn()) {
                 // back to main activity
                 Intent returnIntent = new Intent();
                 returnIntent.putExtra("success", true);
+
+                String currentUrl = mHiddenWebView.getUrl();
+                if (currentUrl != null && !currentUrl.equals(this.mJson.optString("interceptUrl", ""))) {
+                    returnIntent.putExtra("url", mHiddenWebView.getUrl());
+                }
+
                 setResult(RESULT_OK, returnIntent);
                 finish();
-            } else {
+            } else if(AppConfig.getInstance(this).loginIsFirstPage) {
                 mHiddenWebView.loadUrl(this.mJson.optString("interceptUrl", ""));
                 mLoginStatusView.setVisibility(View.GONE);
                 mLoginFormView.setVisibility(View.VISIBLE);
@@ -303,6 +330,10 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
 
             return true;
         }
+        else if (item.getItemId() == android.R.id.home) {
+            this.finish();
+            return true;
+        }
         else
             return super.onOptionsItemSelected(item);
     }
@@ -368,6 +399,16 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
                 if (mJson.optBoolean("isAjax", false)) {
                     scheduleSubmissionCheck();
                 }
+
+                // check login status in 5 seconds just in case we don't get the onPageFinished
+                LoginManager.getInstance().addObserver(this);
+                this.checkLoginStatusHandler = new Handler();
+                this.checkLoginStatusHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        LoginManager.getInstance().checkLogin();
+                    }
+                }, 5 * 1000);
             }
         }
         catch(Exception e) {
@@ -377,7 +418,7 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
     }
 
     void scheduleSubmissionCheck() {
-        handler = new Handler() {
+        checkAjaxHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
                 runOnUiThread(new Runnable(){
@@ -391,12 +432,12 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
 
         Message message = Message.obtain();
         message.what = 1;
-        handler.sendMessageDelayed(message, 1000);
+        checkAjaxHandler.sendMessageDelayed(message, 1000);
     }
 
     void cancelSubmissionCheck() {
-        if (handler != null)
-            handler.removeMessages(1);
+        if (checkAjaxHandler != null)
+            checkAjaxHandler.removeMessages(1);
     }
 
     void checkSubmissionStatus() {

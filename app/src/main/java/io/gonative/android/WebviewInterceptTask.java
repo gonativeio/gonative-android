@@ -63,7 +63,7 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
                 if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
                         responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                     wasRedirected = true;
-                    parsedUrl = new URL(connection.getHeaderField("Location"));
+                    parsedUrl = new URL(parsedUrl, connection.getHeaderField("Location"));
 
                     // check if this page should be intercepted
                     if (this.leanWebviewClient != null

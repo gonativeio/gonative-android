@@ -88,7 +88,7 @@ public class LoginManager extends Observable {
                     if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
                             responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                         wasRedirected = true;
-                        parsedUrl = new URL(connection.getHeaderField("Location"));
+                        parsedUrl = new URL(parsedUrl, connection.getHeaderField("Location"));
                         numRedirects++;
                     } else {
                         wasRedirected = false;

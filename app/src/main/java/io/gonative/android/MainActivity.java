@@ -273,6 +273,9 @@ public class MainActivity extends ActionBarActivity implements Observer {
         this.connectivityReceiver = new ConnectivityChangeReceiver();
         registerReceiver(this.connectivityReceiver,
                 new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
+        // check login status
+        LoginManager.getInstance().checkLogin();
     }
 
     private void retryFailedPage() {
