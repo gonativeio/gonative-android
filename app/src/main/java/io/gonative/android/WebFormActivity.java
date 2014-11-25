@@ -171,6 +171,10 @@ public class WebFormActivity extends ActionBarActivity implements Observer{
         }
 
         LoginManager.getInstance().deleteObserver(this);
+
+        // destroy webview
+        mHiddenWebView.stopLoading();
+        mHiddenWebView.destroy();
     }
 
     public void update (Observable sender, Object data) {

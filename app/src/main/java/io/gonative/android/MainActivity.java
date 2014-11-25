@@ -24,7 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.webkit.CookieManager;
@@ -79,6 +78,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private TabManager tabManager;
+    private ActionManager actionManager;
     private boolean isRoot;
     private int urlLevel = -1;
     private int parentUrlLevel = -1;
@@ -246,6 +246,9 @@ public class MainActivity extends ActionBarActivity implements Observer {
         // tab navigation
         this.tabManager = new TabManager(this);
 
+        // actions in action bar
+        this.actionManager = new ActionManager(this);
+
         // style sidebar
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
             mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
@@ -276,6 +279,22 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
         // check login status
         LoginManager.getInstance().checkLogin();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // destroy webview
+        if (this.mWebview != null) {
+            this.mWebview.stopLoading();
+            // must remove from view hierarchy to destroy
+            ViewGroup parent = (ViewGroup) this.mWebview.getParent();
+            if (parent != null) {
+                parent.removeView(this.mWebview);
+            }
+            this.mWebview.destroy();
+        }
     }
 
     private void retryFailedPage() {
@@ -683,9 +702,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
             }
         }
 
+        if (this.actionManager != null) {
+            this.actionManager.addActions(menu);
+        }
+
 		return true;
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
         // Pass the event to ActionBarDrawerToggle, if it returns
@@ -694,6 +717,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
         if (mDrawerToggle != null) {
             if (mDrawerToggle.onOptionsItemSelected(item)) {
               return true;
+            }
+        }
+
+        // actions
+        if (this.actionManager != null) {
+            if (this.actionManager.onOptionsItemSelected(item)) {
+                return true;
             }
         }
         
@@ -725,9 +755,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
         startActivityForResult(intent, REQUEST_WEBFORM);
     }
 
-    public void checkTabs(String url) {
+    public void checkNavigationForPage(String url) {
         if (this.tabManager != null) {
             this.tabManager.checkTabs(url);
+        }
+
+        if (this.actionManager != null) {
+            this.actionManager.checkActions(url);
         }
     }
 

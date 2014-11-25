@@ -73,6 +73,10 @@ public class AppConfig {
     public ArrayList<Pattern> tabMenuRegexes;
     public ArrayList<String> tabMenuIDs;
 
+    public HashMap<String,JSONArray> actions;
+    public ArrayList<Pattern> actionRegexes;
+    public ArrayList<String> actionIDs;
+
     // styling
     public Integer sidebarBackgroundColor;
     public Integer sidebarForegroundColor;
@@ -80,6 +84,7 @@ public class AppConfig {
     public String customCSS;
     public double forceViewportWidth;
     public String androidTheme;
+    public Integer actionbarForegroundColor;
     public boolean showActionBar = true;
     public double interactiveDelay;
     public String stringViewport;
@@ -261,6 +266,10 @@ public class AppConfig {
                 JSONObject tabNavigation = navigation.optJSONObject("tabNavigation");
                 processTabNavigation(tabNavigation);
 
+                // actions
+                JSONObject actionConfig = navigation.optJSONObject("actionConfig");
+                processActions(actionConfig);
+
                 // refresh button
                 this.showRefreshButton = navigation.optBoolean("androidShowRefreshButton", true);
             }
@@ -298,6 +307,13 @@ public class AppConfig {
             this.hideTitleInActionBar = styling.optBoolean("androidHideTitleInActionBar", false);
             this.showLogoInActionBar = styling.optBoolean("androidShowLogoInActionBar", this.hideTitleInActionBar);
 
+            String actionBarForegroundColor = AppConfig.optString(styling, "androidActionBarForegroundColor");
+            this.actionbarForegroundColor = LeanUtils.parseColor(actionBarForegroundColor);
+            if (this.actionbarForegroundColor == null) {
+                if (this.androidTheme == null) this.actionbarForegroundColor = Color.WHITE;
+                else if (this.androidTheme.equalsIgnoreCase("light")) this.actionbarForegroundColor = Color.BLACK;
+                else this.actionbarForegroundColor = Color.WHITE;
+            }
 
             ////////////////////////////////////////////////////////////
             // Permissions
@@ -562,6 +578,51 @@ public class AppConfig {
         }
 
         LocalBroadcastManager.getInstance(this.context).sendBroadcast(new Intent(PROCESSED_TAB_NAVIGATION_MESSAGE));
+    }
+
+    private void processActions(JSONObject actionConfig) {
+        if (actionConfig == null) return;
+
+        this.actions = new HashMap<String, JSONArray>();
+        this.actionIDs = new ArrayList<String>();
+        this.actionRegexes = new ArrayList<Pattern>();
+
+        if (!actionConfig.optBoolean("active")) return;
+
+        JSONArray actions = actionConfig.optJSONArray("actions");
+        if (actions != null) {
+            for (int i = 0; i < actions.length(); i++) {
+                JSONObject entry = actions.optJSONObject(i);
+                if (entry != null) {
+                    String id = optString(entry, "id");
+                    JSONArray items = entry.optJSONArray("items");
+                    if (id != null && items != null) {
+                        this.actions.put(id, items);
+                    }
+                }
+            }
+        }
+
+        JSONArray actionSelection = actionConfig.optJSONArray("actionSelection");
+        if (actionSelection != null) {
+            for (int i = 0; i < actionSelection.length(); i++) {
+                JSONObject entry = actionSelection.optJSONObject(i);
+                if (entry != null) {
+                    String regex = optString(entry, "regex");
+                    String id = optString(entry, "id");
+
+                    if (regex != null && id != null) {
+                        try {
+                            Pattern pattern = Pattern.compile(regex);
+                            this.actionRegexes.add(pattern);
+                            this.actionIDs.add(id);
+                        } catch (PatternSyntaxException e) {
+                            Log.w(TAG, "Problem with actionSelection pattern. " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public synchronized static AppConfig getInstance(Context context){

@@ -189,9 +189,14 @@ public class LeanWebviewClient extends WebViewClient{
             mainActivity.setUrlLevel(newLevel);
         }
 
-        String newTitle = mainActivity.titleForUrl(url);
+        final String newTitle = mainActivity.titleForUrl(url);
         if (newTitle != null) {
-            mainActivity.setTitle(newTitle);
+            mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.setTitle(newTitle);
+                }
+            });
         }
 
         // check to see if the webview exists in pool.
@@ -200,7 +205,7 @@ public class LeanWebviewClient extends WebViewClient{
         WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Always) {
             this.mainActivity.switchToWebview(poolWebview, true);
-            this.mainActivity.checkTabs(url);
+            this.mainActivity.checkNavigationForPage(url);
             WebViewPool.getInstance().disownWebview(poolWebview);
             LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
             return true;
@@ -208,14 +213,14 @@ public class LeanWebviewClient extends WebViewClient{
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Never) {
             this.mainActivity.switchToWebview(poolWebview, true);
-            this.mainActivity.checkTabs(url);
+            this.mainActivity.checkNavigationForPage(url);
             return true;
         }
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Reload &&
                 !LeanUtils.urlsMatchOnPath(url, view.getUrl())) {
             this.mainActivity.switchToWebview(poolWebview, true);
-            this.mainActivity.checkTabs(url);
+            this.mainActivity.checkNavigationForPage(url);
             return true;
         }
 
@@ -326,7 +331,7 @@ public class LeanWebviewClient extends WebViewClient{
         }
 
         // tabs
-        mainActivity.checkTabs(url);
+        mainActivity.checkNavigationForPage(url);
 
         // post-load javascript
         if (mainActivity.postLoadJavascript != null) {
