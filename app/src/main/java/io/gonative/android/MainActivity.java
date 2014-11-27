@@ -390,14 +390,17 @@ public class MainActivity extends ActionBarActivity implements Observer {
         wv.setWebViewClient(new LeanWebviewClient(MainActivity.this));
         wv.setDownloadListener(fileDownloader);
 
+        wv.removeJavascriptInterface("gonative_profile_picker");
         if (profilePicker != null) {
             wv.addJavascriptInterface(profilePicker.getProfileJsBridge(), "gonative_profile_picker");
         }
 
+        wv.removeJavascriptInterface("gonative_dynamic_update");
         if (AppConfig.getInstance(this).updateConfigJS != null) {
             wv.addJavascriptInterface(AppConfig.getInstance(this).getJsBridge(), "gonative_dynamic_update");
         }
 
+        wv.removeJavascriptInterface("gonative_status_checker");
         wv.addJavascriptInterface(new StatusCheckerBridge(), "gonative_status_checker");
 	}
 
