@@ -1,5 +1,5 @@
-<android.support.v4.widget.DrawerLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -8,10 +8,25 @@
               android:orientation="vertical" 
               android:layout_width="match_parent" 
               android:layout_height="match_parent">
-        
+
+        <com.astuetz.PagerSlidingTabStrip
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:pstsShouldExpand="true"
+            app:pstsForegroundColor="@color/tab_foreground_color"
+            app:pstsIndicatorHeight="4dp"
+            android:visibility="gone"/>
+        <android.support.v4.view.ViewPager android:id="@+id/view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:alpha="0.0"/>
+
         <io.gonative.android.LeanWebView android:id="@+id/webview"
-              android:layout_width="match_parent" 
-              android:layout_height="match_parent"/>
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tabs" />
 
         <ProgressBar
             android:id="@+id/progress"

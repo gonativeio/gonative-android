@@ -24,6 +24,27 @@
         "active": true
       }]
     },
+    "tabNavigation": {
+      "tabSelectionConfig": [{
+        "id": "1",
+        "regex": ".*features.*"
+      }],
+      "tabMenus": [{
+        "id": "1",
+        "items": [{
+          "icon": "fa-inbox",
+          "label": "Tab 1",
+          "url": "javascript:alert('You selected tab 1. These tabs are only shown on the features page')"
+        }, {
+          "label": "Tab 2",
+          "url": "javascript:alert('You selected tab 2. These tabs are only shown on the features page')"
+        }, {
+          "label": "Tab 3",
+          "url": "javascript:alert('You selected tab 3. These tabs are only shown on the features page')"
+        }]
+      }],
+      "active": true
+    },
     "actionConfig": {
       "active": true,
       "actions": [{

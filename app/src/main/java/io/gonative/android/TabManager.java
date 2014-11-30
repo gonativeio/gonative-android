@@ -4,10 +4,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.ActionBar;
-import android.util.Pair;
+import android.support.v4.view.PagerAdapter;
+import android.view.View;
+import android.view.ViewGroup;
+
+import com.astuetz.PagerSlidingTabStrip;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,12 +21,12 @@ import java.util.regex.Pattern;
  * Created by Weiyin He on 9/22/14.
  * Copyright 2014 GoNative.io LLC
  */
-public class TabManager implements ActionBar.TabListener {
+public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnTabClickListener {
     private MainActivity mainActivity;
-    private boolean isFirstSelection;
     private String currentMenuId;
     private String currentUrl;
     private BroadcastReceiver broadcastReceiver;
+    private JSONArray tabs;
 
     private TabManager(){
         // disable instantiation without mainActivity
@@ -50,7 +52,7 @@ public class TabManager implements ActionBar.TabListener {
     public void checkTabs(String url) {
         this.currentUrl = url;
 
-        if (this.mainActivity == null || this.mainActivity.getSupportActionBar() == null || url == null) {
+        if (this.mainActivity == null || url == null) {
             return;
         }
 
@@ -88,75 +90,80 @@ public class TabManager implements ActionBar.TabListener {
     }
 
     private void setTabs(JSONArray tabs) {
-        ActionBar actionBar = this.mainActivity.getSupportActionBar();
-        if (actionBar == null) {
-            return;
-        }
-
-        actionBar.removeAllTabs();
-        this.isFirstSelection = true;
-
-        for (int i = 0; i < tabs.length(); i++) {
-            JSONObject entry = tabs.optJSONObject(i);
-            if (entry != null) {
-                String label = entry.optString("label");
-                String url = entry.optString("url");
-                String javascript = entry.optString("javascript");
-
-                if (label != null) {
-                    ActionBar.Tab tab = actionBar.newTab().setText(label).setTabListener(this);
-                    actionBar.addTab(tab);
-
-                    tab.setTag(new Pair<String,String>(url, javascript));
-                }
-            }
-        }
+        this.tabs = tabs;
+        notifyDataSetChanged();
     }
 
     private void showTabs() {
-        if (this.mainActivity.getSupportActionBar() != null
-                && this.mainActivity.getSupportActionBar().getNavigationMode() != ActionBar.NAVIGATION_MODE_TABS) {
-            this.mainActivity.getSupportActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-        }
+        this.mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.showTabs();
+            }
+        });
     }
 
     private void hideTabs() {
-        if (this.mainActivity.getSupportActionBar() != null) {
-            this.mainActivity.getSupportActionBar().removeAllTabs();
-            this.mainActivity.getSupportActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        this.mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.hideTabs();
+            }
+        });
+    }
+
+    @Override
+    public int getCount() {
+        if (this.tabs != null) {
+            return this.tabs.length();
+        } else {
+            return 0;
         }
     }
 
-    private void selectedTab(ActionBar.Tab tab) {
-        Object tag = tab.getTag();
-        if (tag instanceof Pair) {
-            Pair<String,String> urlJavascript = (Pair<String,String>)tag;
-            String url = urlJavascript.first;
-            String javascript = urlJavascript.second;
+    // the following three methods are there for our dummy viewpager.
+    @Override
+    public boolean isViewFromObject(View view, Object o) {
+        return view == o;
+    }
+
+    @Override
+    public Object instantiateItem(ViewGroup container, int position) {
+        return mainActivity.getLayoutInflater().inflate(R.layout.empty, container);
+    }
+
+    @Override
+    public void destroyItem(ViewGroup container, int position, Object object) {
+        if (object instanceof View) {
+            container.removeView((View)object);
+        }
+    }
+
+    @Override
+    public CharSequence getPageTitle(int position) {
+        String title = "";
+        if (this.tabs != null && position < this.tabs.length()) {
+            JSONObject entry = this.tabs.optJSONObject(position);
+            if (entry != null) {
+                title = entry.optString("label", "");
+            }
+        }
+
+        return title;
+    }
+
+    @Override
+    public void onTabClick(int position) {
+        if (this.tabs != null && position < this.tabs.length()) {
+            JSONObject entry = this.tabs.optJSONObject(position);
+
+            String url = entry.optString("url");
+            String javascript = entry.optString("javascript");
 
             if (url != null && !url.isEmpty()) {
                 if (javascript != null) mainActivity.loadUrlAndJavascript(url, javascript);
                 else mainActivity.loadUrl(url);
             }
         }
-    }
-
-    @Override
-    public void onTabSelected(ActionBar.Tab tab, FragmentTransaction ft) {
-        if (isFirstSelection) {
-            isFirstSelection = false;
-        } else {
-            selectedTab(tab);
-        }
-    }
-
-    @Override
-    public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction ft) {
-        // do nothing
-    }
-
-    @Override
-    public void onTabReselected(ActionBar.Tab tab, FragmentTransaction ft) {
-        selectedTab(tab);
     }
 }

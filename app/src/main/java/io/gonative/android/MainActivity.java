@@ -12,6 +12,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.ViewCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
@@ -40,6 +42,8 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.astuetz.PagerSlidingTabStrip;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
@@ -63,6 +67,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
     public static final int REQUEST_PLAY_SERVICES_RESOLUTION = 9000;
+    private static final float ACTIONBAR_ELEVATION = 12.0f;
 
     private LeanWebView mWebview;
     boolean isPoolWebview = false;
@@ -75,6 +80,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private ProgressBar mProgress;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
+    private PagerSlidingTabStrip slidingTabStrip;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private TabManager tabManager;
@@ -101,7 +107,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
 
-	@Override
+    @Override
 	protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
 
@@ -244,7 +250,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
         }
 
         // tab navigation
+        ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
+        this.slidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
         this.tabManager = new TabManager(this);
+        pager.setAdapter(this.tabManager);
+        this.slidingTabStrip.setViewPager(pager);
+        this.slidingTabStrip.setTabClickListener(this.tabManager);
+        hideTabs();
 
         // actions in action bar
         this.actionManager = new ActionManager(this);
@@ -934,6 +946,23 @@ public class MainActivity extends ActionBarActivity implements Observer {
             } else {
                 showWebview();
             }
+        }
+    }
+
+    public void showTabs() {
+        this.slidingTabStrip.setVisibility(View.VISIBLE);
+        ActionBar actionBar = this.getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setElevation(0);
+        }
+        ViewCompat.setElevation(this.slidingTabStrip, ACTIONBAR_ELEVATION);
+    }
+
+    public void hideTabs() {
+        this.slidingTabStrip.setVisibility(View.GONE);
+        ActionBar actionBar = this.getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setElevation(ACTIONBAR_ELEVATION);
         }
     }
 

@@ -22,6 +22,7 @@ if (process.argv.length != 7) {
 }
 
 var styleFile = require('path').join(__dirname, 'app/src/main/res/values/styles.xml');
+var colorFile = require('path').join(__dirname, 'app/src/main/res/values/colors.xml');
 
 var theme = process.argv[2].toLowerCase();
 var actionBarColor = process.argv[3].toLowerCase();
@@ -104,6 +105,12 @@ if (titleColor !== '' && titleColor !== defaultTitleColor) {
     var s = '<item name="android:textColorPrimary">#' + titleColor + '</item>';
     replaceStringInFile(styleFile, '<!--GoNative placeholder: titleTextColor-->', s);
 }
+
+// tab foreground color
+var tabForegroundColor = titleColor == '' ? defaultTitleColor : titleColor;
+console.log('Setting tab foreground color to ' + tabForegroundColor);
+replaceStringInFile(colorFile, '<color name="tab_foreground_color">#FFFFFF</color>', 
+    '<color name="tab_foreground_color">#' + tabForegroundColor +'</color>');
 
 // set accent color
 if (accentColor !== '' && accentColor !== defaultAccentColor) {

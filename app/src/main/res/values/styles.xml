@@ -6,6 +6,9 @@
     </style>
 
     <style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">
+        <!--Remove action bar shadow. We are managing it ourselves with the tabs.-->
+        <item name="android:windowContentOverlay">@null</item>
+
         <!--GoNative placeholder: colorPrimary-->
         <!--GoNative placeholder: colorPrimaryDark-->
         <!--GoNative placeholder: titleTextColor-->
