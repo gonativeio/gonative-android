@@ -3,11 +3,11 @@
 BASEDIR=$(dirname $0)
 sips -z 1024 1024 -s format png --out $BASEDIR/AppIconTemp.png $BASEDIR/AppIcon 2>&1
 
-convert -size 1024x1024 xc:none -draw "roundrectangle 0,0,1024,1024,80,80" $BASEDIR/mask.png
-convert $BASEDIR/AppIconTemp.png -matte $BASEDIR/mask.png -compose DstIn -composite $BASEDIR/AppIcon
+convert -size 1024x1024 xc:none -draw "roundrectangle 0,0,1024,1024,80,80" $BASEDIR/mask.png 2>&1
+convert $BASEDIR/AppIconTemp.png -matte $BASEDIR/mask.png -compose DstIn -composite $BASEDIR/AppIcon 2>&1
 
-rm $BASEDIR/AppIconTemp.png
-rm $BASEDIR/mask.png
+rm -f $BASEDIR/AppIconTemp.png
+rm -f $BASEDIR/mask.png
 
 sips -z 48 48 -s format png --out $BASEDIR/app/src/main/res/drawable-mdpi/ic_launcher.png $BASEDIR/AppIcon 2>&1
 sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/drawable-hdpi/ic_launcher.png $BASEDIR/AppIcon 2>&1
