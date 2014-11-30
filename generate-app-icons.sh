@@ -1,6 +1,13 @@
 #!/bin/sh
 
 BASEDIR=$(dirname $0)
+sips -z 1024 1024 -s format png --out $BASEDIR/AppIconTemp.png $BASEDIR/AppIcon 2>&1
+
+convert -size 1024x1024 xc:none -draw "roundrectangle 0,0,1024,1024,80,80" mask.png
+convert AppIconTemp.png -matte mask.png -compose DstIn -composite AppIcon
+
+rm AppIconTemp.png
+rm mask.png
 
 sips -z 48 48 -s format png --out $BASEDIR/app/src/main/res/drawable-mdpi/ic_launcher.png $BASEDIR/AppIcon 2>&1
 sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/drawable-hdpi/ic_launcher.png $BASEDIR/AppIcon 2>&1
