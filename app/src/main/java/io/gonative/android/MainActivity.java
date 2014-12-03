@@ -252,7 +252,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
         // tab navigation
         ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
         this.slidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
-        this.tabManager = new TabManager(this);
+        this.tabManager = new TabManager(this, pager);
         pager.setAdapter(this.tabManager);
         this.slidingTabStrip.setViewPager(pager);
         this.slidingTabStrip.setTabClickListener(this.tabManager);
@@ -367,6 +367,8 @@ public class MainActivity extends ActionBarActivity implements Observer {
             logout();
         else
             this.mWebview.loadUrl(url);
+
+        if (this.tabManager != null) this.tabManager.selectTab(url, null);
     }
 
     public void loadUrlAndJavascript(String url, String javascript) {
@@ -380,6 +382,8 @@ public class MainActivity extends ActionBarActivity implements Observer {
             this.postLoadJavascript = javascript;
             loadUrl(url);
         }
+
+        if (this.tabManager != null) this.tabManager.selectTab(url, javascript);
     }
 
     public void runJavascript(String javascript) {

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
  */
 public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnTabClickListener {
     private MainActivity mainActivity;
+    private ViewPager viewPager;
     private String currentMenuId;
     private String currentUrl;
     private BroadcastReceiver broadcastReceiver;
@@ -32,8 +34,9 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
         // disable instantiation without mainActivity
     }
 
-    public TabManager(MainActivity mainActivity) {
+    public TabManager(MainActivity mainActivity, ViewPager viewPager) {
         this.mainActivity = mainActivity;
+        this.viewPager = viewPager;
 
         this.broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -110,6 +113,34 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
                 mainActivity.hideTabs();
             }
         });
+    }
+
+    public boolean selectTab(String url, String javascript) {
+        if (url == null) return false;
+
+        if (this.tabs != null) {
+            for (int i = 0; i < this.tabs.length(); i++) {
+                JSONObject entry = this.tabs.optJSONObject(i);
+                if (entry != null) {
+                    String entryUrl = entry.optString("url");
+                    String entryJs = entry.optString("javascript");
+
+                    if (entryUrl == null) continue;
+
+                    if (url.equals(entryUrl) &&
+                            ((javascript == null && entryJs == null) ||
+                                    (javascript != null && javascript.equals(entryJs)))) {
+                        if (this.viewPager != null) {
+                            this.viewPager.setCurrentItem(i);
+                            return true;
+                        }
+                    }
+
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override

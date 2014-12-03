@@ -53,6 +53,8 @@ public class AppConfig {
     public String deviceRegKey;
     public String userAgent;
     public int forceSessionCookieExpiry;
+    public ArrayList<Pattern> userAgentRegexes;
+    public ArrayList<String> userAgentStrings;
 
     // navigation
     public HashMap<String,JSONArray> menus;
@@ -190,6 +192,11 @@ public class AppConfig {
                 this.publicKey = optString(general, "publicKey");
                 this.deviceRegKey = optString(general, "deviceRegKey");
                 this.forceSessionCookieExpiry = general.optInt("forceSessionCookieExpiry", 0);
+                // forceSessionCookieExpiry requires direct parsing of http headers, which webview
+                // does not allow.
+                if (this.forceSessionCookieExpiry > 0) this.interceptHtml = true;
+
+                processUserAgentRegexes(general.optJSONArray("userAgentRegexes"));
             }
 
 
@@ -280,15 +287,11 @@ public class AppConfig {
             JSONObject styling = this.json.optJSONObject("styling");
 
             this.customCSS = optString(styling, "customCSS");
+            // css and viewport require manipulation of html before it is sent to the webview
+            if (this.customCSS != null) this.interceptHtml = true;
 
             this.forceViewportWidth = styling.optDouble("forceViewportWidth", Double.NaN);
-
-            // css and viewport require manipulation of html before it is sent to the webview
-            // forceSessionCookieExpiry requires direct parsing of http headers, which webview
-            // does not allow.
-            this.interceptHtml = this.customCSS != null
-                    || !Double.isNaN(this.forceViewportWidth)
-                    || this.forceSessionCookieExpiry > 0;
+            if (!Double.isNaN(this.forceViewportWidth)) this.interceptHtml = true;
 
             this.showActionBar = styling.optBoolean("showActionBar", true);
 
@@ -623,6 +626,46 @@ public class AppConfig {
                 }
             }
         }
+    }
+
+    private void processUserAgentRegexes(JSONArray config) {
+        if (config == null) return;
+
+        this.userAgentRegexes = new ArrayList<Pattern>(config.length());
+        this.userAgentStrings = new ArrayList<String>(config.length());
+
+        for (int i = 0; i < config.length(); i++) {
+            JSONObject entry = config.optJSONObject(i);
+            if (entry != null) {
+                String regex = optString(entry, "regex");
+                String agent = optString(entry, "userAgent");
+
+                if (regex != null && agent != null) {
+                    try {
+                        Pattern pattern = Pattern.compile(regex);
+                        this.userAgentRegexes.add(pattern);
+                        this.userAgentStrings.add(agent);
+                        this.interceptHtml = true;
+                    } catch (PatternSyntaxException e) {
+                        Log.e(TAG, "Syntax error with user agent regex", e);
+                    }
+                }
+            }
+        }
+    }
+
+    public String userAgentForUrl(String url) {
+        if (url == null) url = "";
+
+        if (this.userAgentRegexes != null) {
+            for (int i = 0; i < this.userAgentRegexes.size(); i++) {
+                if (this.userAgentRegexes.get(i).matcher(url).matches()) {
+                    return this.userAgentStrings.get(i);
+                }
+            }
+        }
+
+        return this.userAgent;
     }
 
     public synchronized static AppConfig getInstance(Context context){

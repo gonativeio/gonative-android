@@ -53,7 +53,12 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
 
                 connection = (HttpURLConnection) parsedUrl.openConnection();
                 connection.setInstanceFollowRedirects(false);
-                connection.setRequestProperty("User-Agent", appConfig.userAgent);
+                String customUserAgent = appConfig.userAgentForUrl(parsedUrl.toString());
+                if (customUserAgent != null) {
+                    connection.setRequestProperty("User-Agent", customUserAgent);
+                } else {
+                    connection.setRequestProperty("User-Agent", appConfig.userAgent);
+                }
                 if (isReload)
                     connection.setRequestProperty("Cache-Control", "no-cache");
 
