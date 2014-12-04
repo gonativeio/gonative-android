@@ -256,6 +256,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
         pager.setAdapter(this.tabManager);
         this.slidingTabStrip.setViewPager(pager);
         this.slidingTabStrip.setTabClickListener(this.tabManager);
+
+        // custom colors
+        if (appConfig.tabBarBackgroundColor != null)
+            this.slidingTabStrip.setBackgroundColor(appConfig.tabBarBackgroundColor);
+        if (appConfig.tabBarTextColor != null)
+            this.slidingTabStrip.setTextColor(appConfig.tabBarTextColor);
+        if (appConfig.tabBarIndicatorColor != null)
+            this.slidingTabStrip.setIndicatorColor(appConfig.tabBarIndicatorColor);
         hideTabs();
 
         // actions in action bar

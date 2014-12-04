@@ -83,6 +83,9 @@ public class AppConfig {
     public Integer sidebarBackgroundColor;
     public Integer sidebarForegroundColor;
     public Integer tintColor;
+    public Integer tabBarTextColor;
+    public Integer tabBarBackgroundColor;
+    public Integer tabBarIndicatorColor;
     public String customCSS;
     public double forceViewportWidth;
     public String androidTheme;
@@ -305,6 +308,10 @@ public class AppConfig {
             this.sidebarForegroundColor = LeanUtils.parseColor(sideForeColor);
             String tintColor = AppConfig.optString(styling, "androidTintColor");
             this.tintColor = LeanUtils.parseColor(tintColor);
+
+            this.tabBarBackgroundColor = LeanUtils.parseColor(AppConfig.optString(styling, "androidTabBarBackgroundColor"));
+            this.tabBarTextColor = LeanUtils.parseColor(AppConfig.optString(styling, "androidTabBarTextColor"));
+            this.tabBarIndicatorColor = LeanUtils.parseColor(AppConfig.optString(styling, "androidTabBarIndicatorColor"));
 
             this.interactiveDelay = styling.optDouble("transitionInteractiveDelayMax", Double.NaN);
             this.hideTitleInActionBar = styling.optBoolean("androidHideTitleInActionBar", false);
