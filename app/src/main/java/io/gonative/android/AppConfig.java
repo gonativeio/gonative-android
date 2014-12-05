@@ -96,6 +96,7 @@ public class AppConfig {
     public boolean hideTitleInActionBar;
     public boolean showLogoInActionBar;
     public boolean showRefreshButton;
+    public ArrayList<Pattern> navigationTitleImageRegexes;
 
     // forms
     public String searchTemplateUrl;
@@ -324,6 +325,8 @@ public class AppConfig {
                 else if (this.androidTheme.equalsIgnoreCase("light")) this.actionbarForegroundColor = Color.BLACK;
                 else this.actionbarForegroundColor = Color.WHITE;
             }
+
+            processNavigationTitleImage(styling.opt("navigationTitleImage"));
 
             ////////////////////////////////////////////////////////////
             // Permissions
@@ -661,6 +664,38 @@ public class AppConfig {
         }
     }
 
+    private void processNavigationTitleImage(Object navTitleImage) {
+        this.navigationTitleImageRegexes = new ArrayList<Pattern>();
+
+        if (navTitleImage == null) return;
+
+        if (navTitleImage instanceof  Boolean) {
+            if ((Boolean)navTitleImage) {
+                // match everything
+                this.navigationTitleImageRegexes.add(Pattern.compile(".*"));
+            } else {
+                // match nothing
+                this.navigationTitleImageRegexes.add(Pattern.compile("a^"));
+            }
+
+            return;
+        }
+
+        if (navTitleImage instanceof JSONArray) {
+            JSONArray array = (JSONArray)navTitleImage;
+            for (int i = 0; i < array.length(); i++) {
+                String regex = array.optString(i);
+                if (regex != null) {
+                    try {
+                        this.navigationTitleImageRegexes.add(Pattern.compile(regex));
+                    } catch (PatternSyntaxException e) {
+                        Log.e(TAG, "Problem with navigation title image regex: " + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+    }
+
     public String userAgentForUrl(String url) {
         if (url == null) url = "";
 
@@ -673,6 +708,16 @@ public class AppConfig {
         }
 
         return this.userAgent;
+    }
+
+    public boolean shouldShowNavigationTitleImageForUrl(String url) {
+        if (url == null || this.navigationTitleImageRegexes == null)
+            return this.showLogoInActionBar;
+
+        for (Pattern regex : this.navigationTitleImageRegexes) {
+            if (regex.matcher(url).matches()) return true;
+        }
+        return false;
     }
 
     public synchronized static AppConfig getInstance(Context context){

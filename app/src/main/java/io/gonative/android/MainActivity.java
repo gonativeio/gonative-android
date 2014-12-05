@@ -81,6 +81,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
     private PagerSlidingTabStrip slidingTabStrip;
+    private ImageView navigationTitleImage;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private TabManager tabManager;
@@ -235,18 +236,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             }
 
-            if (appConfig.hideTitleInActionBar) {
-                getSupportActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
-            }
-
-            if (appConfig.showLogoInActionBar) {
-                // why use a custom view and not setDisplayUseLogoEnabled and setLogo?
-                // Because logo doesn't work!
-                getSupportActionBar().setDisplayShowCustomEnabled(true);
-                ImageView iv = new ImageView(this);
-                iv.setImageResource(R.drawable.ic_actionbar);
-                getSupportActionBar().setCustomView(iv);
-            }
+            showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
         }
 
         // tab navigation
@@ -498,6 +488,29 @@ public class MainActivity extends ActionBarActivity implements Observer {
         wv.startAnimation(fadein);
     }
 
+    public void showLogoInActionBar(boolean show) {
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar == null) return;
+
+        actionBar.setDisplayOptions(show ? 0 : ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
+
+        if (show) {
+            // disable text title
+            actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+
+            // why use a custom view and not setDisplayUseLogoEnabled and setLogo?
+            // Because logo doesn't work!
+            actionBar.setDisplayShowCustomEnabled(true);
+            if (this.navigationTitleImage == null) {
+                this.navigationTitleImage = new ImageView(this);
+                this.navigationTitleImage.setImageResource(R.drawable.ic_actionbar);
+            }
+            actionBar.setCustomView(this.navigationTitleImage);
+        } else {
+            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
+            actionBar.setDisplayShowCustomEnabled(false);
+        }
+    }
 
 	public void updatePageTitle() {
         if (AppConfig.getInstance(this).useWebpageTitle) {

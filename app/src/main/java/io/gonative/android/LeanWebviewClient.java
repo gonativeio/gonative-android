@@ -199,6 +199,9 @@ public class LeanWebviewClient extends WebViewClient{
             });
         }
 
+        // nav title image
+        mainActivity.showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
+
         // check to see if the webview exists in pool.
         Pair<LeanWebView, WebViewPoolDisownPolicy> pair = WebViewPool.getInstance().webviewForUrl(url);
         LeanWebView poolWebview = pair.first;
