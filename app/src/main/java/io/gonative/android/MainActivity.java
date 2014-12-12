@@ -347,6 +347,16 @@ public class MainActivity extends ActionBarActivity implements Observer {
         loadUrl(this.backHistory.pop());
     }
 
+    public void sharePage() {
+        String url = this.mWebview.getUrl();
+        if (url == null) return;
+
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.putExtra(Intent.EXTRA_TEXT, mWebview.getUrl());
+        startActivity(Intent.createChooser(share, getString(R.string.action_share)));
+    }
+
     public void logout() {
         this.mWebview.stopLoading();
 
