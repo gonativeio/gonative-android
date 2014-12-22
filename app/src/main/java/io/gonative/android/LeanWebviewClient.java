@@ -29,6 +29,7 @@ public class LeanWebviewClient extends WebViewClient{
     private String profilePickerExec;
     private String analyticsExec;
     private String dynamicUpdateExec;
+    private String currentWebviewUrl;
 
     private boolean mVisitedLoginOrSignup = false;
 
@@ -104,6 +105,7 @@ public class LeanWebviewClient extends WebViewClient{
 
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
+        this.currentWebviewUrl = view.getUrl();
         return shouldOverrideUrlLoading(view, url, false);
     }
 
@@ -230,7 +232,7 @@ public class LeanWebviewClient extends WebViewClient{
         }
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Reload &&
-                !LeanUtils.urlsMatchOnPath(url, view.getUrl())) {
+                !LeanUtils.urlsMatchOnPath(url, this.currentWebviewUrl)) {
             this.mainActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

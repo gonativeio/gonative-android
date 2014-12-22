@@ -181,6 +181,26 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
         this.postLoadJavascript = getIntent().getStringExtra("postLoadJavascript");
 
+        // tab navigation
+        ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
+        this.slidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
+        this.tabManager = new TabManager(this, pager);
+        pager.setAdapter(this.tabManager);
+        this.slidingTabStrip.setViewPager(pager);
+        this.slidingTabStrip.setTabClickListener(this.tabManager);
+
+        // custom colors
+        if (appConfig.tabBarBackgroundColor != null)
+            this.slidingTabStrip.setBackgroundColor(appConfig.tabBarBackgroundColor);
+        if (appConfig.tabBarTextColor != null)
+            this.slidingTabStrip.setTextColor(appConfig.tabBarTextColor);
+        if (appConfig.tabBarIndicatorColor != null)
+            this.slidingTabStrip.setIndicatorColor(appConfig.tabBarIndicatorColor);
+        hideTabs();
+
+        // actions in action bar
+        this.actionManager = new ActionManager(this);
+
         // load url
         String url = null;
         // first check intent in case it was created from push notification
@@ -238,26 +258,6 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
             showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
         }
-
-        // tab navigation
-        ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
-        this.slidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
-        this.tabManager = new TabManager(this, pager);
-        pager.setAdapter(this.tabManager);
-        this.slidingTabStrip.setViewPager(pager);
-        this.slidingTabStrip.setTabClickListener(this.tabManager);
-
-        // custom colors
-        if (appConfig.tabBarBackgroundColor != null)
-            this.slidingTabStrip.setBackgroundColor(appConfig.tabBarBackgroundColor);
-        if (appConfig.tabBarTextColor != null)
-            this.slidingTabStrip.setTextColor(appConfig.tabBarTextColor);
-        if (appConfig.tabBarIndicatorColor != null)
-            this.slidingTabStrip.setIndicatorColor(appConfig.tabBarIndicatorColor);
-        hideTabs();
-
-        // actions in action bar
-        this.actionManager = new ActionManager(this);
 
         // style sidebar
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
