@@ -303,7 +303,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
             if (parent != null) {
                 parent.removeView(this.mWebview);
             }
-            this.mWebview.destroy();
+            if (!this.isPoolWebview) this.mWebview.destroy();
         }
     }
 
@@ -448,6 +448,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
         }
     }
 
+    // shows webview with no animation
     public void showWebviewImmediately() {
         startedLoading = false;
         stopCheckingReadyStatus();

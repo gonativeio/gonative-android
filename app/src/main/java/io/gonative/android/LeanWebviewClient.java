@@ -40,12 +40,9 @@ public class LeanWebviewClient extends WebViewClient{
 
         // profile picker
         if (appConfig.profilePickerJS != null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("gonative_profile_picker.parseJson(eval(");
-            sb.append(LeanUtils.jsWrapString(appConfig.profilePickerJS));
-            sb.append("))");
-
-            this.profilePickerExec = sb.toString();
+            this.profilePickerExec = "gonative_profile_picker.parseJson(eval("
+                    + LeanUtils.jsWrapString(appConfig.profilePickerJS)
+                    + "))";
         }
 
         // analytics
@@ -70,12 +67,9 @@ public class LeanWebviewClient extends WebViewClient{
 
         // dynamic config updates
         if (appConfig.updateConfigJS != null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("gonative_dynamic_update.parseJson(eval(");
-            sb.append(LeanUtils.jsWrapString(appConfig.updateConfigJS));
-            sb.append("))");
-
-            this.dynamicUpdateExec = sb.toString();
+            this.dynamicUpdateExec = "gonative_dynamic_update.parseJson(eval("
+                    + LeanUtils.jsWrapString(appConfig.updateConfigJS)
+                    + "))";
         }
 	}
 	
@@ -113,7 +107,7 @@ public class LeanWebviewClient extends WebViewClient{
         return shouldOverrideUrlLoading(view, url, false);
     }
 
-    public boolean shouldOverrideUrlLoadingNoIntercept(WebView view, final String url) {
+    public boolean shouldOverrideUrlLoadingNoIntercept(final WebView view, final String url) {
 //		Log.d(TAG, "shouldOverrideUrl: " + url);
 
         // return if url is null (can happen if clicking refresh when there is no page loaded)
@@ -209,26 +203,41 @@ public class LeanWebviewClient extends WebViewClient{
 
         // check to see if the webview exists in pool.
         Pair<LeanWebView, WebViewPoolDisownPolicy> pair = WebViewPool.getInstance().webviewForUrl(url);
-        LeanWebView poolWebview = pair.first;
+        final LeanWebView poolWebview = pair.first;
         WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Always) {
-            this.mainActivity.switchToWebview(poolWebview, true);
-            this.mainActivity.checkNavigationForPage(url);
+            this.mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.switchToWebview(poolWebview, true);
+                    mainActivity.checkNavigationForPage(url);
+                }
+            });
             WebViewPool.getInstance().disownWebview(poolWebview);
-            LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
+            LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(LeanWebviewClient.FINISHED_LOADING_MESSAGE));
             return true;
         }
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Never) {
-            this.mainActivity.switchToWebview(poolWebview, true);
-            this.mainActivity.checkNavigationForPage(url);
+            this.mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.switchToWebview(poolWebview, true);
+                    mainActivity.checkNavigationForPage(url);
+                }
+            });
             return true;
         }
 
         if (poolWebview != null && poolDisownPolicy == WebViewPoolDisownPolicy.Reload &&
                 !LeanUtils.urlsMatchOnPath(url, view.getUrl())) {
-            this.mainActivity.switchToWebview(poolWebview, true);
-            this.mainActivity.checkNavigationForPage(url);
+            this.mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.switchToWebview(poolWebview, true);
+                    mainActivity.checkNavigationForPage(url);
+                }
+            });
             return true;
         }
 
@@ -242,8 +251,10 @@ public class LeanWebviewClient extends WebViewClient{
     }
 
 	public boolean shouldOverrideUrlLoading(WebView view, String url, boolean isReload) {
+        if (url == null) return false;
+
         boolean shouldOverride = shouldOverrideUrlLoadingNoIntercept(view, url);
-        if (shouldOverride) return shouldOverride;
+        if (shouldOverride) return true;
 
         // intercept html
         if (AppConfig.getInstance(mainActivity).interceptHtml) {
@@ -281,7 +292,7 @@ public class LeanWebviewClient extends WebViewClient{
         mainActivity.startCheckingReadyStatus();
 
         // send broadcast message
-        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.STARTED_LOADING_MESSAGE));
+        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(LeanWebviewClient.STARTED_LOADING_MESSAGE));
     }
 
     public void showWebViewImmediately() {
@@ -309,7 +320,7 @@ public class LeanWebviewClient extends WebViewClient{
 
 		Uri uri = Uri.parse(url);		
 		if (isInternalUri(uri)){
-			CookieSyncManager.getInstance().sync();
+            CookieSyncManager.getInstance().sync();
 		}
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
@@ -349,7 +360,7 @@ public class LeanWebviewClient extends WebViewClient{
         }
 		
         // send broadcast message
-        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(this.FINISHED_LOADING_MESSAGE));
+        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(LeanWebviewClient.FINISHED_LOADING_MESSAGE));
 
 	}
 
