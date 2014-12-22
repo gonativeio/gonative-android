@@ -4,11 +4,13 @@ set -e
 DARK_ICONS=(
 ic_refresh_white_24dp.png
 ic_search_white_24dp.png
+ic_share_white_24dp.png
 )
 
 LIGHT_ICONS=(
 ic_refresh_black_24dp.png
 ic_search_black_24dp.png
+ic_share_black_24dp.png
 )
 
 DARK_DEFAULT_COLOR=ffffff
@@ -57,7 +59,7 @@ for drawable in `ls -d $BASEDIR/app/src/main/res/drawable*`; do
             convert $filePath -alpha extract temp_alpha_extract.png
             convert temp_alpha_extract.png -background "#$tintColor" -alpha shape $filePath
             rm -f temp_alpha_extract.png
-            pngcrush -q -rem allb -brute -reduce -ow $filePath
+            pngcrush -q -rem allb -brute -ow $filePath
         fi
     done
 done

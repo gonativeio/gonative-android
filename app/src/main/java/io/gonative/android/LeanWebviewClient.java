@@ -113,7 +113,7 @@ public class LeanWebviewClient extends WebViewClient{
         return shouldOverrideUrlLoading(view, url, false);
     }
 
-    public boolean shouldOverrideUrlLoadingNoIntercept(WebView view, String url) {
+    public boolean shouldOverrideUrlLoadingNoIntercept(WebView view, final String url) {
 //		Log.d(TAG, "shouldOverrideUrl: " + url);
 
         // return if url is null (can happen if clicking refresh when there is no page loaded)
@@ -126,7 +126,7 @@ public class LeanWebviewClient extends WebViewClient{
 
         Uri uri = Uri.parse(url);
 
-        AppConfig appConfig = AppConfig.getInstance(mainActivity);
+        final AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
         if(checkLoginSignup &&
                 appConfig.loginUrl != null &&
@@ -200,7 +200,12 @@ public class LeanWebviewClient extends WebViewClient{
         }
 
         // nav title image
-        mainActivity.showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
+        mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
+            }
+        });
 
         // check to see if the webview exists in pool.
         Pair<LeanWebView, WebViewPoolDisownPolicy> pair = WebViewPool.getInstance().webviewForUrl(url);

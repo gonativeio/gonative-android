@@ -21,14 +21,14 @@ sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/drawable-xhdpi/ic_ac
 sips -z 108 108 -s format png --out $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_actionbar.png $BASEDIR/AppIcon 2>&1
 sips -z 144 144 -s format png --out $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_actionbar.png $BASEDIR/AppIcon 2>&1
 
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-mdpi/ic_launcher.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-hdpi/ic_launcher.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-xhdpi/ic_launcher.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_launcher.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_launcher.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-mdpi/ic_launcher.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-hdpi/ic_launcher.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-xhdpi/ic_launcher.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_launcher.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_launcher.png 2>&1
 
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-mdpi/ic_actionbar.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-hdpi/ic_actionbar.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-xhdpi/ic_actionbar.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_actionbar.png 2>&1
-pngcrush -q -rem -allb -brute -reduce -ow $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_actionbar.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-mdpi/ic_actionbar.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-hdpi/ic_actionbar.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-xhdpi/ic_actionbar.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_actionbar.png 2>&1
+pngcrush -q -rem -allb -brute -ow $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_actionbar.png 2>&1
