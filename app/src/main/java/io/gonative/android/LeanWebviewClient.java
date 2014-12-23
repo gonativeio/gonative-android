@@ -166,6 +166,9 @@ public class LeanWebviewClient extends WebViewClient{
                 intent.putExtra("postLoadJavascript", mainActivity.postLoadJavascript);
                 mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
 
+                mainActivity.postLoadJavascript = null;
+                mainActivity.postLoadJavascriptForRefresh = null;
+
                 return true;
             }
             else if (newLevel < currentLevel && newLevel <= mainActivity.getParentUrlLevel()) {
@@ -309,6 +312,14 @@ public class LeanWebviewClient extends WebViewClient{
 	@Override
 	public void onPageFinished(WebView view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
+        super.onPageFinished(view, url);
+
+        AppConfig appConfig = AppConfig.getInstance(mainActivity);
+        if (url != null && appConfig.ignorePageFinishedRegexes != null) {
+            for (Pattern pattern: appConfig.ignorePageFinishedRegexes) {
+                if (pattern.matcher(url).matches()) return;
+            }
+        }
 
         mainActivity.runOnUiThread(new Runnable() {
             @Override
@@ -318,14 +329,11 @@ public class LeanWebviewClient extends WebViewClient{
         });
 
         UrlInspector.getInstance().inspectUrl(url);
-		super.onPageFinished(view, url);
 
 		Uri uri = Uri.parse(url);		
 		if (isInternalUri(uri)){
             CookieSyncManager.getInstance().sync();
 		}
-
-        AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
         if (appConfig.loginDetectionUrl != null) {
             if (mVisitedLoginOrSignup){

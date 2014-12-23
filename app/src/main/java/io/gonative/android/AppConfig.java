@@ -79,6 +79,8 @@ public class AppConfig {
     public ArrayList<Pattern> actionRegexes;
     public ArrayList<String> actionIDs;
 
+    public ArrayList<Pattern> ignorePageFinishedRegexes;
+
     // styling
     public Integer sidebarBackgroundColor;
     public Integer sidebarForegroundColor;
@@ -88,6 +90,7 @@ public class AppConfig {
     public Integer tabBarIndicatorColor;
     public String customCSS;
     public double forceViewportWidth;
+    public boolean zoomableForceViewport;
     public String androidTheme;
     public Integer actionbarForegroundColor;
     public boolean showActionBar = true;
@@ -283,6 +286,25 @@ public class AppConfig {
 
                 // refresh button
                 this.showRefreshButton = navigation.optBoolean("androidShowRefreshButton", true);
+
+                // ignore the "onPageFinished" event for certain URLs
+                JSONArray ignorePageFinished = navigation.optJSONArray("ignorePageFinishedRegexes");
+                this.ignorePageFinishedRegexes = new ArrayList<Pattern>();
+                if (ignorePageFinished != null) {
+                    for (int i = 0; i < ignorePageFinished.length(); i++) {
+                        if (!ignorePageFinished.isNull(i)) {
+                            String entry = ignorePageFinished.optString(i);
+                            if (entry != null) {
+                                try {
+                                    Pattern pattern = Pattern.compile(entry);
+                                    this.ignorePageFinishedRegexes.add(pattern);
+                                } catch (PatternSyntaxException e) {
+                                    Log.e(TAG, "Error parsing regex " + entry, e);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             ////////////////////////////////////////////////////////////
@@ -296,6 +318,8 @@ public class AppConfig {
 
             this.forceViewportWidth = styling.optDouble("forceViewportWidth", Double.NaN);
             if (!Double.isNaN(this.forceViewportWidth)) this.interceptHtml = true;
+
+            this.zoomableForceViewport = styling.optBoolean("zoomableForceViewport", false);
 
             this.showActionBar = styling.optBoolean("showActionBar", true);
 

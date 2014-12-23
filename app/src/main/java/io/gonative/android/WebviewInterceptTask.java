@@ -138,15 +138,21 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
                     builder.append("\" />");
                 }
                 if (!Double.isNaN(appConfig.forceViewportWidth)) {
-                    // we want to use user-scalable=no, but android has a bug that sets scale to
-                    // 1.0 if user-scalable=no. The workaround to is calculate the scale and set
-                    // it for initial, minimum, and maximum.
-                    // http://stackoverflow.com/questions/12723844/android-viewport-setting-user-scalable-no-breaks-width-zoom-level-of-viewpor
-                    double webViewWidth = webview.getWidth() / this.context.getResources().getDisplayMetrics().density;
-                    double viewportWidth = appConfig.forceViewportWidth;
-                    double scale = webViewWidth / viewportWidth;
-                    builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
-                            viewportWidth, scale, scale, scale));
+                    if (appConfig.zoomableForceViewport) {
+                        builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,maximum-scale=1.0\" />",
+                                appConfig.forceViewportWidth));
+                    }
+                    else {
+                        // we want to use user-scalable=no, but android has a bug that sets scale to
+                        // 1.0 if user-scalable=no. The workaround to is calculate the scale and set
+                        // it for initial, minimum, and maximum.
+                        // http://stackoverflow.com/questions/12723844/android-viewport-setting-user-scalable-no-breaks-width-zoom-level-of-viewpor
+                        double webViewWidth = webview.getWidth() / this.context.getResources().getDisplayMetrics().density;
+                        double viewportWidth = appConfig.forceViewportWidth;
+                        double scale = webViewWidth / viewportWidth;
+                        builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
+                                viewportWidth, scale, scale, scale));
+                    }
                 }
 
                 builder.append(origString.substring(insertPoint));

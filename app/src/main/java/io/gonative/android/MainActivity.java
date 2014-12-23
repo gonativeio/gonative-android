@@ -107,6 +107,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private PushManager pushManager;
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
+    protected String postLoadJavascriptForRefresh;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -180,6 +181,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 		setupWebview(wv);
 
         this.postLoadJavascript = getIntent().getStringExtra("postLoadJavascript");
+        this.postLoadJavascriptForRefresh = this.postLoadJavascript;
 
         // tab navigation
         ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
@@ -371,6 +373,9 @@ public class MainActivity extends ActionBarActivity implements Observer {
     }
 
     public void loadUrl(String url) {
+        this.postLoadJavascript = null;
+        this.postLoadJavascriptForRefresh = null;
+
         if (url.equalsIgnoreCase("gonative_logout"))
             logout();
         else
@@ -383,12 +388,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
         String currentUrl = this.mWebview.getUrl();
 
         if (url != null && currentUrl != null && url.equals(currentUrl)) {
-            hideWebview();
+//            hideWebview();
             runJavascript(javascript);
-            showWebview();
+            this.postLoadJavascriptForRefresh = javascript;
+//            showWebview();
         } else {
             this.postLoadJavascript = javascript;
-            loadUrl(url);
+            this.postLoadJavascriptForRefresh = javascript;
+            this.mWebview.loadUrl(url);
         }
 
         if (this.tabManager != null) this.tabManager.selectTab(url, javascript);
@@ -786,12 +793,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	        case R.id.action_search:
 	        	return true;
 	        case R.id.action_refresh:
-	        	if (this.mWebview.getUrl() != null && this.mWebview.getUrl().startsWith("data:")){
+                String url = this.mWebview.getUrl();
+	        	if (url != null && url.startsWith("data:")){
                     this.mWebview.goBack();
 	        		updateMenu();
 	        	}
 	        	else {
-                    this.mWebview.reload();
+                    this.postLoadJavascript = this.postLoadJavascriptForRefresh;
+                    this.mWebview.loadUrl(url);
 	        	}
 	        	return true;
         	default:
