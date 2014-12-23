@@ -427,6 +427,7 @@ public class AppConfig {
             processNavigationLevels(parsedJson.optJSONObject("navigationLevels"));
             processNavigationTitles(parsedJson.optJSONObject("navigationTitles"));
             processWebViewPools(parsedJson.optJSONArray("webviewPools"));
+            processNavigationTitleImage(parsedJson.opt("navigationTitleImage"));
         }
     }
 
