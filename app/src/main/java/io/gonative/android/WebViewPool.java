@@ -37,6 +37,7 @@ public class WebViewPool {
     private static WebViewPool instance;
     private Context context;
 
+    private boolean isInitialized;
     private Map<String, LeanWebView> urlToWebview;
     private Map<String, WebViewPoolDisownPolicy> urlToDisownPolicy;
     private List<Set<String>> urlSets;
@@ -62,6 +63,9 @@ public class WebViewPool {
     }
 
     public void init(Activity activity) {
+        if (this.isInitialized) return;
+        this.isInitialized = true;
+
         // webviews must be instantiated from activity context
         this.context = activity;
 

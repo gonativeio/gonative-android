@@ -192,8 +192,8 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
             String javascript = entry.optString("javascript");
 
             if (url != null && !url.isEmpty()) {
-                if (javascript != null) mainActivity.loadUrlAndJavascript(url, javascript);
-                else mainActivity.loadUrl(url);
+                if (javascript != null) mainActivity.loadUrlAndJavascript(url, javascript, true);
+                else mainActivity.loadUrl(url, true);
             }
         }
     }

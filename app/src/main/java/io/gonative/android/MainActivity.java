@@ -140,10 +140,10 @@ public class MainActivity extends ActionBarActivity implements Observer {
                 this.pushManager = new PushManager(this);
                 this.pushManager.register();
             }
-
-            // webview pools
-            WebViewPool.getInstance().init(this);
         }
+
+        // webview pools
+        WebViewPool.getInstance().init(this);
 
         // WebView debugging
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -373,6 +373,10 @@ public class MainActivity extends ActionBarActivity implements Observer {
     }
 
     public void loadUrl(String url) {
+        loadUrl(url, false);
+    }
+
+    public void loadUrl(String url, boolean isFromTab) {
         this.postLoadJavascript = null;
         this.postLoadJavascriptForRefresh = null;
 
@@ -381,10 +385,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
         else
             this.mWebview.loadUrl(url);
 
-        if (this.tabManager != null) this.tabManager.selectTab(url, null);
+        if (!isFromTab && this.tabManager != null) this.tabManager.selectTab(url, null);
     }
 
     public void loadUrlAndJavascript(String url, String javascript) {
+        loadUrlAndJavascript(url, javascript, false);
+    }
+
+    public void loadUrlAndJavascript(String url, String javascript, boolean isFromTab) {
         String currentUrl = this.mWebview.getUrl();
 
         if (url != null && currentUrl != null && url.equals(currentUrl)) {
@@ -398,7 +406,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
             this.mWebview.loadUrl(url);
         }
 
-        if (this.tabManager != null) this.tabManager.selectTab(url, javascript);
+        if (!isFromTab && this.tabManager != null) this.tabManager.selectTab(url, javascript);
     }
 
     public void runJavascript(String javascript) {
