@@ -3,5 +3,5 @@
     <color name="sidebarSeparatorColor">#30808080</color>
 
     <color name="background_tab_pressed">#1AFFFFFF</color>
-    <color name="tab_foreground_color">#ffffff</color>
+    <color name="tab_foreground_color">#FFFFFF</color>
 </resources>
