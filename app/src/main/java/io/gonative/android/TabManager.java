@@ -118,6 +118,8 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     public boolean selectTab(String url, String javascript) {
         if (url == null) return false;
 
+        if (javascript == null) javascript = "";
+
         if (this.tabs != null) {
             for (int i = 0; i < this.tabs.length(); i++) {
                 JSONObject entry = this.tabs.optJSONObject(i);
@@ -126,10 +128,9 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
                     String entryJs = entry.optString("javascript");
 
                     if (entryUrl == null) continue;
+                    if (entryJs == null) entryJs = "";
 
-                    if (url.equals(entryUrl) &&
-                            ((javascript == null && entryJs == null) ||
-                                    (javascript != null && javascript.equals(entryJs)))) {
+                    if (url.equals(entryUrl) && javascript.equals(entryJs)) {
                         if (this.viewPager != null) {
                             this.viewPager.setCurrentItem(i);
                             return true;

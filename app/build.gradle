@@ -2,7 +2,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.1"
+    buildToolsVersion "21.1.2"
 
     defaultConfig {
         minSdkVersion 14
@@ -25,8 +25,9 @@ android {
 	    applicationIdSuffix ".debug"
         }
         release {
-            runProguard true
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            zipAlignEnabled true
             signingConfig signingConfigs.release
         }
     }

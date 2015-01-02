@@ -25,7 +25,7 @@ import java.net.URL;
  */
 public class FileDownloader implements DownloadListener{
     private static final String TAG = DownloadListener.class.getName();
-    public static final String AUTHORITY = BuildConfig.PACKAGE_NAME + ".fileprovider";
+    public static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private Context context;
     private ProgressDialog progressDialog;
 
