@@ -34,6 +34,8 @@ public class LeanWebView extends WebView{
 
     @Override
     public void loadUrl(String url) {
+        if (url == null) return;
+
         if (url.startsWith("javascript:"))
             LeanUtils.runJavascriptOnWebView(this, url.substring("javascript:".length()));
         else if (mClient == null || !mClient.shouldOverrideUrlLoading(this, url)) {

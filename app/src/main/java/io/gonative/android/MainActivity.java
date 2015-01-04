@@ -377,6 +377,8 @@ public class MainActivity extends ActionBarActivity implements Observer {
     }
 
     public void loadUrl(String url, boolean isFromTab) {
+        if (url == null) return;
+
         this.postLoadJavascript = null;
         this.postLoadJavascriptForRefresh = null;
 

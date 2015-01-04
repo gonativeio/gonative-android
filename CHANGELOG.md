@@ -1,5 +1,9 @@
 # Changelog
 
+## 2014-01-04
+
+- Fix a crash on reload with no page loaded.
+
 ## 2015-01-02
 
 - Update to latest gradle and build tools versions, making the project compatible with Android Studio 1.0.
