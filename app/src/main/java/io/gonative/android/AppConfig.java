@@ -690,9 +690,9 @@ public class AppConfig {
     }
 
     private void processNavigationTitleImage(Object navTitleImage) {
-        this.navigationTitleImageRegexes = new ArrayList<Pattern>();
-
         if (navTitleImage == null) return;
+
+        this.navigationTitleImageRegexes = new ArrayList<Pattern>();
 
         if (navTitleImage instanceof  Boolean) {
             if ((Boolean)navTitleImage) {
