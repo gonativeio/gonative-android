@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/*
+    This file has been MODIFIED from the original by Weiyin He
+ */
+
 package com.astuetz;
 
 import android.annotation.SuppressLint;

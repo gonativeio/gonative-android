@@ -33,4 +33,11 @@
         android:layout_centerInParent="true"
         android:visibility="invisible"/>
 
+    <RelativeLayout
+        android:id="@+id/fullscreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="invisible"/>
+
 </RelativeLayout>

@@ -30,17 +30,14 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
-import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
-import android.webkit.JsResult;
 import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
 
@@ -62,7 +59,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
-	private static final int REQUEST_SELECT_FILE = 100;
+	public static final int REQUEST_SELECT_FILE = 100;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
@@ -70,6 +67,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private static final float ACTIONBAR_ELEVATION = 12.0f;
 
     private LeanWebView mWebview;
+    private GoNativeWebChromeClient webChromeClient;
     boolean isPoolWebview = false;
     private Stack<String> backHistory = new Stack<String>();
 
@@ -78,6 +76,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
     private ProgressBar mProgress;
+    private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
     private PagerSlidingTabStrip slidingTabStrip;
@@ -162,6 +161,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
             setContentView(R.layout.activity_gonative_nonav);
 
         mProgress = (ProgressBar) findViewById(R.id.progress);
+        this.fullScreenLayout = (RelativeLayout)findViewById(R.id.fullscreen);
 
 		LeanWebView wv = (LeanWebView) findViewById(R.id.webview);
 
@@ -427,7 +427,9 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	private void setupWebview(WebView wv){
         LeanUtils.setupWebview(wv, this);
 
-        wv.setWebChromeClient(new CustomWebChromeClient());
+        this.webChromeClient = new GoNativeWebChromeClient(this);
+        wv.setWebChromeClient(this.webChromeClient);
+
         wv.setWebViewClient(new LeanWebviewClient(MainActivity.this));
         wv.setDownloadListener(fileDownloader);
 
@@ -665,6 +667,10 @@ public class MainActivity extends ActionBarActivity implements Observer {
     @Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            if (this.webChromeClient != null && this.webChromeClient.onBackPressed()) {
+                return true;
+            }
+
 			if (isDrawerOpen()){
 				mDrawerLayout.closeDrawers();
 				return true;
@@ -904,50 +910,6 @@ public class MainActivity extends ActionBarActivity implements Observer {
         mDrawerLayout.closeDrawers();
     }
 
-    protected class CustomWebChromeClient extends WebChromeClient {
-        @Override
-        public boolean onJsAlert(WebView view, String url, String message, JsResult result){
-            Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-            result.confirm();
-            return true;
-        }
-
-        @Override
-        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-            callback.invoke(origin, AppConfig.getInstance(MainActivity.this).usesGeolocation, true);
-        }
-
-        // For Android > 4.1
-        public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture) {
-            mUploadMessage = uploadMsg;
-
-            if (acceptType == null) acceptType = "*/*";
-
-            // Filesystem.
-            final Intent galleryIntent = new Intent();
-            galleryIntent.setType(acceptType);
-            galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
-            galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
-
-            startActivityForResult(galleryIntent, REQUEST_SELECT_FILE);
-        }
-
-        // Android 3.0 + 
-        public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType) {
-            openFileChooser(uploadMsg, acceptType, null);
-        }
-
-        //Android 3.0
-        public void openFileChooser(ValueCallback<Uri> uploadMsg) {
-            openFileChooser(uploadMsg, null, null);
-        }
-        
-        @Override
-        public void onReceivedTitle(WebView view, String title){
-            updatePageTitle();
-        }
-    }
-
     public boolean isRoot() {
         return isRoot;
     }
@@ -1019,6 +981,46 @@ public class MainActivity extends ActionBarActivity implements Observer {
         if (actionBar != null) {
             actionBar.setElevation(ACTIONBAR_ELEVATION);
         }
+    }
+
+    public void toggleFullscreen(boolean fullscreen) {
+        ActionBar actionBar = this.getSupportActionBar();
+        View decorView = getWindow().getDecorView();
+        int visibility = decorView.getSystemUiVisibility();
+        int fullscreenFlags = View.SYSTEM_UI_FLAG_LOW_PROFILE |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+
+        if (Build.VERSION.SDK_INT >= 16) {
+            fullscreenFlags |= View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        }
+
+        if (Build.VERSION.SDK_INT >= 19) {
+            fullscreenFlags |= View.SYSTEM_UI_FLAG_IMMERSIVE |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+        }
+
+        if (fullscreen) {
+            visibility |= fullscreenFlags;
+            if (actionBar != null) actionBar.hide();
+        } else {
+            visibility &= ~fullscreenFlags;
+            if (actionBar != null) actionBar.show();
+        }
+
+        decorView.setSystemUiVisibility(visibility);
+    }
+
+    public ValueCallback<Uri> getUploadMessage() {
+        return mUploadMessage;
+    }
+
+    public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
+        this.mUploadMessage = mUploadMessage;
+    }
+
+    public RelativeLayout getFullScreenLayout() {
+        return fullScreenLayout;
     }
 
     public class StatusCheckerBridge {
