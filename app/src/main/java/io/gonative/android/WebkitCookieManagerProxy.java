@@ -65,7 +65,8 @@ public class WebkitCookieManagerProxy extends CookieManager {
                                 Calendar calendar = Calendar.getInstance();
                                 calendar.add(Calendar.SECOND, sessionExpiry);
                                 Date expiryDate = calendar.getTime();
-                                expiryString = String.format("; expires=%s; Max-Age=%d", DateUtils.formatDate(expiryDate), sessionExpiry);
+                                expiryString = "; expires=" + DateUtils.formatDate(expiryDate) +
+                                        "; Max-Age=" + Integer.toString(sessionExpiry);
                             }
 
                             StringBuilder newHeader = new StringBuilder();

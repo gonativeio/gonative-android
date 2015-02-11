@@ -35,7 +35,7 @@ public class WebViewPool {
     private static final String TAG = WebViewPool.class.getName();
     // singleton
     private static WebViewPool instance;
-    private Context context;
+    private Activity context;
 
     private boolean isInitialized;
     private Map<String, LeanWebView> urlToWebview;
@@ -84,6 +84,7 @@ public class WebViewPool {
                     WebViewPool pool = WebViewPool.this;
                     pool.isMainActivityLoading = true;
                     if (pool.currentLoadingWebview != null) {
+                        // onReceive is always called on the main thread, so this is safe.
                         pool.currentLoadingWebview.stopLoading();
                         pool.isLoading = false;
                     }
@@ -105,11 +106,17 @@ public class WebViewPool {
 
         this.webviewClient = new WebViewClient(){
             @Override
-            public void onPageFinished(WebView view, String url) {
+            public void onPageFinished(final WebView view, String url) {
                 super.onPageFinished(view, url);
 
                 WebViewPool pool = WebViewPool.this;
-                view.setWebViewClient(null);
+                context.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        view.setWebViewClient(null);
+                    }
+                });
+
                 pool.urlToWebview.put(pool.currentLoadingUrl, pool.currentLoadingWebview);
                 pool.currentLoadingUrl = null;
                 pool.currentLoadingWebview = null;
@@ -199,29 +206,43 @@ public class WebViewPool {
         if (this.isMainActivityLoading || this.isLoading) return;
 
         if (this.currentLoadingWebview != null && this.currentLoadingUrl != null) {
-            this.currentLoadingWebview.loadUrl(this.currentLoadingUrl);
+            context.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    currentLoadingWebview.loadUrl(currentLoadingUrl);
+                }
+            });
             this.isLoading = true;
             return;
         }
 
         if (!this.urlsToLoad.isEmpty()) {
-            String urlString = this.urlsToLoad.iterator().next();
+            final String urlString = this.urlsToLoad.iterator().next();
             this.currentLoadingUrl = urlString;
 
-            LeanWebView webview = new LeanWebView(this.context);
-            LeanUtils.setupWebview(webview, this.context);
+            context.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    LeanWebView webview = new LeanWebView(context);
+                    currentLoadingWebview = webview;
+                    urlsToLoad.remove(urlString);
+                    LeanUtils.setupWebview(webview, context);
 
-            // size it before loading url
-            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-            Display display = wm.getDefaultDisplay();
-            Point size = new Point();
-            display.getSize(size);
-            webview.layout(0, 0, size.x, size.y);
 
-            webview.setWebViewClient(this.webviewClient);
-            this.currentLoadingWebview = webview;
-            this.urlsToLoad.remove(urlString);
-            this.currentLoadingWebview.loadUrl(urlString);
+                    // size it before loading url
+                    WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                    Display display = wm.getDefaultDisplay();
+                    Point size = new Point();
+                    display.getSize(size);
+                    webview.layout(0, 0, size.x, size.y);
+
+                    webview.setWebViewClient(webviewClient);
+                    currentLoadingWebview = webview;
+                    urlsToLoad.remove(urlString);
+
+                    currentLoadingWebview.loadUrl(urlString);
+                }
+            });
         }
     }
 
