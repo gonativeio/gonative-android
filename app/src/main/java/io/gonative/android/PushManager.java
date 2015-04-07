@@ -152,22 +152,14 @@ public class PushManager {
         }
     }
 
-    /**
-     * Check the device to make sure it has the Google Play Services APK. If
-     * it doesn't, display a dialog that allows users to download the APK from
-     * the Google Play Store or enable it in the device's system settings.
-     */
+    // Check for Google Play Services APK.
     private boolean checkPlayServices() {
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
         if (resultCode != ConnectionResult.SUCCESS) {
-            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                GooglePlayServicesUtil.getErrorDialog(resultCode, mainActivity,
-                        MainActivity.REQUEST_PLAY_SERVICES_RESOLUTION).show();
-            } else {
-                Log.i(TAG, "This device is not supported for Google Play Services");
-            }
+            Log.i(TAG, "This device is not supported for Google Play Services");
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 }
