@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -32,6 +33,7 @@ import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
@@ -59,7 +61,8 @@ public class MainActivity extends ActionBarActivity implements Observer {
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
-	public static final int REQUEST_SELECT_FILE = 100;
+	public static final int REQUEST_SELECT_FILE_OLD = 100;
+    public static final int REQUEST_SELECT_FILE_LOLLIPOP = 101;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
@@ -72,6 +75,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private Stack<String> backHistory = new Stack<String>();
 
 	private ValueCallback<Uri> mUploadMessage;
+    private ValueCallback<Uri[]> uploadMessageLP;
 	private DrawerLayout mDrawerLayout;
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
@@ -609,6 +613,8 @@ public class MainActivity extends ActionBarActivity implements Observer {
     }
 	
 	@Override
+    @TargetApi(21)
+    // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (data != null && data.getBooleanExtra("exit", false))
             finish();
@@ -644,15 +650,22 @@ public class MainActivity extends ActionBarActivity implements Observer {
             }
         }
 
-        if (requestCode == REQUEST_SELECT_FILE) {
+        if (requestCode == REQUEST_SELECT_FILE_OLD) {
             if (null == mUploadMessage)
                 return;
 
             if (resultCode == RESULT_OK) {
                 Uri selectedImageUri = data == null ? null : data.getData();
                 mUploadMessage.onReceiveValue(selectedImageUri);
-                mUploadMessage = null;
             }
+
+            mUploadMessage = null;
+        }
+
+        if (requestCode == REQUEST_SELECT_FILE_LOLLIPOP) {
+            if (uploadMessageLP == null) return;
+            uploadMessageLP.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+            uploadMessageLP = null;
         }
     }
 
@@ -1017,6 +1030,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
     public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
         this.mUploadMessage = mUploadMessage;
+    }
+
+    public ValueCallback<Uri[]> getUploadMessageLP() {
+        return uploadMessageLP;
+    }
+
+    public void setUploadMessageLP(ValueCallback<Uri[]> uploadMessageLP) {
+        this.uploadMessageLP = uploadMessageLP;
     }
 
     public RelativeLayout getFullScreenLayout() {

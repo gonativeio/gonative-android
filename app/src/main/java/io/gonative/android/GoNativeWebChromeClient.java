@@ -1,5 +1,7 @@
 package io.gonative.android;
 
+import android.annotation.TargetApi;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
@@ -81,8 +83,38 @@ class GoNativeWebChromeClient extends WebChromeClient {
         }
     }
 
+    @Override
+    @TargetApi(21)
+    // This method was added in Lollipop
+    public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+        // make sure there is no existing message
+        if (mainActivity.getUploadMessageLP() != null) {
+            mainActivity.getUploadMessageLP().onReceiveValue(null);
+            mainActivity.setUploadMessageLP(null);
+        }
+
+        mainActivity.setUploadMessageLP(filePathCallback);
+
+        Intent intent = fileChooserParams.createIntent();
+        try {
+            mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_LOLLIPOP);
+        } catch (ActivityNotFoundException e) {
+            mainActivity.setUploadMessageLP(null);
+            Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        return true;
+    }
+
     // For Android > 4.1
     public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture) {
+        // make sure there is no existing message
+        if (mainActivity.getUploadMessage() != null) {
+            mainActivity.getUploadMessage().onReceiveValue(null);
+            mainActivity.setUploadMessage(null);
+        }
+
         mainActivity.setUploadMessage(uploadMsg);
 
         if (acceptType == null) acceptType = "*/*";
@@ -93,7 +125,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
         galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
         galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
 
-        mainActivity.startActivityForResult(galleryIntent, MainActivity.REQUEST_SELECT_FILE);
+        mainActivity.startActivityForResult(galleryIntent, MainActivity.REQUEST_SELECT_FILE_OLD);
     }
 
     // Android 3.0 +
