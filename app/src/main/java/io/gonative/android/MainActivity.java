@@ -845,6 +845,9 @@ public class MainActivity extends ActionBarActivity implements Observer {
     }
 
     public void checkNavigationForPage(String url) {
+        // don't change anything on navigation if the url that just finished was a file download
+        if (url.equals(this.fileDownloader.getLastDownloadedUrl())) return;
+
         if (this.tabManager != null) {
             this.tabManager.checkTabs(url);
         }

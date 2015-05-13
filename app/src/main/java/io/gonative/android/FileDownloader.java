@@ -28,6 +28,7 @@ public class FileDownloader implements DownloadListener{
     public static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private Context context;
     private ProgressDialog progressDialog;
+    private String lastDownloadedUrl;
 
     public FileDownloader(Context context) {
         this.context = context;
@@ -38,6 +39,7 @@ public class FileDownloader implements DownloadListener{
 
     @Override
     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+        lastDownloadedUrl = url;
         DownloadFileParams param = new DownloadFileParams(url, userAgent, mimetype, contentLength);
         new DownloadFileTask().execute(param);
     }
@@ -199,5 +201,9 @@ public class FileDownloader implements DownloadListener{
         protected void onCancelled(DownloadFileResult downloadFileResult) {
             Toast.makeText(context, R.string.download_canceled, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public String getLastDownloadedUrl() {
+        return lastDownloadedUrl;
     }
 }
