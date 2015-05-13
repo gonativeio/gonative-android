@@ -84,6 +84,11 @@ class GoNativeWebChromeClient extends WebChromeClient {
     }
 
     @Override
+    public void onCloseWindow(WebView window) {
+        if (!mainActivity.isRoot()) mainActivity.finish();
+    }
+
+    @Override
     @TargetApi(21)
     // This method was added in Lollipop
     public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {

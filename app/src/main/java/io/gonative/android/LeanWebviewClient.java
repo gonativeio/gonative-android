@@ -139,7 +139,7 @@ public class LeanWebviewClient extends WebViewClient{
                     if (command == null) continue;
 
                     if (command.equals("pop")) {
-                        mainActivity.finish();
+                        if (!mainActivity.isRoot()) mainActivity.finish();
                     } else if (command.equals("clearPools")) {
                         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(
                                 new Intent(LeanWebviewClient.CLEAR_POOLS_MESSAGE));
