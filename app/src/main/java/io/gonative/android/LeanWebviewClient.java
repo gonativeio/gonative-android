@@ -12,6 +12,9 @@ import android.webkit.CookieSyncManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -20,6 +23,7 @@ import java.util.regex.Pattern;
 public class LeanWebviewClient extends WebViewClient{
     public static final String STARTED_LOADING_MESSAGE = "io.gonative.android.webview.started";
     public static final String FINISHED_LOADING_MESSAGE = "io.gonative.android.webview.finished";
+    public static final String CLEAR_POOLS_MESSAGE = "io.gonative.android.webview.clearPools";
 
     private static final String TAG = LeanWebviewClient.class.getName();
 
@@ -121,6 +125,32 @@ public class LeanWebviewClient extends WebViewClient{
         ((LeanWebView)view).setCheckLoginSignup(true);
 
         Uri uri = Uri.parse(url);
+
+        if (uri.getScheme() != null && uri.getScheme().equals("gonative-bridge")) {
+            try {
+                String json = uri.getQueryParameter("json");
+
+                JSONArray parsedJson = new JSONArray(json);
+                for (int i = 0; i < parsedJson.length(); i++) {
+                    JSONObject entry = parsedJson.optJSONObject(i);
+                    if (entry == null) continue;
+
+                    String command = entry.optString("command");
+                    if (command == null) continue;
+
+                    if (command.equals("pop")) {
+                        mainActivity.finish();
+                    } else if (command.equals("clearPools")) {
+                        LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(
+                                new Intent(LeanWebviewClient.CLEAR_POOLS_MESSAGE));
+                    }
+                }
+            } catch (Exception e) {
+                // do nothing
+            }
+
+            return true;
+        }
 
         final AppConfig appConfig = AppConfig.getInstance(mainActivity);
 

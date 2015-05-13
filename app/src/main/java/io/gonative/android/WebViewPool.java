@@ -94,6 +94,8 @@ public class WebViewPool {
                     pool.resumeLoading();
                 } else if (intent.getAction().equals(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE)) {
                     processConfig();
+                } else if (intent.getAction().equals(LeanWebviewClient.CLEAR_POOLS_MESSAGE)) {
+                    WebViewPool.this.flushAll();
                 }
             }
         };
@@ -101,6 +103,8 @@ public class WebViewPool {
                 this.messageReceiver, new IntentFilter(LeanWebviewClient.STARTED_LOADING_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
                 this.messageReceiver, new IntentFilter(LeanWebviewClient.FINISHED_LOADING_MESSAGE));
+        LocalBroadcastManager.getInstance(this.context).registerReceiver(
+                this.messageReceiver, new IntentFilter(LeanWebviewClient.CLEAR_POOLS_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
                 this.messageReceiver, new IntentFilter(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE));
 
@@ -244,6 +248,15 @@ public class WebViewPool {
                 }
             });
         }
+    }
+
+    private void flushAll() {
+        if (this.currentLoadingWebview != null) this.currentLoadingWebview.stopLoading();
+        this.isLoading = false;
+        this.currentLoadingWebview = null;
+        this.currentLoadingUrl = null;
+        this.lastUrlRequest = null;
+        this.urlToWebview.clear();
     }
 
     public void disownWebview(WebView webview) {
