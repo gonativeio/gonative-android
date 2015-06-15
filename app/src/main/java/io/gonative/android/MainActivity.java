@@ -16,6 +16,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -27,8 +28,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
@@ -56,7 +55,7 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MainActivity extends ActionBarActivity implements Observer {
+public class MainActivity extends ActionBarActivity implements Observer, SwipeRefreshLayout.OnRefreshListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -80,6 +79,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
     private ProgressBar mProgress;
+    private SwipeRefreshLayout swipeRefresh;
     private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
@@ -90,6 +90,9 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private TabManager tabManager;
     private ActionManager actionManager;
     private boolean isRoot;
+    private float hideWebviewAlpha = 0.0f;
+    private boolean isFirstHideWebview = true;
+    private boolean webviewIsHidden = false;
     private int urlLevel = -1;
     private int parentUrlLevel = -1;
     private Handler handler = new Handler();
@@ -116,7 +119,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
 
+        this.hideWebviewAlpha  = appConfig.hideWebviewAlpha;
+
         super.onCreate(savedInstanceState);
+
+        if (appConfig.showSplash) {
+            Intent splashIntent = new Intent(this, SplashActivity.class);
+            startActivity(splashIntent);
+        }
 
         isRoot = getIntent().getBooleanExtra("isRoot", true);
         parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
@@ -167,7 +177,14 @@ public class MainActivity extends ActionBarActivity implements Observer {
         mProgress = (ProgressBar) findViewById(R.id.progress);
         this.fullScreenLayout = (RelativeLayout)findViewById(R.id.fullscreen);
 
-		LeanWebView wv = (LeanWebView) findViewById(R.id.webview);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh.setOnRefreshListener(this);
+        swipeRefresh.setEnabled(appConfig.pullToRefresh);
+        if (appConfig.pullToRefreshColor != null) {
+            swipeRefresh.setColorSchemeColors(appConfig.pullToRefreshColor);
+        }
+
+        LeanWebView wv = (LeanWebView) findViewById(R.id.webview);
 
         // profile picker
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
@@ -452,10 +469,17 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	}
 
     public void hideWebview() {
+        if (AppConfig.getInstance(this).disableAnimations) return;
+
+        this.webviewIsHidden = true;
         mProgress.setAlpha(1.0f);
         mProgress.setVisibility(View.VISIBLE);
 
-        this.mWebview.setVisibility(View.INVISIBLE);
+        if (this.isFirstHideWebview) {
+            this.mWebview.setAlpha(0.0f);
+        } else {
+            this.mWebview.setAlpha(this.hideWebviewAlpha);
+        }
     }
 
     public void showWebview(double delay) {
@@ -465,7 +489,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
                 public void run() {
                     showWebview();
                 }
-            }, (int)(delay * 1000));
+            }, (int) (delay * 1000));
         } else {
             showWebview();
         }
@@ -473,53 +497,34 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
     // shows webview with no animation
     public void showWebviewImmediately() {
+        this.isFirstHideWebview = false;
+        webviewIsHidden = false;
         startedLoading = false;
         stopCheckingReadyStatus();
-        this.mWebview.setVisibility(View.VISIBLE);
+        this.mWebview.setAlpha(1.0f);
         this.mProgress.setVisibility(View.INVISIBLE);
     }
 
     public void showWebview() {
+        this.isFirstHideWebview = false;
         startedLoading = false;
         stopCheckingReadyStatus();
 
         final WebView wv = this.mWebview;
-        if (wv.getVisibility() == View.VISIBLE) {
+        if (!webviewIsHidden) {
             // don't animate if already visible
             mProgress.setVisibility(View.INVISIBLE);
             return;
         }
 
-        Animation fadein = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-        Animation fadeout = AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
-        fadein.setDuration(300);
-        fadeout.setDuration(60);
-        fadein.setStartOffset(150);
+        webviewIsHidden = false;
 
+        wv.animate().alpha(1.0f)
+                .setDuration(300)
+                .setStartDelay(150);
 
-        mProgress.setAlpha(1.0f);
-
-        wv.setVisibility(View.VISIBLE);
-
-        fadeout.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                mProgress.setVisibility(View.INVISIBLE);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-
-        mProgress.startAnimation(fadeout);
-        wv.startAnimation(fadein);
+        mProgress.animate().alpha(0.0f)
+                .setDuration(60);
     }
 
     public void showLogoInActionBar(boolean show) {
@@ -822,18 +827,39 @@ public class MainActivity extends ActionBarActivity implements Observer {
 	        case R.id.action_search:
 	        	return true;
 	        case R.id.action_refresh:
-                String url = this.mWebview.getUrl();
-	        	if (url != null && url.startsWith("data:")){
-                    this.mWebview.goBack();
-	        		updateMenu();
-	        	}
-	        	else {
-                    this.postLoadJavascript = this.postLoadJavascriptForRefresh;
-                    this.mWebview.loadUrl(url);
-	        	}
+                onRefresh();
 	        	return true;
         	default:
                 return super.onOptionsItemSelected(item);	        		
+        }
+    }
+
+    @Override
+    public void onRefresh() {
+        refreshPage();
+        // let the refreshing spinner stay for a little bit if the native show/hide is disabled
+        // otherwise there isn't enough of a user confirmation that the page is refreshing
+        if (AppConfig.getInstance(this).disableAnimations) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    swipeRefresh.setRefreshing(false);
+                }
+            }, 1000); // 1 second
+        } else {
+            this.swipeRefresh.setRefreshing(false);
+        }
+    }
+
+    private void refreshPage() {
+        String url = this.mWebview.getUrl();
+        if (url != null && url.startsWith("file:///android_asset/offline")){
+            this.mWebview.goBack();
+            updateMenu();
+        }
+        else {
+            this.postLoadJavascript = this.postLoadJavascriptForRefresh;
+            this.mWebview.loadUrl(url);
         }
     }
 

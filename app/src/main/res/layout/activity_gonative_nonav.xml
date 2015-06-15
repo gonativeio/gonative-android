@@ -18,10 +18,16 @@
         android:layout_height="1px"
         android:alpha="0.0"/>
 
-    <io.gonative.android.LeanWebView android:id="@+id/webview"
-          android:layout_width="match_parent"
-          android:layout_height="match_parent"
-          android:layout_below="@id/tabs"/>
+    <android.support.v4.widget.SwipeRefreshLayout android:id="@+id/swipe_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tabs">
+
+        <io.gonative.android.LeanWebView android:id="@+id/webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </android.support.v4.widget.SwipeRefreshLayout>
 
     <ProgressBar
         android:id="@+id/progress"

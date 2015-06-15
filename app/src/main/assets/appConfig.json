@@ -5,6 +5,7 @@
     "appName": "GoNative.io"
   },
   "navigation": {
+    "androidPullToRefresh": true,
     "sidebarNavigation": {
       "menus": [{
         "name": "default",
@@ -101,6 +102,9 @@
     "androidSidebarBackgroundColor": "#111111",
     "androidSidebarForegroundColor": "#d0d0d0",
     "androidHideTitleInActionBar": false,
+    "androidPullToRefreshColor": "#333333",
+    "androidShowSplash": true,
+    "disableAnimations": false,
     "menuAnimationDuration": 0.15,
     "transitionInteractiveDelayMax": 0.2
   }

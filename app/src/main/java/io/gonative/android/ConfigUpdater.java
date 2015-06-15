@@ -32,10 +32,14 @@ public class ConfigUpdater {
     }
 
     public void updateConfig() {
+        if (AppConfig.getInstance(context).disableConfigUpdater) return;
+
         new UpdateConfigTask().execute();
     }
 
     public void registerEvent() {
+        if (AppConfig.getInstance(context).disableEventRecorder) return;
+
         new EventTask().execute();
     }
 

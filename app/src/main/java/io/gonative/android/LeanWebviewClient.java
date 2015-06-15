@@ -120,6 +120,9 @@ public class LeanWebviewClient extends WebViewClient{
         if (url == null)
             return false;
 
+        // return if loading from local assets
+        if (url.startsWith("file:///android_asset/")) return false;
+
         // checkLoginSignup might be false when returning from login screen with loginIsFirstPage
         boolean checkLoginSignup = ((LeanWebView)view).checkLoginSignup();
         ((LeanWebView)view).setCheckLoginSignup(true);

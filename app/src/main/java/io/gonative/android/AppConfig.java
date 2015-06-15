@@ -55,8 +55,11 @@ public class AppConfig {
     public int forceSessionCookieExpiry;
     public ArrayList<Pattern> userAgentRegexes;
     public ArrayList<String> userAgentStrings;
+    public boolean disableConfigUpdater;
+    public boolean disableEventRecorder;
 
     // navigation
+    public boolean pullToRefresh;
     public HashMap<String,JSONArray> menus;
     public boolean showNavigationMenu;
     public String userIdRegex;
@@ -100,6 +103,10 @@ public class AppConfig {
     public boolean showLogoInActionBar;
     public boolean showRefreshButton;
     public ArrayList<Pattern> navigationTitleImageRegexes;
+    public float hideWebviewAlpha;
+    public Integer pullToRefreshColor;
+    public boolean showSplash;
+    public boolean disableAnimations;
 
     // forms
     public String searchTemplateUrl;
@@ -204,6 +211,9 @@ public class AppConfig {
                 if (this.forceSessionCookieExpiry > 0) this.interceptHtml = true;
 
                 processUserAgentRegexes(general.optJSONArray("userAgentRegexes"));
+
+                this.disableConfigUpdater = general.optBoolean("disableConfigUpdater", false);
+                this.disableEventRecorder = general.optBoolean("disableEventRecorder", false);
             }
 
 
@@ -241,13 +251,18 @@ public class AppConfig {
             ////////////////////////////////////////////////////////////
             JSONObject navigation = this.json.optJSONObject("navigation");
             if (navigation != null) {
+                this.pullToRefresh = navigation.optBoolean("androidPullToRefresh");
+
                 // sidebar
                 JSONObject sidebarNav = navigation.optJSONObject("sidebarNavigation");
                 processSidebarNavigation(sidebarNav);
 
                 // navigation levels
-                JSONObject navigationLevels = navigation.optJSONObject("navigationLevels");
-                processNavigationLevels(navigationLevels);
+                if (navigation.optJSONObject("androidNavigationLevels") != null) {
+                    processNavigationLevels(navigation.optJSONObject("androidNavigationLevels"));
+                } else {
+                    processNavigationLevels(navigation.optJSONObject("navigationLevels"));
+                }
 
                 // navigation titles
                 JSONObject navigationTitles = navigation.optJSONObject("navigationTitles");
@@ -352,6 +367,14 @@ public class AppConfig {
 
             processNavigationTitleImage(styling.opt("navigationTitleImage"));
 
+            this.hideWebviewAlpha = (float)styling.optDouble("hideWebviewAlpha", 0.0);
+
+            this.pullToRefreshColor = LeanUtils.parseColor(AppConfig.optString(styling, "androidPullToRefreshColor"));
+
+            this.showSplash = styling.optBoolean("androidShowSplash", false);
+
+            this.disableAnimations = styling.optBoolean("disableAnimations", false);
+
             ////////////////////////////////////////////////////////////
             // Permissions
             ////////////////////////////////////////////////////////////
@@ -424,7 +447,11 @@ public class AppConfig {
         if (parsedJson != null) {
             processTabNavigation(parsedJson.optJSONObject("tabNavigation"));
             processSidebarNavigation(parsedJson.optJSONObject("sidebarNavigation"));
-            processNavigationLevels(parsedJson.optJSONObject("navigationLevels"));
+            if (parsedJson.optJSONObject("androidNavigationLevels") != null) {
+                processNavigationLevels(parsedJson.optJSONObject("androidNavigationLevels"));
+            } else {
+                processNavigationLevels(parsedJson.optJSONObject("navigationLevels"));
+            }
             processNavigationTitles(parsedJson.optJSONObject("navigationTitles"));
             processWebViewPools(parsedJson.optJSONArray("webviewPools"));
             processNavigationTitleImage(parsedJson.opt("navigationTitleImage"));
