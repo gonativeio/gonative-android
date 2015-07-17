@@ -59,7 +59,7 @@ for drawable in `ls -d $BASEDIR/app/src/main/res/drawable*`; do
             convert $filePath -alpha extract temp_alpha_extract.png
             convert temp_alpha_extract.png -background "#$tintColor" -alpha shape $filePath
             rm -f temp_alpha_extract.png
-            pngcrush -q -rem allb -brute -ow $filePath
+            optipng $filePath
         fi
     done
 done
