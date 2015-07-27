@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -54,6 +55,7 @@ public class GcmBroadcastReceiver extends BroadcastReceiver {
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)
                 .setContentText(message)
+                .setDefaults(Notification.DEFAULT_ALL)
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(message))
                 .setAutoCancel(true)
