@@ -107,5 +107,19 @@
     "disableAnimations": false,
     "menuAnimationDuration": 0.15,
     "transitionInteractiveDelayMax": 0.2
+  },
+  "services": {
+    "parse": {
+      "active": false,
+      "applicationId": "",
+      "clientKey": "",
+      "pushEnabled": false
+    },
+    "push": {
+      "active": false
+    },
+    "analytics": {
+      "active": false
+    }
   }
 }

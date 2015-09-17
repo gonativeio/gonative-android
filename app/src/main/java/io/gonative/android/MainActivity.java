@@ -41,6 +41,10 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 
 import com.astuetz.PagerSlidingTabStrip;
+import com.parse.ParseAnalytics;
+
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -87,6 +91,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     private ImageView navigationTitleImage;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
+    private IdentityService identityService;
     private TabManager tabManager;
     private ActionManager actionManager;
     private boolean isRoot;
@@ -123,15 +128,15 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         super.onCreate(savedInstanceState);
 
-        if (appConfig.showSplash) {
-            Intent splashIntent = new Intent(this, SplashActivity.class);
-            startActivity(splashIntent);
-        }
-
         isRoot = getIntent().getBooleanExtra("isRoot", true);
         parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
 
         if (isRoot) {
+            if (appConfig.showSplash) {
+                Intent splashIntent = new Intent(this, SplashActivity.class);
+                startActivity(splashIntent);
+            }
+
             // html5 app cache (manifest)
             File cachePath = new File(getCacheDir(), webviewCacheSubdir);
             cachePath.mkdirs();
@@ -147,6 +152,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
             // Register launch
             configUpdater.registerEvent();
+
+            if (appConfig.parseAnalyticsEnabled) {
+                ParseAnalytics.trackAppOpenedInBackground(getIntent());
+            }
 
             // Push notifications
             if (appConfig.pushNotifications) {
@@ -224,17 +233,35 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         // actions in action bar
         this.actionManager = new ActionManager(this);
 
+        Intent intent = getIntent();
         // load url
         String url = null;
         // first check intent in case it was created from push notification
-        String targetUrl = getIntent().getStringExtra(INTENT_TARGET_URL);
+        String targetUrl = intent.getStringExtra(INTENT_TARGET_URL);
         if (targetUrl != null && !targetUrl.isEmpty()){
             url = targetUrl;
         }
+        // if it came from parse, then a bit more work is necessary
+        if (url == null && intent.hasExtra("com.parse.Data")) {
+            try {
+                String pushJson = intent.getStringExtra("com.parse.Data");
+                JSONObject object = (JSONObject) new JSONTokener(pushJson).nextValue();
+                if (object.has("targetUrl") && !object.isNull("targetUrl")) {
+                    url = object.optString("targetUrl");
+                }
+                if (url == null && object.has("u") && !object.isNull("u")) {
+                    url = object.optString("u");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error parsing json from Parse push notification", e);
+            }
+        }
+
+
         if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
         if (url == null && isRoot) url = appConfig.initialUrl;
         // url from intent (hub and spoke nav)
-        if (url == null) url = getIntent().getStringExtra("url");
+        if (url == null) url = intent.getStringExtra("url");
 
         if (url != null) {
             wv.loadUrl(url);
@@ -286,6 +313,9 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
             mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
         }
+
+        // identity service
+        this.identityService = new IdentityService(this);
 	}
 
     protected void onPause() {
@@ -880,6 +910,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (this.actionManager != null) {
             this.actionManager.checkActions(url);
+        }
+
+        if (this.identityService != null) {
+            this.identityService.checkUrl(url);
         }
     }
 

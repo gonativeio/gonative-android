@@ -20,6 +20,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -124,6 +126,17 @@ public class AppConfig {
     public boolean analytics = false;
     public int idsite_test = Integer.MIN_VALUE;
     public int idsite_prod = Integer.MIN_VALUE;
+
+    // Parse integration
+    public boolean parseEnabled = false;
+    public String parseApplicationId;
+    public String parseClientKey;
+    public boolean parsePushEnabled = false;
+    public boolean parseAnalyticsEnabled = false;
+
+    // identity service
+    public List<Pattern> checkIdentityUrlRegexes;
+    public String identityEndpointUrl;
 
     // performance
     public JSONArray webviewPools;
@@ -403,6 +416,51 @@ public class AppConfig {
                     } else {
                         this.analytics = true;
                     }
+                }
+
+                JSONObject parse = services.optJSONObject("parse");
+                if (parse != null && parse.optBoolean("active")) {
+                    String applicationId = optString(parse, "applicationId");
+                    String clientKey = optString(parse, "clientKey");
+                    if (applicationId != null && !applicationId.isEmpty() &&
+                            clientKey != null && !clientKey.isEmpty()) {
+
+                        this.parseEnabled = true;
+                        this.parseApplicationId = applicationId;
+                        this.parseClientKey = clientKey;
+                        this.parsePushEnabled = parse.optBoolean("pushEnabled");
+                        this.parseAnalyticsEnabled = parse.optBoolean("analyticsEnabled");
+                    } else {
+                        Log.e(TAG, "Config is missing Parse applicationId or clientKey");
+                        this.parseEnabled = false;
+                    }
+                } else {
+                    this.parseEnabled = false;
+                }
+
+                JSONObject identityService = services.optJSONObject("identity");
+                if (identityService != null && identityService.optBoolean("active")) {
+                    // string or array of strings
+                    LinkedList<Pattern> regexes = new LinkedList<Pattern>();
+                    this.checkIdentityUrlRegexes = regexes;
+
+                    Object identityUrls = identityService.opt("checkIdentityUrl");
+                    if (identityUrls != null && identityUrls instanceof String) {
+                        Pattern regex = Pattern.compile((String) identityUrls);
+                        regexes.add(regex);
+                    } else if (identityUrls != null && identityUrls instanceof JSONArray) {
+                        JSONArray identityUrlArray = (JSONArray)identityUrls;
+                        for (int i = 0; i < identityUrlArray.length(); i++) {
+                            String regexString = identityUrlArray.optString(i);
+                            if (regexString != null && !regexString.isEmpty()) {
+                                Pattern regex = Pattern.compile(regexString);
+                                regexes.add(regex);
+                            }
+                        }
+                    }
+
+                    // identityEndpointUrl
+                    this.identityEndpointUrl = optString(identityService, "identityEndpointUrl");
                 }
             }
 

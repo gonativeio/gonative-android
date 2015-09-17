@@ -39,6 +39,7 @@ public class GcmBroadcastReceiver extends BroadcastReceiver {
         if (message == null) return;
 
         String targetUrl = extras.getString("targetUrl");
+        if (targetUrl == null) targetUrl = extras.getString("u");
 
         Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
