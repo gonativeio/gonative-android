@@ -59,3 +59,7 @@
 -dontwarn android.support.v7.**
 -keep class android.support.v7.** { *; }
 -keep interface android.support.v7.** { *; }
+
+# parse.com sdk
+-dontwarn com.parse.**
+-keep class com.parse.** { *; }
