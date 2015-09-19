@@ -20,10 +20,12 @@
     <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
 
     <!-- additional permissions for parse push notifications -->
+    <!-- start parse permissions -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <!-- end parse permissions -->
 
     <application
         android:name=".GoNativeApplication"
@@ -87,6 +89,7 @@
         </provider>
 
         <!-- Parse Integration -->
+        <!-- start parse service -->
         <service android:name="com.parse.PushService" />
         <receiver android:name="com.parse.ParseBroadcastReceiver">
             <intent-filter>
@@ -110,6 +113,7 @@
                 <category android:name="${applicationId}" />
             </intent-filter>
         </receiver>
+        <!-- end parse service -->
 
         <!-- set icon for parse push notifications -->
         <meta-data android:name="com.parse.push.notification_icon" android:resource="@drawable/ic_notification"/>
