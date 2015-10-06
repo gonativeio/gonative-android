@@ -123,6 +123,7 @@ public class AppConfig {
 
     // services
     public boolean pushNotifications = false;
+    public String googleProjectId;
     public boolean analytics = false;
     public int idsite_test = Integer.MIN_VALUE;
     public int idsite_prod = Integer.MIN_VALUE;
@@ -137,6 +138,9 @@ public class AppConfig {
     // identity service
     public List<Pattern> checkIdentityUrlRegexes;
     public String identityEndpointUrl;
+
+    // registration service
+    public JSONArray registrationEndpoints;
 
     // performance
     public JSONArray webviewPools;
@@ -404,6 +408,9 @@ public class AppConfig {
             if (services != null) {
                 JSONObject push = services.optJSONObject("push");
                 this.pushNotifications = push != null && push.optBoolean("active", false);
+                if (this.pushNotifications) {
+                    this.googleProjectId = optString(push, "googleProjectId");
+                }
 
                 JSONObject analytics = services.optJSONObject("analytics");
                 if (analytics != null && analytics.optBoolean("active", false)) {
@@ -461,6 +468,11 @@ public class AppConfig {
 
                     // identityEndpointUrl
                     this.identityEndpointUrl = optString(identityService, "identityEndpointUrl");
+                }
+
+                JSONObject registrationService = services.optJSONObject("registration");
+                if (registrationService != null && registrationService.optBoolean("active")) {
+                    this.registrationEndpoints = registrationService.optJSONArray("endpoints");
                 }
             }
 

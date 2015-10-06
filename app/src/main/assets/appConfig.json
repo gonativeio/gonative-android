@@ -120,6 +120,14 @@
     },
     "analytics": {
       "active": false
+    },
+    "registration": {
+      "active": false,
+      "endpoints": [{
+        "url": "https://gonative.io/example_push_endpoint",
+        "dataType": "push",
+        "urlRegex": ".*/loginfinished"
+      }]
     }
   }
 }

@@ -10,9 +10,17 @@ import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class LeanUtils {
     private static final String TAG = LeanUtils.class.getName();
@@ -152,5 +160,54 @@ public class LeanUtils {
 
     public static String colorString(int color) {
         return String.format("#%06X", (0xFFFFFF & color));
+    }
+
+    public static List<Pattern> createRegexArrayFromStrings(Object json) {
+        List<Pattern> result = new LinkedList<Pattern>();
+
+        if (json instanceof JSONArray) {
+            JSONArray array = (JSONArray)json;
+            for (int i = 0; i < array.length(); i++) {
+                String regexString = array.isNull(i) ? null : array.optString(i, null);
+                if (regexString != null) {
+                    try {
+                        Pattern regex = Pattern.compile(regexString);
+                        result.add(regex);
+                    } catch (PatternSyntaxException e) {
+                        Log.e(TAG, "Error parsing regex: " + regexString, e);
+                    }
+                }
+            }
+        }
+        else if (json instanceof String) {
+            String regexString = (String)json;
+            try {
+                Pattern regex = Pattern.compile(regexString);
+                result.add(regex);
+            } catch (PatternSyntaxException e) {
+                Log.e(TAG, "Error parsing regex: " + regexString, e);
+            }
+        }
+
+        return result;
+    }
+
+    public static boolean stringMatchesAnyRegex(String s, Collection<Pattern> regexes) {
+        if (s == null || regexes == null || regexes.isEmpty()) {
+            return false;
+        }
+
+        for (Pattern regex : regexes) {
+            if (regex.matcher(s).matches()) return true;
+        }
+
+        return false;
+    }
+
+    /** Return the value mapped by the given key, or null if not present or null. */
+    public static String optString(JSONObject json, String key)
+    {
+        // http://code.google.com/p/android/issues/detail?id=13830
+        return json.isNull(key) ? null : json.optString(key, null);
     }
 }

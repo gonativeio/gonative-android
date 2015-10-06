@@ -116,6 +116,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     private FileDownloader fileDownloader = new FileDownloader(this);
     private boolean startedLoading = false; // document readystate checker
     private PushManager pushManager;
+    private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
@@ -157,8 +158,12 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
                 ParseAnalytics.trackAppOpenedInBackground(getIntent());
             }
 
+            // registration service
+            this.registrationManager = ((GoNativeApplication)getApplication()).getRegistrationManager();
+
             // Push notifications
-            if (appConfig.pushNotifications) {
+            if (appConfig.pushNotifications ||
+                    (this.registrationManager != null && this.registrationManager.pushEnabled())) {
                 this.pushManager = new PushManager(this);
                 this.pushManager.register();
             }
@@ -914,6 +919,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (this.identityService != null) {
             this.identityService.checkUrl(url);
+        }
+
+        if (this.registrationManager != null) {
+            this.registrationManager.checkUrl(url);
         }
     }
 

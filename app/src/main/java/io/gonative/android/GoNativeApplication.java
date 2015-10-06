@@ -11,14 +11,29 @@ import com.parse.ParseInstallation;
  * Copyright 2014 GoNative.io LLC
  */
 public class GoNativeApplication extends Application {
+    private RegistrationManager registrationManager;
+
     @Override
     public void onCreate() {
         super.onCreate();
 
         AppConfig appConfig = AppConfig.getInstance(this);
+        String parseInstallationId = null;
         if (appConfig.parseEnabled) {
             Parse.initialize(this, appConfig.parseApplicationId, appConfig.parseClientKey);
             ParseInstallation.getCurrentInstallation().saveInBackground();
+            parseInstallationId = ParseInstallation.getCurrentInstallation().getInstallationId();
         }
+
+        if (appConfig.registrationEndpoints != null) {
+            this.registrationManager = new RegistrationManager(this);
+            registrationManager.processConfig(appConfig.registrationEndpoints);
+
+            if (parseInstallationId != null) registrationManager.setParseInstallationId(parseInstallationId);
+        }
+    }
+
+    public RegistrationManager getRegistrationManager() {
+        return registrationManager;
     }
 }

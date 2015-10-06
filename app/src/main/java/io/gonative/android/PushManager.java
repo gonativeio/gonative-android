@@ -21,11 +21,12 @@ import java.net.URL;
  * Created by weiyin on 8/10/14.
  */
 public class PushManager {
-    private static final String GOOGLE_PROJECT_ID = "132633329658";
+    private static final String GONATIVE_GOOGLE_PROJECT_ID = "132633329658";
     private static final String GONATIVE_REG_URL = "https://push.gonative.io/api/register";
 
     private static final String TAG = PushManager.class.getName();
     private static final String PROPERTY_PUSHREG_APPVERSION = "push_app_version";
+    private static final String PROPERTY_PUSHREG_GOOGLE_PROJECT_ID = "push_google_project_id";
     private static final String PROPERTY_PUSHREG_ID = "push_registration_id";
     private static final String SHARED_PREF_FILE = "gcm_registration";
 
@@ -33,14 +34,26 @@ public class PushManager {
     private MainActivity mainActivity;
     private GoogleCloudMessaging gcm;
     private String regid;
+    private String googleProjectId;
 
     public PushManager(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
         this.context = mainActivity.getApplicationContext();
+
+        AppConfig appConfig = AppConfig.getInstance(this.context);
+        if (appConfig.googleProjectId != null) {
+            // using custom push service
+            this.googleProjectId = appConfig.googleProjectId;
+        } else {
+            // gonative push service
+            this.googleProjectId = GONATIVE_GOOGLE_PROJECT_ID;
+        }
     }
 
     public void register() {
-        if (AppConfig.getInstance(this.context).publicKey == null) {
+        AppConfig appConfig = AppConfig.getInstance(this.context);
+
+        if (googleProjectId.equals(GONATIVE_GOOGLE_PROJECT_ID) && appConfig.publicKey == null) {
             Log.w(TAG, "publicKey is required for push");
             return;
         }
@@ -69,7 +82,7 @@ public class PushManager {
                     if (gcm == null) {
                         gcm = GoogleCloudMessaging.getInstance(context);
                     }
-                    regid = gcm.register(GOOGLE_PROJECT_ID);
+                    regid = gcm.register(GONATIVE_GOOGLE_PROJECT_ID);
 
                     sendRegistrationIdToBackend(regid);
                     storeRegistrationId(regid);
@@ -83,33 +96,39 @@ public class PushManager {
     }
 
     private void sendRegistrationIdToBackend(final String regid) {
-        new AsyncTask<Void,Void,Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                JSONObject json = new JSONObject(Installation.getInfo(context));
+        // registration service
+        RegistrationManager registrationManager = ((GoNativeApplication)mainActivity.getApplication()).getRegistrationManager();
+        if (registrationManager != null) {
+            registrationManager.setPushRegistrationToken(regid);
+        }
 
-                try {
-                    json.put("registrationId", regid);
+        if (this.googleProjectId.equals(GONATIVE_GOOGLE_PROJECT_ID)) {
+            new AsyncTask<Void,Void,Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    JSONObject json = new JSONObject(Installation.getInfo(context));
 
-                    URL url = new URL(GONATIVE_REG_URL);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    connection.setRequestMethod("POST");
-                    connection.setRequestProperty("Content-Type", "application/json");
-                    connection.setDoOutput(true);
-                    OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
-                    writer.write(json.toString());
-                    writer.close();
-                    connection.connect();
-                    int result = connection.getResponseCode();
-                } catch (Exception e) {
-                    Log.e(TAG, e.getMessage(), e);
+                    try {
+                        json.put("registrationId", regid);
+
+                        URL url = new URL(GONATIVE_REG_URL);
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestMethod("POST");
+                        connection.setRequestProperty("Content-Type", "application/json");
+                        connection.setDoOutput(true);
+                        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+                        writer.write(json.toString());
+                        writer.close();
+                        connection.connect();
+                        int result = connection.getResponseCode();
+                    } catch (Exception e) {
+                        Log.e(TAG, e.getMessage(), e);
+                    }
+
+                    return null;
                 }
-
-
-                return null;
-            }
-        }.execute();
-
+            }.execute();
+        }
     }
 
     private void storeRegistrationId(String regId) {
@@ -119,6 +138,7 @@ public class PushManager {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_PUSHREG_ID, regId);
         editor.putInt(PROPERTY_PUSHREG_APPVERSION, appVersion);
+        editor.putString(PROPERTY_PUSHREG_GOOGLE_PROJECT_ID, this.googleProjectId);
         editor.commit();
     }
 
@@ -136,6 +156,11 @@ public class PushManager {
         int currentVersion = getAppVersion(context);
         if (registeredVersion != currentVersion) {
             Log.i(TAG, "App version changed. Regenerating registration id");
+            return "";
+        }
+
+        if (!prefs.getString(PROPERTY_PUSHREG_GOOGLE_PROJECT_ID, "").equals(this.googleProjectId)) {
+            Log.i(TAG, "Google project id changed. Regenerating registration id");
             return "";
         }
         return registrationId;
