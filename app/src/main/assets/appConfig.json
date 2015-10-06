@@ -104,6 +104,8 @@
     "androidHideTitleInActionBar": false,
     "androidPullToRefreshColor": "#333333",
     "androidShowSplash": true,
+    "androidShowSplashMaxTime": null,
+    "androidShowSplashForceTime": null,
     "disableAnimations": false,
     "menuAnimationDuration": 0.15,
     "transitionInteractiveDelayMax": 0.2

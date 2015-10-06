@@ -108,6 +108,8 @@ public class AppConfig {
     public float hideWebviewAlpha;
     public Integer pullToRefreshColor;
     public boolean showSplash;
+    public double showSplashMaxTime;
+    public double showSplashForceTime;
     public boolean disableAnimations;
 
     // forms
@@ -389,6 +391,8 @@ public class AppConfig {
             this.pullToRefreshColor = LeanUtils.parseColor(AppConfig.optString(styling, "androidPullToRefreshColor"));
 
             this.showSplash = styling.optBoolean("androidShowSplash", false);
+            this.showSplashMaxTime = styling.optDouble("androidShowSplashMaxTime", Double.NaN);
+            this.showSplashForceTime = styling.optDouble("androidShowSplashForceTime", Double.NaN);
 
             this.disableAnimations = styling.optBoolean("disableAnimations", false);
 
