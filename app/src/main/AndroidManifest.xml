@@ -55,10 +55,6 @@
             android:theme="@style/GoNativeTheme.WithActionBar"
             android:configChanges="orientation|screenSize">
         </activity>
-        <activity android:name="io.gonative.android.SplashActivity"
-            android:theme="@style/GoNativeTheme.NoActionBar"
-            android:exported="false">
-        </activity>
 
         <!--
   WakefulBroadcastReceiver that will receive intents from GCM

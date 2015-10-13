@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.annotation.TargetApi;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -83,6 +84,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
     private ProgressBar mProgress;
+    private Dialog splashDialog;
+    private boolean splashDismissRequiresForce;
     private SwipeRefreshLayout swipeRefresh;
     private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
@@ -134,8 +137,14 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (isRoot) {
             if (appConfig.showSplash) {
-                Intent splashIntent = new Intent(this, SplashActivity.class);
-                startActivity(splashIntent);
+                boolean isFromLauncher = getIntent().hasCategory(Intent.CATEGORY_LAUNCHER);
+                // FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY does not seem to be set when it should
+                // for some devices. I have yet to find a good workaround.
+                boolean isFromRecents = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
+
+                if (isFromLauncher && !isFromRecents) {
+                    showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
+                }
             }
 
             // html5 app cache (manifest)
@@ -187,6 +196,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 	    	setContentView(R.layout.activity_gonative);
         else
             setContentView(R.layout.activity_gonative_nonav);
+
 
         mProgress = (ProgressBar) findViewById(R.id.progress);
         this.fullScreenLayout = (RelativeLayout)findViewById(R.id.fullscreen);
@@ -503,6 +513,38 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         wv.addJavascriptInterface(new StatusCheckerBridge(), "gonative_status_checker");
 	}
 
+    private void showSplashScreen(double maxTime, double forceTime) {
+        splashDialog = new Dialog(this, R.style.SplashScreen);
+        splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
+        splashDialog.setContentView(R.layout.splash_screen);
+        splashDialog.setCancelable(false);
+        splashDialog.show();
+
+        double delay;
+
+        if (forceTime > 0) {
+            delay = forceTime;
+            splashDismissRequiresForce = true;
+        } else {
+            delay = maxTime;
+            splashDismissRequiresForce = false;
+        }
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                hideSplashScreen(true);
+            }
+        }, (long)(delay * 1000));
+    }
+
+    private void hideSplashScreen(boolean isForce) {
+        if (splashDialog != null && (!splashDismissRequiresForce || isForce)) {
+            splashDialog.dismiss();
+            splashDialog = null;
+        }
+    }
+
     public void hideWebview() {
         if (AppConfig.getInstance(this).disableAnimations) return;
 
@@ -518,6 +560,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     }
 
     public void showWebview(double delay) {
+        hideSplashScreen(false);
+
         if (delay > 0) {
             handler.postDelayed(new Runnable() {
                 @Override
@@ -532,6 +576,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
     // shows webview with no animation
     public void showWebviewImmediately() {
+        hideSplashScreen(false);
+
         this.isFirstHideWebview = false;
         webviewIsHidden = false;
         startedLoading = false;
@@ -541,6 +587,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     }
 
     public void showWebview() {
+        hideSplashScreen(false);
+
         this.isFirstHideWebview = false;
         startedLoading = false;
         stopCheckingReadyStatus();

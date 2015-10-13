@@ -391,7 +391,7 @@ public class AppConfig {
             this.pullToRefreshColor = LeanUtils.parseColor(AppConfig.optString(styling, "androidPullToRefreshColor"));
 
             this.showSplash = styling.optBoolean("androidShowSplash", false);
-            this.showSplashMaxTime = styling.optDouble("androidShowSplashMaxTime", Double.NaN);
+            this.showSplashMaxTime = styling.optDouble("androidShowSplashMaxTime", 1.5);
             this.showSplashForceTime = styling.optDouble("androidShowSplashForceTime", Double.NaN);
 
             this.disableAnimations = styling.optBoolean("disableAnimations", false);
