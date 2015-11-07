@@ -8,6 +8,7 @@ import android.webkit.WebView;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -91,7 +92,11 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
 
             String mimetype = connection.getContentType();
             if (mimetype == null) {
-                is = new BufferedInputStream(connection.getInputStream());
+                try {
+                    is = new BufferedInputStream(connection.getInputStream());
+                } catch (IOException e) {
+                    is = new BufferedInputStream(connection.getErrorStream());
+                }
                 mimetype = HttpURLConnection.guessContentTypeFromStream(is);
             }
 
@@ -104,8 +109,15 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
             if (encoding == null)
                 encoding = "UTF-8";
 
-            if (is == null)
-                is = new BufferedInputStream(connection.getInputStream());
+            if (is == null) {
+                try {
+                    is = new BufferedInputStream(connection.getInputStream());
+                } catch (IOException e) {
+                    is = new BufferedInputStream(connection.getErrorStream());
+                }
+
+                if (is == null) return null;
+            }
 
             int initialLength = connection.getContentLength();
             if (initialLength < 0)
