@@ -74,6 +74,7 @@ public class AppConfig {
     public String profilePickerJS;
     public ArrayList<Pattern> regexInternalExternal;
     public ArrayList<Boolean> regexIsInternal;
+    public HashMap<String,String> redirects;
     public boolean useWebpageTitle;
 
     public HashMap<String,JSONArray> tabMenus;
@@ -338,6 +339,18 @@ public class AppConfig {
                             }
                         }
                     }
+                }
+
+                JSONArray redirects = navigation.optJSONArray("redirects");
+                if (redirects != null) {
+                    this.redirects = new HashMap<String,String>(redirects.length());
+                    for (int i = 0; i < redirects.length(); i++) {
+                        String from = LeanUtils.optString(redirects.optJSONObject(i), "from");
+                        String to = LeanUtils.optString(redirects.optJSONObject(i), "to");
+                        if (from != null && to != null) this.redirects.put(from, to);
+                    }
+                } else {
+                    this.redirects = null;
                 }
             }
 

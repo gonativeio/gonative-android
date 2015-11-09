@@ -85,7 +85,11 @@
         "internal": true
       }],
       "active": true
-    }
+    },
+    "redirects": [{
+      "from": "https://example.com/from/",
+      "to": "https://example.com/to/"
+    }]
   },
   "forms": {
     "search": {

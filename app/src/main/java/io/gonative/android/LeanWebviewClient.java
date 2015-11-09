@@ -157,6 +157,20 @@ public class LeanWebviewClient extends WebViewClient{
 
         final AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
+        // check redirects
+        if (appConfig.redirects != null) {
+            final String to = appConfig.redirects.get(url);
+            if (to != null) {
+                mainActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mainActivity.loadUrl(to);
+                    }
+                });
+                return true;
+            }
+        }
+
         if(checkLoginSignup &&
                 appConfig.loginUrl != null &&
                 LeanUtils.urlsMatchOnPath(url, appConfig.loginUrl)){

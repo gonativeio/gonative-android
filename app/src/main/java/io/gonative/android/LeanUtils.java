@@ -207,6 +207,7 @@ public class LeanUtils {
     /** Return the value mapped by the given key, or null if not present or null. */
     public static String optString(JSONObject json, String key)
     {
+        if (json == null || key == null) return null;
         // http://code.google.com/p/android/issues/detail?id=13830
         return json.isNull(key) ? null : json.optString(key, null);
     }
