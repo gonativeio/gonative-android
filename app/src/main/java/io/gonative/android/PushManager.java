@@ -82,7 +82,7 @@ public class PushManager {
                     if (gcm == null) {
                         gcm = GoogleCloudMessaging.getInstance(context);
                     }
-                    regid = gcm.register(GONATIVE_GOOGLE_PROJECT_ID);
+                    regid = gcm.register(googleProjectId);
 
                     sendRegistrationIdToBackend(regid);
                     storeRegistrationId(regid);
