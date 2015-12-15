@@ -180,7 +180,13 @@ public class PushManager {
     // Check for Google Play Services APK.
     private boolean checkPlayServices() {
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-        if (resultCode != ConnectionResult.SUCCESS) {
+        if (resultCode == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED) {
+            GooglePlayServicesUtil.getErrorDialog(resultCode, mainActivity,
+                    MainActivity.REQUEST_PLAY_SERVICES_RESOLUTION)
+                    .show();
+            return false;
+        }
+        else if (resultCode != ConnectionResult.SUCCESS) {
             Log.i(TAG, "This device is not supported for Google Play Services");
             return false;
         } else {

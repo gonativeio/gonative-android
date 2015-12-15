@@ -43,6 +43,7 @@ import android.widget.Spinner;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.parse.ParseAnalytics;
+import com.parse.ParsePushBroadcastReceiver;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -257,9 +258,9 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             url = targetUrl;
         }
         // if it came from parse, then a bit more work is necessary
-        if (url == null && intent.hasExtra("com.parse.Data")) {
+        if (url == null && intent.hasExtra(ParsePushBroadcastReceiver.KEY_PUSH_DATA)) {
             try {
-                String pushJson = intent.getStringExtra("com.parse.Data");
+                String pushJson = intent.getStringExtra(ParsePushBroadcastReceiver.KEY_PUSH_DATA);
                 JSONObject object = (JSONObject) new JSONTokener(pushJson).nextValue();
                 if (object.has("targetUrl") && !object.isNull("targetUrl")) {
                     url = object.optString("targetUrl");

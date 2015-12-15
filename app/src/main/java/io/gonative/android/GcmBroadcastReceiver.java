@@ -15,7 +15,8 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
  * Created by weiyin on 8/11/2014.
  */
 public class GcmBroadcastReceiver extends BroadcastReceiver {
-    private static final int NOTIFICATION_ID = 1;
+    private static final int DEFAULT_NOTIFICATION_ID = 1;
+    private static final String DEFAULT_NOTIFICATION_TAG = "gonative_default_tag";
 
     private static final String TAG = GcmBroadcastReceiver.class.getName();
     @Override
@@ -24,27 +25,46 @@ public class GcmBroadcastReceiver extends BroadcastReceiver {
         GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(context);
 
         String messageType = gcm.getMessageType(intent);
-        if (!extras.isEmpty()) {
+        if (messageType != null && !extras.isEmpty()) {
             if (messageType.equals(GoogleCloudMessaging.MESSAGE_TYPE_MESSAGE)) {
                 showNotification(context, extras);
             }
         }
     }
 
+    // This will receive notifications sent via Parse, but will not show them because
+    // message will be null.
+    // Parse puts everything into a JSON string in extras.getString("data").
     private void showNotification(Context context, Bundle extras) {
+        String message = extras.getString("message");
+        if (message == null) message = extras.getString("alert");
+        if (message == null) return;
+
         String title = extras.getString("title");
         if (title == null) title = AppConfig.getInstance(context).appName;
-
-        String message = extras.getString("message");
-        if (message == null) return;
 
         String targetUrl = extras.getString("targetUrl");
         if (targetUrl == null) targetUrl = extras.getString("u");
 
+        // we support strings and ints
+        Object notificationId = extras.get("n_id");
+        if (notificationId == null) notificationId = extras.get("notificationId");
+
+        String tag = DEFAULT_NOTIFICATION_TAG;
+        int id = DEFAULT_NOTIFICATION_ID;
+
+        if (notificationId instanceof String) {
+            tag =  (String)notificationId;
+            id = DEFAULT_NOTIFICATION_ID;
+        } else if (notificationId instanceof Integer) {
+            tag = "customId";
+            id = (Integer)notificationId;
+        }
+
         Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         if (targetUrl != null && !targetUrl.isEmpty()) {
-            intent.putExtra("targetUrl", targetUrl);
+            intent.putExtra(MainActivity.INTENT_TARGET_URL, targetUrl);
         }
 
         PendingIntent contentIntent = PendingIntent.getActivity(context,
@@ -65,6 +85,6 @@ public class GcmBroadcastReceiver extends BroadcastReceiver {
         NotificationManager notificationManager = (NotificationManager)
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
+        notificationManager.notify(tag, id, builder.build());
     }
 }
