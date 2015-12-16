@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.parse.ParseAnalytics;
 import com.parse.ParsePushBroadcastReceiver;
 
 import org.json.JSONException;
@@ -62,5 +63,27 @@ public class GnParsePushBroadcastReceiver extends ParsePushBroadcastReceiver {
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing JSON data", e);
         }
+    }
+
+    @Override
+    protected void onPushOpen(Context context, Intent intent) {
+        ParseAnalytics.trackAppOpenedInBackground(intent);
+        
+        String targetUrl = null;
+        try {
+            JSONObject pushData = new JSONObject(intent.getStringExtra(ParsePushBroadcastReceiver.KEY_PUSH_DATA));
+            targetUrl = LeanUtils.optString(pushData, "targetUrl");
+            if (targetUrl == null) targetUrl = LeanUtils.optString(pushData, "u");
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON data", e);
+        }
+
+        Intent mainIntent = new Intent(context, MainActivity.class);
+        if (targetUrl != null) {
+            mainIntent.putExtra(MainActivity.INTENT_TARGET_URL, targetUrl);
+        }
+        // use flag_activity_single_top to send to existing activity
+        mainIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        context.startActivity(mainIntent);
     }
 }

@@ -443,6 +443,11 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         loadUrl(url, false);
     }
 
+    public void loadUrlUsingJavascript(String url) {
+        String js = "window.location.href=" + LeanUtils.jsWrapString(url) + ";";
+        runJavascript(js);
+    }
+
     public void loadUrl(String url, boolean isFromTab) {
         if (url == null) return;
 
