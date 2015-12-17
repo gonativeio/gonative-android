@@ -273,6 +273,9 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             }
         }
 
+        if (intent.getAction() == Intent.ACTION_VIEW) {
+            url = intent.getDataString();
+        }
 
         if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
         if (url == null && isRoot) url = appConfig.initialUrl;
