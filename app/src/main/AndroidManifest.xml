@@ -46,15 +46,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"></action>
-                <category android:name="android.intent.category.DEFAULT"></category>
-                <category android:name="android.intent.category.BROWSABLE"></category>
-                <data android:scheme="http"></data>
-                <data android:scheme="https"></data>
-                <!--specify data android:host here-->
-                <data android:pathPattern=".*"></data>
-            </intent-filter>
+            <!--additional intent filters-->
+
+            <!--example: -->
+            <!--<intent-filter>-->
+                <!--<action android:name="android.intent.action.VIEW"></action>-->
+                <!--<category android:name="android.intent.category.DEFAULT"></category>-->
+                <!--<category android:name="android.intent.category.BROWSABLE"></category>-->
+                <!--<data android:scheme="http"></data>-->
+                <!--<data android:scheme="https"></data>-->
+                <!--<data android:host="gonative.io"></data>-->
+                <!--<data android:pathPrefix="/"></data>-->
+            <!--</intent-filter>-->
         </activity>
         <activity
             android:name="io.gonative.android.WebFormActivity"
