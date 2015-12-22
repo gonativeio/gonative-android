@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
@@ -95,6 +96,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     private ImageView navigationTitleImage;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
+    private SegmentedController segmentedController = null;
     private IdentityService identityService;
     private TabManager tabManager;
     private ActionManager actionManager;
@@ -213,8 +215,11 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         // profile picker
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
-            Spinner spinner = (Spinner) findViewById(R.id.profile_picker);
-            profilePicker = new ProfilePicker(this, spinner);
+            Spinner profileSpinner = (Spinner) findViewById(R.id.profile_picker);
+            profilePicker = new ProfilePicker(this, profileSpinner);
+
+            Spinner segmentedSpinner = (Spinner) findViewById(R.id.segmented_control);
+            segmentedController = new SegmentedController(this, segmentedSpinner);
         }
 
 		// to save webview cookies to permanent storage
@@ -335,7 +340,23 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         // identity service
         this.identityService = new IdentityService(this);
-	}
+
+        // respond to navigation titles processed
+        LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equals(AppConfig.PROCESSED_NAVIGATION_TITLES)) {
+                    String url = mWebview.getUrl();
+                    if (url == null) return;
+
+                    String title = titleForUrl(mWebview.getUrl());
+                    if (title == null) return;
+
+                    setTitle(title);
+                }
+            }
+        }, new IntentFilter(AppConfig.PROCESSED_NAVIGATION_TITLES));
+    }
 
     protected void onPause() {
         super.onPause();

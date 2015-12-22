@@ -72,11 +72,20 @@
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:visibility="gone"/>
+        <Spinner
+            android:id="@+id/segmented_control"
+            android:layout_below="@id/profile_picker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:visibility="gone"/>
         <ExpandableListView
 			android:id="@+id/drawer_list"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:layout_below="@id/profile_picker"
+			android:layout_below="@id/segmented_control"
 			android:choiceMode="singleChoice"
 			android:scrollbars="vertical"
             android:scrollbarStyle="insideOverlay"

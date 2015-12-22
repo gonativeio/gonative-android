@@ -34,6 +34,8 @@ public class AppConfig {
     public static final String PROCESSED_MENU_MESSAGE = "io.gonative.android.AppConfig.processedMenu";
     public static final String PROCESSED_TAB_NAVIGATION_MESSAGE = "io.gonative.android.AppConfig.processedTabNavigation";
     public static final String PROCESSED_WEBVIEW_POOLS_MESSAGE = "io.gonative.android.AppConfig.processedWebViewPools";
+    public static final String PROCESSED_SEGMENTED_CONTROL = "io.gonative.android.AppConfig.processedSegmentedControl";
+    public static final String PROCESSED_NAVIGATION_TITLES = "io.gonative.android.AppConfig.processedNavigationTitles";
 
     private static final String TAG = AppConfig.class.getName();
 
@@ -76,6 +78,8 @@ public class AppConfig {
     public ArrayList<Boolean> regexIsInternal;
     public HashMap<String,String> redirects;
     public boolean useWebpageTitle;
+
+    public ArrayList<JSONObject> segmentedControl;
 
     public HashMap<String,JSONArray> tabMenus;
     public ArrayList<Pattern> tabMenuRegexes;
@@ -352,6 +356,10 @@ public class AppConfig {
                 } else {
                     this.redirects = null;
                 }
+
+                // segmented control
+                JSONObject segmentedControl = navigation.optJSONObject("segmentedControl");
+                processSegmentedControl(segmentedControl);
             }
 
             ////////////////////////////////////////////////////////////
@@ -542,6 +550,7 @@ public class AppConfig {
             processNavigationTitles(parsedJson.optJSONObject("navigationTitles"));
             processWebViewPools(parsedJson.optJSONArray("webviewPools"));
             processNavigationTitleImage(parsedJson.opt("navigationTitleImage"));
+            processSegmentedControl(parsedJson.optJSONObject("segmentedControl"));
         }
     }
 
@@ -596,6 +605,7 @@ public class AppConfig {
             }
         }
 
+        LocalBroadcastManager.getInstance(this.context).sendBroadcast(new Intent(PROCESSED_NAVIGATION_TITLES));
     }
 
     private void processNavigationLevels(JSONObject navigationLevels) {
@@ -683,6 +693,20 @@ public class AppConfig {
             }
         }
 
+    }
+
+    private void processSegmentedControl(JSONObject segmentedConfig) {
+        if (segmentedConfig == null) return;
+
+        this.segmentedControl = new ArrayList<JSONObject>();
+
+        JSONArray items = segmentedConfig.optJSONArray("items");
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.optJSONObject(i);
+            if (item != null) this.segmentedControl.add(item);
+        }
+
+        LocalBroadcastManager.getInstance(this.context).sendBroadcast(new Intent(PROCESSED_SEGMENTED_CONTROL));
     }
 
     private void processTabNavigation(JSONObject tabNavigation) {
