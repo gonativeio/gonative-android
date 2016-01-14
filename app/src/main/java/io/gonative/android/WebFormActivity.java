@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
+import io.gonative.android.library.AppConfig;
 
 /**
  * Activity which displays a login screen to the user, offering registration as

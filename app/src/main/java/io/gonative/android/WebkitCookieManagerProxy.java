@@ -1,7 +1,5 @@
 package io.gonative.android;
 
-import org.apache.http.impl.cookie.DateUtils;
-
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -13,6 +11,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import io.gonative.android.library.AppConfig;
 
 // this syncs cookies between webkit (webview) and java.net classes
 public class WebkitCookieManagerProxy extends CookieManager {
@@ -65,7 +65,7 @@ public class WebkitCookieManagerProxy extends CookieManager {
                                 Calendar calendar = Calendar.getInstance();
                                 calendar.add(Calendar.SECOND, sessionExpiry);
                                 Date expiryDate = calendar.getTime();
-                                expiryString = "; expires=" + DateUtils.formatDate(expiryDate) +
+                                expiryString = "; expires=" + LeanUtils.formatDateForCookie(expiryDate) +
                                         "; Max-Age=" + Integer.toString(sessionExpiry);
                             }
 

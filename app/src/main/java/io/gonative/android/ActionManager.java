@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import io.gonative.android.library.AppConfig;
+
 /**
  * Created by weiyin on 11/25/14.
  * Copyright 2014 GoNative.io LLC

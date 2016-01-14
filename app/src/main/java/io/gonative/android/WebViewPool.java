@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.gonative.android.library.AppConfig;
+
 /**
  * Created by Weiyin He on 9/3/14.
  * Copyright 2014 GoNative.io LLC

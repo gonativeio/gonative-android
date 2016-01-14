@@ -18,6 +18,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import io.gonative.android.library.AppConfig;
+
 /**
  * Created by Weiyin He on 9/22/14.
  * Copyright 2014 GoNative.io LLC

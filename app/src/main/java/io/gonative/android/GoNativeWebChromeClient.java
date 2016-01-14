@@ -14,6 +14,8 @@ import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import io.gonative.android.library.AppConfig;
+
 /**
 * Created by weiyin on 2/2/15.
 * Copyright 2014 GoNative.io LLC

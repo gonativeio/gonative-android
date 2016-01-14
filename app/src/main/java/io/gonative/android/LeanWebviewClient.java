@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import io.gonative.android.library.AppConfig;
 
 public class LeanWebviewClient extends WebViewClient{
     public static final String STARTED_LOADING_MESSAGE = "io.gonative.android.webview.started";
@@ -159,12 +160,14 @@ public class LeanWebviewClient extends WebViewClient{
 
         // check redirects
         if (appConfig.redirects != null) {
-            final String to = appConfig.redirects.get(url);
-            if (to != null) {
+            String to = appConfig.redirects.get(url);
+            if (to == null) to = appConfig.redirects.get("*");
+            if (to != null && !to.equals(url)) {
+                final String destination = to;
                 mainActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mainActivity.loadUrl(to);
+                        mainActivity.loadUrl(destination);
                     }
                 });
                 return true;

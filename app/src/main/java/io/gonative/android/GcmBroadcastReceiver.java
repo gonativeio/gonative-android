@@ -11,6 +11,8 @@ import android.support.v4.app.NotificationCompat;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import io.gonative.android.library.AppConfig;
+
 /**
  * Created by weiyin on 8/11/2014.
  */

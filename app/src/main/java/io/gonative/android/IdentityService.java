@@ -24,6 +24,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import io.gonative.android.library.AppConfig;
+
 /**
  * Created by weiyin on 9/17/15.
  */

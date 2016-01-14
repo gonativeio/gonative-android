@@ -1,10 +1,11 @@
 package io.gonative.android;
 
 import android.app.Application;
-import android.util.Log;
 
 import com.parse.Parse;
 import com.parse.ParseInstallation;
+
+import io.gonative.android.library.AppConfig;
 
 /**
  * Created by weiyin on 9/2/15.

@@ -16,11 +16,17 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import io.gonative.android.library.AppConfig;
 
 public class LeanUtils {
     private static final String TAG = LeanUtils.class.getName();
@@ -210,5 +216,15 @@ public class LeanUtils {
         if (json == null || key == null) return null;
         // http://code.google.com/p/android/issues/detail?id=13830
         return json.isNull(key) ? null : json.optString(key, null);
+    }
+
+    public static String formatDateForCookie(Date date) {
+        // for http cookie
+        final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
+
+        SimpleDateFormat format = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        return format.format(date);
     }
 }

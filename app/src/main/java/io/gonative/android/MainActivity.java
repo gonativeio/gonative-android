@@ -62,6 +62,8 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.gonative.android.library.AppConfig;
+
 public class MainActivity extends ActionBarActivity implements Observer, SwipeRefreshLayout.OnRefreshListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     public static final String webviewDatabaseSubdir = "webviewDatabase";
