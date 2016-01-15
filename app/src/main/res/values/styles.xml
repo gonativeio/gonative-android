@@ -2,7 +2,7 @@
 <resources>
     <style name="GoNativeTheme.NoActionBar" parent="GoNativeTheme.WithActionBar">
         <item name="windowActionBar">false</item>
-        <item name="android:windowNoTitle">true</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">
