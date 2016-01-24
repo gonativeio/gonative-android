@@ -1,60 +1,72 @@
 package io.gonative.android;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
-import android.webkit.WebView;
+import android.webkit.WebResourceResponse;
+
+import org.xwalk.core.XWalkResourceClient;
+import org.xwalk.core.XWalkView;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import io.gonative.android.library.AppConfig;
 
 /**
-* Created by weiyin on 9/5/14.
-*/
-class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterceptParams, Void, String> {
-    private static final String TAG = WebviewInterceptTask.class.getName();
-
-    private Context context;
+ * Created by weiyin on 9/9/15.
+ */
+public class GoNativeXWalkResourceClient extends XWalkResourceClient {
+    private static final String TAG = GoNativeXWalkResourceClient.class.getName();
     private UrlNavigation urlNavigation;
-    private GoNativeWebviewInterface webview;
-    private URL parsedUrl;
-    private URL finalUrl;
+    private Context context;
 
-    public WebviewInterceptTask(Context context, UrlNavigation urlNavigation) {
-        this.context = context;
+    public GoNativeXWalkResourceClient(XWalkView view, UrlNavigation urlNavigation, Context context) {
+        super(view);
         this.urlNavigation = urlNavigation;
+        this.context = context;
     }
 
-    private WebviewInterceptTask(){
+    @Override
+    public boolean shouldOverrideUrlLoading(XWalkView view, String url) {
+        return urlNavigation.shouldOverrideUrlLoading((GoNativeWebviewInterface)view, url);
     }
 
-    protected String doInBackground(WebviewInterceptParams... inputs) {
-        AppConfig appConfig = AppConfig.getInstance(this.context);
+    @Override
+    public void onReceivedLoadError(XWalkView view, int errorCode, String description, String failingUrl) {
+        // crosswalk has this weird load error: "A network change was detected"
+        if (description != null &&  description.startsWith("A network change was detected")) {
+            view.reload(XWalkView.RELOAD_NORMAL);
+        } else {
+            urlNavigation.onReceivedError((GoNativeWebviewInterface)view, errorCode, description, failingUrl);
+        }
+    }
+
+    @Override
+    public WebResourceResponse shouldInterceptLoadRequest(XWalkView view, String url) {
+        if (!url.equals(urlNavigation.getInterceptHtmlUrl())) return null;
 
         InputStream is = null;
         ByteArrayOutputStream baos = null;
-        try {
-            parsedUrl = inputs[0].url;
-            webview = inputs[0].webview;
-            boolean isReload = inputs[0].isReload;
 
-            // assume Url we got was http or https, since we have already checked in shouldOverrideUrl
-            HttpURLConnection.setFollowRedirects(true);
-            HttpURLConnection connection = null;
+        try {
+            AppConfig appConfig = AppConfig.getInstance(context);
+
+            URL parsedUrl = new URL(url);
+            if (!parsedUrl.getProtocol().toLowerCase().startsWith("http")) return null;
+
+            HttpURLConnection connection;
             boolean wasRedirected = false;
             int numRedirects = 0;
             do {
-                if (isCancelled()) return null;
-
-                connection = (HttpURLConnection) parsedUrl.openConnection();
+                connection = (HttpURLConnection)parsedUrl.openConnection();
                 connection.setInstanceFollowRedirects(false);
                 String customUserAgent = appConfig.userAgentForUrl(parsedUrl.toString());
                 if (customUserAgent != null) {
@@ -62,37 +74,34 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
                 } else {
                     connection.setRequestProperty("User-Agent", appConfig.userAgent);
                 }
-                if (isReload)
-                    connection.setRequestProperty("Cache-Control", "no-cache");
+                connection.setRequestProperty("Cache-Control", "no-cache");
 
                 connection.connect();
                 int responseCode = connection.getResponseCode();
 
                 if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
                         responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+
                     wasRedirected = true;
+                    numRedirects++;
                     parsedUrl = new URL(parsedUrl, connection.getHeaderField("Location"));
 
                     // We may have been redirected to a page that should be intercepted.
                     // check if this page should be intercepted
                     if (this.urlNavigation != null
-                            && this.urlNavigation.shouldOverrideUrlLoadingNoIntercept(this.webview, parsedUrl.toString(), false)) {
+                            && this.urlNavigation.shouldOverrideUrlLoadingNoIntercept((GoNativeWebviewInterface)view,
+                                parsedUrl.toString(), true)) {
 
                         urlNavigation.showWebViewImmediately();
                         connection.disconnect();
-                        this.cancel(true);
-
                         return null;
                     }
-
-                    numRedirects++;
                 } else {
                     wasRedirected = false;
                 }
             } while (wasRedirected && numRedirects < 10);
 
-            finalUrl = connection.getURL();
-
+            // done with redirects
             String mimetype = connection.getContentType();
             if (mimetype == null) {
                 try {
@@ -162,7 +171,7 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
                         // 1.0 if user-scalable=no. The workaround to is calculate the scale and set
                         // it for initial, minimum, and maximum.
                         // http://stackoverflow.com/questions/12723844/android-viewport-setting-user-scalable-no-breaks-width-zoom-level-of-viewpor
-                        double webViewWidth = webview.getWidth() / this.context.getResources().getDisplayMetrics().density;
+                        double webViewWidth = view.getWidth() / this.context.getResources().getDisplayMetrics().density;
                         double viewportWidth = appConfig.forceViewportWidth;
                         double scale = webViewWidth / viewportWidth;
                         builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
@@ -178,7 +187,7 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
                 newString = origString;
             }
 
-            return newString;
+            return new WebResourceResponse("text/html", "utf-8", new ByteArrayInputStream(newString.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             Log.e(TAG, e.toString(), e);
             return null;
@@ -186,29 +195,6 @@ class WebviewInterceptTask extends AsyncTask<WebviewInterceptTask.WebviewInterce
             IOUtils.close(is);
             IOUtils.close(baos);
         }
-    }
 
-    protected void onPostExecute(String data) {
-//            Log.d(TAG, "urlconnection settled on url " + finalUrl.toString());
-
-        if (data == null) {
-            // load directly
-            if (finalUrl != null)
-                webview.loadUrlDirect(finalUrl.toString());
-        } else {
-            webview.loadDataWithBaseURL(finalUrl.toString(), data, "text/html", null, finalUrl.toString());
-        }
-    }
-
-    public static class WebviewInterceptParams {
-        GoNativeWebviewInterface webview;
-        URL url;
-        boolean isReload;
-
-        public WebviewInterceptParams(GoNativeWebviewInterface webview, URL url, boolean isReload) {
-            this.webview = webview;
-            this.url = url;
-            this.isReload = isReload;
-        }
     }
 }

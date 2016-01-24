@@ -22,7 +22,7 @@ android {
 
     buildTypes {
         debug {
-	    applicationIdSuffix ".debug"
+	        applicationIdSuffix ".debug"
         }
         release {
             minifyEnabled true
@@ -31,12 +31,48 @@ android {
             signingConfig signingConfigs.release
         }
     }
+
+
+    flavorDimensions "crosswalk", "abi"
+
+    productFlavors {
+        normal {
+            dimension "crosswalk"
+        }
+        xwalk {
+            dimension "crosswalk"
+        }
+
+        generic {
+            dimension "abi"
+        }
+        x86 {
+            dimension "abi"
+            ndk {
+                abiFilters "x86", ""
+            }
+        }
+        arm {
+            dimension "abi"
+            ndk {
+                abiFilters "armeabi-v7a", ""
+            }
+        }
+
+    }
 }
 
 dependencies {
+    xwalkCompile 'org.xwalk:xwalk_core_library:16.45.421.19'
     compile 'com.android.support:support-v4:23.1.0'
     compile 'com.android.support:appcompat-v7:23.1.0'
     compile 'com.google.android.gms:play-services-gcm:7.8.0'
     compile 'com.parse.bolts:bolts-android:1.+'
     compile fileTree(dir: 'libs', include: '*.jar')
+}
+
+repositories {
+    maven {
+        url 'https://download.01.org/crosswalk/releases/crosswalk/android/maven2'
+    }
 }

@@ -23,16 +23,23 @@
             android:layout_height="1px"
             android:alpha="0.0"/>
 
-        <android.support.v4.widget.SwipeRefreshLayout android:id="@+id/swipe_refresh"
+        <io.gonative.android.MySwipeRefreshLayout
+            android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@id/tabs">
 
-            <io.gonative.android.LeanWebView android:id="@+id/webview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
 
-        </android.support.v4.widget.SwipeRefreshLayout>
+                <io.gonative.android.LeanWebView android:id="@+id/webview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+
+            </RelativeLayout>
+
+        </io.gonative.android.MySwipeRefreshLayout>
 
 
         <ProgressBar

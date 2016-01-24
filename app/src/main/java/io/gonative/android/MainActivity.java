@@ -55,7 +55,6 @@ import java.net.CookieHandler;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -77,8 +76,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     public static final int REQUEST_PLAY_SERVICES_RESOLUTION = 9000;
     private static final float ACTIONBAR_ELEVATION = 12.0f;
 
-    private LeanWebView mWebview;
-    private GoNativeWebChromeClient webChromeClient;
+    private GoNativeWebviewInterface mWebview;
     boolean isPoolWebview = false;
     private Stack<String> backHistory = new Stack<String>();
 
@@ -90,7 +88,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     private ProgressBar mProgress;
     private Dialog splashDialog;
     private boolean splashDismissRequiresForce;
-    private SwipeRefreshLayout swipeRefresh;
+    private MySwipeRefreshLayout swipeRefresh;
     private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
@@ -186,15 +184,9 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         // webview pools
         WebViewPool.getInstance().init(this);
 
-        // WebView debugging
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Map<String,Object> installation = Installation.getInfo(this);
-            String dist = (String)installation.get("distribution");
-            if (dist != null && (dist.equals("debug") || dist.equals("adhoc"))) {
-                WebView.setWebContentsDebuggingEnabled(true);
-            }
-        }
-		
+        // some global webview setup
+        WebViewSetup.setupWebviewGlobals(this);
+
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu)
@@ -206,14 +198,27 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         mProgress = (ProgressBar) findViewById(R.id.progress);
         this.fullScreenLayout = (RelativeLayout)findViewById(R.id.fullscreen);
 
-        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh = (MySwipeRefreshLayout) findViewById(R.id.swipe_refresh);
         swipeRefresh.setOnRefreshListener(this);
-        swipeRefresh.setEnabled(appConfig.pullToRefresh);
+        // only enable swipeRefresh if LeanWebView is a subclass of WebView, since XWalkView integrates
+        // its own refresh controller.
+        if (appConfig.pullToRefresh && WebView.class.isAssignableFrom(LeanWebView.class)) {
+            swipeRefresh.setEnabled(true);
+            swipeRefresh.setCanChildScrollUpCallback(new MySwipeRefreshLayout.CanChildScrollUpCallback() {
+                @Override
+                public boolean canSwipeRefreshChildScrollUp() {
+                    return mWebview.getScrollY() > 0;
+                }
+            });
+        } else {
+            swipeRefresh.setEnabled(false);
+        }
         if (appConfig.pullToRefreshColor != null) {
             swipeRefresh.setColorSchemeColors(appConfig.pullToRefreshColor);
         }
 
-        LeanWebView wv = (LeanWebView) findViewById(R.id.webview);
+        this.mWebview = (GoNativeWebviewInterface) findViewById(R.id.webview);
+        setupWebview(this.mWebview);
 
         // profile picker
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
@@ -228,10 +233,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 		CookieSyncManager.createInstance(getApplicationContext());
 		
 		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
-		CookieHandler.setDefault(new WebkitCookieManagerProxy());
+        CookieHandler.setDefault(new WebkitCookieManagerProxy());
 
-        this.mWebview = wv;
-		setupWebview(wv);
 
         this.postLoadJavascript = getIntent().getStringExtra("postLoadJavascript");
         this.postLoadJavascriptForRefresh = this.postLoadJavascript;
@@ -290,7 +293,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (url == null) url = intent.getStringExtra("url");
 
         if (url != null) {
-            wv.loadUrl(url);
+            this.mWebview.loadUrl(url);
         } else {
             Log.e(TAG, "No url specified for MainActivity");
         }
@@ -396,7 +399,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             // must remove from view hierarchy to destroy
             ViewGroup parent = (ViewGroup) this.mWebview.getParent();
             if (parent != null) {
-                parent.removeView(this.mWebview);
+                parent.removeView((View)this.mWebview);
             }
             if (!this.isPoolWebview) this.mWebview.destroy();
         }
@@ -511,38 +514,17 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
     public void runJavascript(String javascript) {
         if (javascript == null) return;
-
-        LeanUtils.runJavascriptOnWebView(this.mWebview, javascript);
+        this.mWebview.runJavascript(javascript);
     }
 	
 	public boolean isConnected(){
 		NetworkInfo ni = cm.getActiveNetworkInfo();
 		return ni != null && ni.isConnected();
 	}
-		
 	
 	// configures webview settings
-	private void setupWebview(WebView wv){
-        LeanUtils.setupWebview(wv, this);
-
-        this.webChromeClient = new GoNativeWebChromeClient(this);
-        wv.setWebChromeClient(this.webChromeClient);
-
-        wv.setWebViewClient(new LeanWebviewClient(MainActivity.this));
-        wv.setDownloadListener(fileDownloader);
-
-        wv.removeJavascriptInterface("gonative_profile_picker");
-        if (profilePicker != null) {
-            wv.addJavascriptInterface(profilePicker.getProfileJsBridge(), "gonative_profile_picker");
-        }
-
-        wv.removeJavascriptInterface("gonative_dynamic_update");
-        if (AppConfig.getInstance(this).updateConfigJS != null) {
-            wv.addJavascriptInterface(AppConfig.getInstance(this).getJsBridge(), "gonative_dynamic_update");
-        }
-
-        wv.removeJavascriptInterface("gonative_status_checker");
-        wv.addJavascriptInterface(new StatusCheckerBridge(), "gonative_status_checker");
+	private void setupWebview(GoNativeWebviewInterface wv){
+        WebViewSetup.setupWebviewForActivity(wv, this);
 	}
 
     private void showSplashScreen(double maxTime, double forceTime) {
@@ -625,7 +607,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         startedLoading = false;
         stopCheckingReadyStatus();
 
-        final WebView wv = this.mWebview;
+        final GoNativeWebviewInterface wv = this.mWebview;
         if (!webviewIsHidden) {
             // don't animate if already visible
             mProgress.setVisibility(View.INVISIBLE);
@@ -777,6 +759,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             if (resultCode == RESULT_OK) {
                 Uri selectedImageUri = data == null ? null : data.getData();
                 mUploadMessage.onReceiveValue(selectedImageUri);
+            } else {
+                mUploadMessage.onReceiveValue(null);
             }
 
             mUploadMessage = null;
@@ -800,7 +784,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     @Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if ((keyCode == KeyEvent.KEYCODE_BACK)) {
-            if (this.webChromeClient != null && this.webChromeClient.onBackPressed()) {
+            if (this.mWebview.exitFullScreen()) {
                 return true;
             }
 
@@ -817,13 +801,13 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 		return super.onKeyDown(keyCode, event);
 	}
 
-    public void switchToWebview(LeanWebView newWebview, boolean isPoolWebview) {
+    public void switchToWebview(GoNativeWebviewInterface newWebview, boolean isPoolWebview) {
         setupWebview(newWebview);
 
         // scroll to top
-        newWebview.scrollTo(0, 0);
+        ((View)newWebview).scrollTo(0, 0);
 
-        LeanWebView prev = this.mWebview;
+        View prev = (View)this.mWebview;
 
         // replace the current web view in the parent with the new view
         if (newWebview != prev) {
@@ -831,16 +815,22 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             // a parent will cause a runtime exception. So be extra safe by removing it from its parent.
             ViewParent temp = newWebview.getParent();
             if (temp instanceof  ViewGroup) {
-                ((ViewGroup) temp).removeView(newWebview);
+                ((ViewGroup) temp).removeView((View)newWebview);
             }
 
             ViewGroup parent = (ViewGroup) prev.getParent();
             int index = parent.indexOfChild(prev);
             parent.removeView(prev);
-            parent.addView(newWebview, index);
-            newWebview.setLayoutParams(prev.getLayoutParams());
+            parent.addView((View) newWebview, index);
+            ((View)newWebview).setLayoutParams(prev.getLayoutParams());
 
-            if (!this.isPoolWebview) prev.destroy();
+            // webviews can still send some extraneous events to this activity if we do not remove
+            // its callbacks
+            WebViewSetup.removeCallbacks((LeanWebView)prev);
+
+            if (!this.isPoolWebview) {
+                ((GoNativeWebviewInterface)prev).destroy();
+            }
         }
 
         this.isPoolWebview = isPoolWebview;
@@ -1091,6 +1081,18 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         this.urlLevel = urlLevel;
     }
 
+    public ProfilePicker getProfilePicker() {
+        return profilePicker;
+    }
+
+    public FileDownloader getFileDownloader() {
+        return fileDownloader;
+    }
+
+    public StatusCheckerBridge getStatusCheckerBridge() {
+        return new StatusCheckerBridge();
+    }
+
     @Override
     public void setTitle(CharSequence title) {
         super.setTitle(title);
@@ -1109,7 +1111,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     }
 
     public void checkReadyStatus() {
-        LeanUtils.runJavascriptOnWebView(this.mWebview, "gonative_status_checker.onReadyState(document.readyState)");
+        this.mWebview.runJavascript("gonative_status_checker.onReadyState(document.readyState)");
     }
 
     public void checkReadyStatusResult(String status) {

@@ -15,7 +15,7 @@ import java.util.Map;
 import io.gonative.android.library.AppConfig;
 
 // this syncs cookies between webkit (webview) and java.net classes
-public class WebkitCookieManagerProxy extends CookieManager {
+public class WebkitCookieManagerProxy extends java.net.CookieManager {
     private static final String TAG = WebkitCookieManagerProxy.class.getName();
 	private android.webkit.CookieManager webkitCookieManager;
 

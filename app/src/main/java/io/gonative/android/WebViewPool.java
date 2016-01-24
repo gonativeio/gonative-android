@@ -11,8 +11,6 @@ import android.util.Log;
 import android.util.Pair;
 import android.view.Display;
 import android.view.WindowManager;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,18 +32,52 @@ import io.gonative.android.library.AppConfig;
  */
 
 public class WebViewPool {
+    public class WebViewPoolCallback {
+        public void onPageFinished(final GoNativeWebviewInterface webview, String url) {
+            WebViewPool pool = WebViewPool.this;
+
+            pool.urlToWebview.put(pool.currentLoadingUrl, pool.currentLoadingWebview);
+            pool.currentLoadingUrl = null;
+            pool.currentLoadingWebview = null;
+            pool.isLoading = false;
+
+            pool.resumeLoading();
+        }
+
+        public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface webview, String url) {
+            // intercept html
+            WebViewPool pool = WebViewPool.this;
+
+            if (AppConfig.getInstance(pool.context).interceptHtml) {
+                try {
+                    URL parsedUrl = new URL(url);
+                    if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
+                        new WebviewInterceptTask(pool.context, null).execute(new WebviewInterceptTask.WebviewInterceptParams(webview, parsedUrl, true));
+                        return true;
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, e.getMessage(), e);
+                }
+            }
+
+            return false;
+        }
+    }
+
     private static final String TAG = WebViewPool.class.getName();
     // singleton
     private static WebViewPool instance;
     private Activity context;
 
     private boolean isInitialized;
-    private Map<String, LeanWebView> urlToWebview;
+    private Map<String, GoNativeWebviewInterface> urlToWebview;
     private Map<String, WebViewPoolDisownPolicy> urlToDisownPolicy;
+
+    private WebViewPoolCallback webViewPoolCallback = new WebViewPoolCallback();
+
     private List<Set<String>> urlSets;
     private Set<String> urlsToLoad;
-    private WebViewClient webviewClient;
-    private LeanWebView currentLoadingWebview;
+    private GoNativeWebviewInterface currentLoadingWebview;
     private String currentLoadingUrl;
     private boolean isLoading;
     private String lastUrlRequest;
@@ -71,7 +103,7 @@ public class WebViewPool {
         // webviews must be instantiated from activity context
         this.context = activity;
 
-        this.urlToWebview = new HashMap<String, LeanWebView>();
+        this.urlToWebview = new HashMap<String, GoNativeWebviewInterface>();
         this.urlToDisownPolicy = new HashMap<String, WebViewPoolDisownPolicy>();
         this.urlSets = new ArrayList<Set<String>>();
         this.urlsToLoad = new HashSet<String>();
@@ -82,7 +114,7 @@ public class WebViewPool {
             public void onReceive(Context context, Intent intent) {
                 if (intent == null || intent.getAction() == null) return;
 
-                if (intent.getAction().equals(LeanWebviewClient.STARTED_LOADING_MESSAGE)) {
+                if (intent.getAction().equals(UrlNavigation.STARTED_LOADING_MESSAGE)) {
                     WebViewPool pool = WebViewPool.this;
                     pool.isMainActivityLoading = true;
                     if (pool.currentLoadingWebview != null) {
@@ -90,67 +122,25 @@ public class WebViewPool {
                         pool.currentLoadingWebview.stopLoading();
                         pool.isLoading = false;
                     }
-                } else if (intent.getAction().equals(LeanWebviewClient.FINISHED_LOADING_MESSAGE)) {
+                } else if (intent.getAction().equals(UrlNavigation.FINISHED_LOADING_MESSAGE)) {
                     WebViewPool pool = WebViewPool.this;
                     pool.isMainActivityLoading = false;
                     pool.resumeLoading();
                 } else if (intent.getAction().equals(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE)) {
                     processConfig();
-                } else if (intent.getAction().equals(LeanWebviewClient.CLEAR_POOLS_MESSAGE)) {
+                } else if (intent.getAction().equals(UrlNavigation.CLEAR_POOLS_MESSAGE)) {
                     WebViewPool.this.flushAll();
                 }
             }
         };
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(LeanWebviewClient.STARTED_LOADING_MESSAGE));
+                this.messageReceiver, new IntentFilter(UrlNavigation.STARTED_LOADING_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(LeanWebviewClient.FINISHED_LOADING_MESSAGE));
+                this.messageReceiver, new IntentFilter(UrlNavigation.FINISHED_LOADING_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(LeanWebviewClient.CLEAR_POOLS_MESSAGE));
+                this.messageReceiver, new IntentFilter(UrlNavigation.CLEAR_POOLS_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
                 this.messageReceiver, new IntentFilter(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE));
-
-        this.webviewClient = new WebViewClient(){
-            @Override
-            public void onPageFinished(final WebView view, String url) {
-                super.onPageFinished(view, url);
-
-                WebViewPool pool = WebViewPool.this;
-                context.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        view.setWebViewClient(null);
-                    }
-                });
-
-                pool.urlToWebview.put(pool.currentLoadingUrl, pool.currentLoadingWebview);
-                pool.currentLoadingUrl = null;
-                pool.currentLoadingWebview = null;
-                pool.isLoading = false;
-
-                pool.resumeLoading();
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                // intercept html
-                WebViewPool pool = WebViewPool.this;
-
-                if (AppConfig.getInstance(pool.context).interceptHtml) {
-                    try {
-                        URL parsedUrl = new URL(url);
-                        if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
-                            new WebviewInterceptTask(pool.context, null).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, true));
-                            return true;
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, e.getMessage(), e);
-                    }
-                }
-
-                return false;
-            }
-        };
 
         processConfig();
     }
@@ -232,8 +222,7 @@ public class WebViewPool {
                     LeanWebView webview = new LeanWebView(context);
                     currentLoadingWebview = webview;
                     urlsToLoad.remove(urlString);
-                    LeanUtils.setupWebview(webview, context);
-
+                    WebViewSetup.setupWebview(webview, context);
 
                     // size it before loading url
                     WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
@@ -242,7 +231,8 @@ public class WebViewPool {
                     display.getSize(size);
                     webview.layout(0, 0, size.x, size.y);
 
-                    webview.setWebViewClient(webviewClient);
+                    new PoolWebViewClient(webViewPoolCallback, webview);
+
                     currentLoadingWebview = webview;
                     urlsToLoad.remove(urlString);
 
@@ -261,7 +251,7 @@ public class WebViewPool {
         this.urlToWebview.clear();
     }
 
-    public void disownWebview(WebView webview) {
+    public void disownWebview(GoNativeWebviewInterface webview) {
         Iterator<String> it = this.urlToWebview.keySet().iterator();
         while(it.hasNext()) {
             String key = it.next();
@@ -272,7 +262,7 @@ public class WebViewPool {
         }
     }
 
-    public Pair<LeanWebView, WebViewPoolDisownPolicy> webviewForUrl(String url) {
+    public Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy> webviewForUrl(String url) {
         this.lastUrlRequest = url;
         HashSet<String> urlSet = urlSetForUrl(url);
         if (urlSet.size() > 0) {
@@ -285,11 +275,11 @@ public class WebViewPool {
             this.urlsToLoad.addAll(newUrls);
         }
 
-        LeanWebView webview = this.urlToWebview.get(url);
-        if (webview == null) return new Pair<LeanWebView, WebViewPoolDisownPolicy>(null, null);
+        GoNativeWebviewInterface webview = this.urlToWebview.get(url);
+        if (webview == null) return new Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy>(null, null);
 
         WebViewPoolDisownPolicy policy = this.urlToDisownPolicy.get(url);
-        return new Pair<LeanWebView, WebViewPoolDisownPolicy>(webview, policy);
+        return new Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy>(webview, policy);
     }
 
     private HashSet<String> urlSetForUrl(String url){

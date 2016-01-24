@@ -84,17 +84,14 @@ public class LeanUtils {
                 .toString();
     }
 
+    // only used by WebFormActivity. For real webviews, not our subclasses.
     public static void runJavascriptOnWebView(WebView webview, String js) {
         // before Kitkat, the only way to run javascript was to load a url that starts with "javascript:".
         // Starting in Kitkat, the "javascript:" method still works, but it expects the rest of the string
         // to be URL encoded, unlike previous versions. Rather than URL encode for Kitkat and above,
         // use the new evaluateJavascript method.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            if (webview instanceof LeanWebView) {
-                ((LeanWebView)webview).loadUrlDirect("javascript:" + js);
-            } else {
                 webview.loadUrl("javascript:" + js);
-            }
         } else {
             webview.evaluateJavascript(js, null);
         }
@@ -119,38 +116,6 @@ public class LeanUtils {
         }
 
         return sb.toString();
-    }
-
-    @SuppressWarnings("deprecation")
-    @SuppressLint("SetJavaScriptEnabled")
-    public static void setupWebview(WebView wv, Context context) {
-        WebSettings webSettings = wv.getSettings();
-
-        if (AppConfig.getInstance(context).allowZoom) {
-            webSettings.setBuiltInZoomControls(true);
-        }
-        else {
-            webSettings.setBuiltInZoomControls(false);
-        }
-
-        webSettings.setDisplayZoomControls(false);
-        webSettings.setLoadWithOverviewMode(true);
-        webSettings.setUseWideViewPort(true);
-
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-
-        webSettings.setDomStorageEnabled(true);
-        File cachePath = new File(context.getCacheDir(), MainActivity.webviewCacheSubdir);
-        webSettings.setAppCachePath(cachePath.getAbsolutePath());
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setDatabaseEnabled(true);
-
-        webSettings.setSaveFormData(false);
-        webSettings.setSavePassword(false);
-        webSettings.setUserAgentString(AppConfig.getInstance(context).userAgent);
-        webSettings.setSupportMultipleWindows(false);
-        webSettings.setGeolocationEnabled(AppConfig.getInstance(context).usesGeolocation);
     }
 
     public static Integer parseColor(String colorString) {

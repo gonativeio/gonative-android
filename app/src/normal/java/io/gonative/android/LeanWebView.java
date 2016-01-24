@@ -1,8 +1,10 @@
 package io.gonative.android;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.webkit.WebBackForwardList;
+import android.webkit.WebChromeClient;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -10,8 +12,9 @@ import android.webkit.WebViewClient;
 /**
  * Pass calls WebViewClient.shouldOverrideUrlLoading when loadUrl, reload, or goBack are called.
  */
-public class LeanWebView extends WebView{
+public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     private WebViewClient mClient = null;
+    private WebChromeClient mChromeClient = null;
     private boolean checkLoginSignup = true;
 
     public LeanWebView(Context context) {
@@ -33,11 +36,17 @@ public class LeanWebView extends WebView{
     }
 
     @Override
+    public void setWebChromeClient(WebChromeClient client) {
+        mChromeClient = client;
+        super.setWebChromeClient(client);
+    }
+
+    @Override
     public void loadUrl(String url) {
         if (url == null) return;
 
         if (url.startsWith("javascript:"))
-            LeanUtils.runJavascriptOnWebView(this, url.substring("javascript:".length()));
+            runJavascript(url.substring("javascript:".length()));
         else if (mClient == null || !mClient.shouldOverrideUrlLoading(this, url)) {
             super.loadUrl(url);
         }
@@ -45,8 +54,8 @@ public class LeanWebView extends WebView{
 
     @Override
     public void reload() {
-        if (mClient == null || !(mClient instanceof LeanWebviewClient)) super.reload();
-        else if(!((LeanWebviewClient)mClient).shouldOverrideUrlLoading(this, getUrl(), true))
+        if (mClient == null || !(mClient instanceof GoNativeWebviewClient)) super.reload();
+        else if(!((GoNativeWebviewClient)mClient).shouldOverrideUrlLoading(this, getUrl(), true))
             super.reload();
     }
 
@@ -71,5 +80,30 @@ public class LeanWebView extends WebView{
 
     public void setCheckLoginSignup(boolean checkLoginSignup) {
         this.checkLoginSignup = checkLoginSignup;
+    }
+
+    public void runJavascript(String js) {
+        // before Kitkat, the only way to run javascript was to load a url that starts with "javascript:".
+        // Starting in Kitkat, the "javascript:" method still works, but it expects the rest of the string
+        // to be URL encoded, unlike previous versions. Rather than URL encode for Kitkat and above,
+        // use the new evaluateJavascript method.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            loadUrlDirect("javascript:" + js);
+        } else {
+            evaluateJavascript(js, null);
+        }
+    }
+
+    public boolean exitFullScreen() {
+        if (mChromeClient != null && mChromeClient instanceof GoNativeWebChromeClient) {
+            return ((GoNativeWebChromeClient) mChromeClient).exitFullScreen();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isCrosswalk() {
+        return false;
     }
 }

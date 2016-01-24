@@ -76,7 +76,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
         this.mainActivity.toggleFullscreen(this.isFullScreen);
     }
 
-    public boolean onBackPressed() {
+    public boolean exitFullScreen() {
         if (this.isFullScreen) {
             onHideCustomView();
             return true;
@@ -124,7 +124,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
         mainActivity.setUploadMessage(uploadMsg);
 
-        if (acceptType == null) acceptType = "*/*";
+        if (acceptType == null || acceptType.trim().isEmpty()) acceptType = "*/*";
 
         // Filesystem.
         final Intent galleryIntent = new Intent();
