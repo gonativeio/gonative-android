@@ -31,7 +31,7 @@ public class WebViewSetup {
         UrlNavigation urlNavigation = new UrlNavigation(activity);
         urlNavigation.setCurrentWebviewUrl(webview.getUrl());
 
-        wv.setWebChromeClient(new GoNativeWebChromeClient(activity));
+        wv.setWebChromeClient(new GoNativeWebChromeClient(activity, urlNavigation));
         wv.setWebViewClient(new GoNativeWebviewClient(activity, urlNavigation));
 
         FileDownloader fileDownloader = activity.getFileDownloader();

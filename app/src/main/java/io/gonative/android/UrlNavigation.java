@@ -4,10 +4,12 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.util.Pair;
 import android.webkit.CookieSyncManager;
+import android.webkit.MimeTypeMap;
 import android.webkit.WebView;
 
 import org.json.JSONArray;
@@ -15,6 +17,7 @@ import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
@@ -473,5 +476,40 @@ public class UrlNavigation {
 
     public String getInterceptHtmlUrl() {
         return interceptHtmlUrl;
+    }
+
+    public Intent createFileChooserIntent(String[] mimetypespec) {
+        boolean isMultipleTypes = false;
+        ArrayList<String> mimeTypes = new ArrayList<String>();
+        for (String spec : mimetypespec) {
+            String[] splitSpec = spec.split("[,;\\s]");
+            for (String s : splitSpec) {
+                if (s.startsWith(".")) {
+                    String t = MimeTypeMap.getSingleton().getMimeTypeFromExtension(s.substring(1));
+                    if (t != null) mimeTypes.add(t);
+                } else if (s.contains("/")) {
+                    mimeTypes.add(s);
+                }
+            }
+        }
+
+        if (mimeTypes.isEmpty()) mimeTypes.add("*/*");
+
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        if (mimeTypes.size() == 1) {
+            intent.setType(mimeTypes.get(0));
+        } else {
+            intent.setType("*/*");
+
+            // If running kitkat or later, then we can specify multiple mime types
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray());
+            }
+        }
+
+        return intent;
     }
 }

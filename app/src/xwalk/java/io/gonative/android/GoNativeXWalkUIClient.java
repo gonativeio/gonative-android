@@ -49,15 +49,10 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
         }
 
         mainActivity.setUploadMessage(uploadFile);
-
         if (acceptType == null || acceptType.trim().isEmpty()) acceptType = "*/*";
-        final Intent galleryIntent = new Intent();
-        galleryIntent.setType(acceptType);
-        galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
-        galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
-
+        Intent intent = urlNavigation.createFileChooserIntent(new String[]{acceptType});
         try {
-            mainActivity.startActivityForResult(galleryIntent, MainActivity.REQUEST_SELECT_FILE_OLD);
+            mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_OLD);
         } catch (ActivityNotFoundException e) {
             mainActivity.setUploadMessageLP(null);
             Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();

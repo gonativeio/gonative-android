@@ -22,12 +22,14 @@ import io.gonative.android.library.AppConfig;
 */
 class GoNativeWebChromeClient extends WebChromeClient {
     private MainActivity mainActivity;
+    private UrlNavigation urlNavigation;
     private View customView;
     private CustomViewCallback callback;
     private boolean isFullScreen = false;
 
-    public GoNativeWebChromeClient(MainActivity mainActivity) {
+    public GoNativeWebChromeClient(MainActivity mainActivity, UrlNavigation urlNavigation) {
         this.mainActivity = mainActivity;
+        this.urlNavigation = urlNavigation;
     }
 
     @Override
@@ -102,7 +104,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
         mainActivity.setUploadMessageLP(filePathCallback);
 
-        Intent intent = fileChooserParams.createIntent();
+        Intent intent = urlNavigation.createFileChooserIntent(fileChooserParams.getAcceptTypes());
         try {
             mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_LOLLIPOP);
         } catch (ActivityNotFoundException e) {
@@ -124,15 +126,9 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
         mainActivity.setUploadMessage(uploadMsg);
 
-        if (acceptType == null || acceptType.trim().isEmpty()) acceptType = "*/*";
-
-        // Filesystem.
-        final Intent galleryIntent = new Intent();
-        galleryIntent.setType(acceptType);
-        galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
-        galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
-
-        mainActivity.startActivityForResult(galleryIntent, MainActivity.REQUEST_SELECT_FILE_OLD);
+        if (acceptType == null) acceptType = "*/*";
+        Intent intent = urlNavigation.createFileChooserIntent(new String[]{acceptType});
+        mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_OLD);
     }
 
     // Android 3.0 +
