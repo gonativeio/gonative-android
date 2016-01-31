@@ -3,6 +3,8 @@ package io.gonative.android;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
 
@@ -58,6 +60,4 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
             Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
         }
     }
-
-
 }

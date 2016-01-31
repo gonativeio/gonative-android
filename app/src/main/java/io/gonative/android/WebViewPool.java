@@ -11,6 +11,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.view.Display;
 import android.view.WindowManager;
+import android.webkit.WebResourceResponse;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -40,27 +41,13 @@ public class WebViewPool {
             pool.currentLoadingUrl = null;
             pool.currentLoadingWebview = null;
             pool.isLoading = false;
+            pool.htmlIntercept.setInterceptUrl(null);
 
             pool.resumeLoading();
         }
 
-        public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface webview, String url) {
-            // intercept html
-            WebViewPool pool = WebViewPool.this;
-
-            if (AppConfig.getInstance(pool.context).interceptHtml) {
-                try {
-                    URL parsedUrl = new URL(url);
-                    if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
-                        new WebviewInterceptTask(pool.context, null).execute(new WebviewInterceptTask.WebviewInterceptParams(webview, parsedUrl, true));
-                        return true;
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, e.getMessage(), e);
-                }
-            }
-
-            return false;
+        public WebResourceResponse interceptHtml(GoNativeWebviewInterface webview, String url) {
+            return htmlIntercept.interceptHtml(webview, url);
         }
     }
 
@@ -68,6 +55,7 @@ public class WebViewPool {
     // singleton
     private static WebViewPool instance;
     private Activity context;
+    private HtmlIntercept htmlIntercept;
 
     private boolean isInitialized;
     private Map<String, GoNativeWebviewInterface> urlToWebview;
@@ -102,6 +90,7 @@ public class WebViewPool {
 
         // webviews must be instantiated from activity context
         this.context = activity;
+        this.htmlIntercept = new HtmlIntercept(activity);
 
         this.urlToWebview = new HashMap<String, GoNativeWebviewInterface>();
         this.urlToDisownPolicy = new HashMap<String, WebViewPoolDisownPolicy>();
@@ -215,6 +204,7 @@ public class WebViewPool {
         if (!this.urlsToLoad.isEmpty()) {
             final String urlString = this.urlsToLoad.iterator().next();
             this.currentLoadingUrl = urlString;
+            this.htmlIntercept.setInterceptUrl(urlString);
 
             context.runOnUiThread(new Runnable() {
                 @Override

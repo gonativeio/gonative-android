@@ -126,6 +126,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
+    private Stack<Bundle>previousWebviewStates;
+
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -238,6 +240,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         this.postLoadJavascript = getIntent().getStringExtra("postLoadJavascript");
         this.postLoadJavascriptForRefresh = this.postLoadJavascript;
+
+        this.previousWebviewStates = new Stack<>();
 
         // tab navigation
         ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
@@ -434,15 +438,27 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (this.backHistory.isEmpty() || !this.backHistory.peek().equals(url)) {
             this.backHistory.push(url);
         }
+
+        checkNavigationForPage(url);
+
+        // this is a little hack to show the webview after going back in history in single-page apps.
+        // We may never get onPageStarted or onPageFinished, hence the webview would be forever
+        // hidden when navigating back in single-page apps. We do, however, get an updatedHistory callback.
+        showWebview(0.3);
     }
 
     public boolean canGoBack() {
-        return this.backHistory.size() >= 2;
+        return this.mWebview.canGoBack();
     }
 
     public void goBack() {
-        this.backHistory.pop();
-        loadUrl(this.backHistory.pop());
+        if (this.mWebview.isCrosswalk()) {
+            // not safe to do for non-crosswalk, as we may never get a page finished callback
+            // for single-page apps
+            hideWebview();
+        }
+
+        this.mWebview.goBack();
     }
 
     public void sharePage() {
@@ -549,7 +565,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             public void run() {
                 hideSplashScreen(true);
             }
-        }, (long)(delay * 1000));
+        }, (long) (delay * 1000));
     }
 
     private void hideSplashScreen(boolean isForce) {
@@ -796,18 +812,36 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
                 goBack();
                 return true;
             }
+            else if (!this.previousWebviewStates.isEmpty()) {
+                Bundle state = previousWebviewStates.pop();
+                LeanWebView webview = new LeanWebView(this);
+                webview.restoreStateFromBundle(state);
+                switchToWebview(webview, /* isPool */ false, /* isBack */ true);
+                return true;
+            }
 		}
 
 		return super.onKeyDown(keyCode, event);
 	}
 
-    public void switchToWebview(GoNativeWebviewInterface newWebview, boolean isPoolWebview) {
+    // isPoolWebView is used to keep track of whether we are showing a pooled webview, which has implications
+    // for page navigation, namely notifying the pool to disown the webview.
+    // isBack means the webview is being switched in as part of back navigation behavior. If isBack=false,
+    // then we will save the state of the old one switched out.
+    public void switchToWebview(GoNativeWebviewInterface newWebview, boolean isPoolWebview, boolean isBack) {
         setupWebview(newWebview);
 
         // scroll to top
         ((View)newWebview).scrollTo(0, 0);
 
         View prev = (View)this.mWebview;
+
+        if (!isBack) {
+            // save the state for back button behavior
+            Bundle stateBundle = new Bundle();
+            this.mWebview.saveStateToBundle(stateBundle);
+            this.previousWebviewStates.add(stateBundle);
+        }
 
         // replace the current web view in the parent with the new view
         if (newWebview != prev) {
@@ -935,7 +969,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
                 onRefresh();
 	        	return true;
         	default:
-                return super.onOptionsItemSelected(item);	        		
+                return super.onOptionsItemSelected(item);
         }
     }
 

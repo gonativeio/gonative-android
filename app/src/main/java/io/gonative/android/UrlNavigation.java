@@ -10,6 +10,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
 import org.json.JSONArray;
@@ -17,7 +18,6 @@ import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
@@ -36,13 +36,13 @@ public class UrlNavigation {
     private String analyticsExec;
     private String dynamicUpdateExec;
     private String currentWebviewUrl;
-    private String interceptHtmlUrl; // used by GoNativeXWalkResourceClient
+    private HtmlIntercept htmlIntercept;
 
     private boolean mVisitedLoginOrSignup = false;
 
 	public UrlNavigation(MainActivity activity) {
-		super();
 		this.mainActivity = activity;
+        this.htmlIntercept = new HtmlIntercept(activity, this);
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
@@ -284,7 +284,7 @@ public class UrlNavigation {
             this.mainActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mainActivity.switchToWebview(poolWebview, true);
+                    mainActivity.switchToWebview(poolWebview, true, false);
                     mainActivity.checkNavigationForPage(url);
                 }
             });
@@ -297,7 +297,7 @@ public class UrlNavigation {
             this.mainActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mainActivity.switchToWebview(poolWebview, true);
+                    mainActivity.switchToWebview(poolWebview, true, false);
                     mainActivity.checkNavigationForPage(url);
                 }
             });
@@ -309,7 +309,7 @@ public class UrlNavigation {
             this.mainActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mainActivity.switchToWebview(poolWebview, true);
+                    mainActivity.switchToWebview(poolWebview, true, false);
                     mainActivity.checkNavigationForPage(url);
                 }
             });
@@ -332,19 +332,12 @@ public class UrlNavigation {
         if (shouldOverride) return true;
 
         // intercept html
-        this.interceptHtmlUrl = null;
+        this.htmlIntercept.setInterceptUrl(null);
         if (AppConfig.getInstance(mainActivity).interceptHtml) {
             try {
                 URL parsedUrl = new URL(url);
                 if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
-                    this.interceptHtmlUrl = url;
-
-                    if (!view.isCrosswalk()) {
-                        mainActivity.setProgress(0);
-                        new WebviewInterceptTask(this.mainActivity, this).execute(new WebviewInterceptTask.WebviewInterceptParams(view, parsedUrl, isReload));
-                        mainActivity.hideWebview();
-                        return true;
-                    }
+                    this.htmlIntercept.setInterceptUrl(url);
                 }
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage(), e);
@@ -357,6 +350,8 @@ public class UrlNavigation {
 
 	public void onPageStarted(String url) {
 //        Log.d(TAG, "onpagestarted " + url);
+        htmlIntercept.setInterceptUrl(url);
+
         UrlInspector.getInstance().inspectUrl(url);
 		Uri uri = Uri.parse(url);
 
@@ -474,8 +469,9 @@ public class UrlNavigation {
         this.currentWebviewUrl = currentWebviewUrl;
     }
 
-    public String getInterceptHtmlUrl() {
-        return interceptHtmlUrl;
+    public WebResourceResponse interceptHtml(LeanWebView view, String url) {
+//        Log.d(TAG, "intercept " + url);
+        return htmlIntercept.interceptHtml(view, url);
     }
 
     public Intent createFileChooserIntent(String[] mimetypespec) {

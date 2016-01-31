@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.os.Bundle;
 import android.view.ViewParent;
 import android.view.ViewPropertyAnimator;
 
@@ -13,6 +14,7 @@ public interface GoNativeWebviewInterface {
     public void loadDataWithBaseURL (String baseUrl, String data, String mimeType, String encoding, String historyUrl);
     public String getUrl();
     public void reload();
+    public boolean canGoBack();
     public void goBack();
     public void onPause();
     public void onResume();
@@ -34,4 +36,7 @@ public interface GoNativeWebviewInterface {
     public void setCheckLoginSignup(boolean checkLoginSignup);
 
     public boolean isCrosswalk();
+
+    public void saveStateToBundle(Bundle outBundle);
+    public void restoreStateFromBundle(Bundle inBundle);
 }

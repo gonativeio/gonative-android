@@ -36,8 +36,8 @@ public class PoolWebViewClient {
         }
 
         @Override
-        public boolean shouldOverrideUrlLoading(XWalkView view, String url) {
-            return webViewPoolCallback.shouldOverrideUrlLoading((GoNativeWebviewInterface)view, url);
+        public WebResourceResponse shouldInterceptLoadRequest(XWalkView view, String url) {
+            return webViewPoolCallback.interceptHtml((GoNativeWebviewInterface)view, url);
         }
     }
 

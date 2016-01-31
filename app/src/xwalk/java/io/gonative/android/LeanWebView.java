@@ -3,13 +3,16 @@ package io.gonative.android;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.xwalk.core.XWalkNavigationHistory;
 import org.xwalk.core.XWalkView;
 
 /**
@@ -42,7 +45,7 @@ public class LeanWebView extends XWalkView implements GoNativeWebviewInterface {
 
     @Override
     public void goBack() {
-
+        getNavigationHistory().navigate(XWalkNavigationHistory.Direction.BACKWARD, 1);
     }
 
     @Override
@@ -67,6 +70,10 @@ public class LeanWebView extends XWalkView implements GoNativeWebviewInterface {
 
     @Override
     public boolean exitFullScreen() {
+        if (hasEnteredFullscreen()) {
+            leaveFullscreen();
+            return true;
+        }
         return false;
     }
 
@@ -98,5 +105,34 @@ public class LeanWebView extends XWalkView implements GoNativeWebviewInterface {
     @Override
     public boolean isCrosswalk() {
         return true;
+    }
+
+    @Override
+    public boolean canGoBack() {
+        XWalkNavigationHistory history = getNavigationHistory();
+        if (history == null) return false;
+        else return history.canGoBack();
+    }
+
+    @Override
+    public void saveStateToBundle(Bundle outBundle) {
+        saveState(outBundle);
+    }
+
+    @Override
+    public void restoreStateFromBundle(Bundle inBundle) {
+        restoreState(inBundle);
+    }
+
+    @Override
+    // This makes crosswalk behave the same as the regular android webview in regards
+    // to the back button.
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_UP &&
+                event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            // do not handle the back key. We will handle it in our activity.
+            return false;
+        }
+        return super.dispatchKeyEvent(event);
     }
 }

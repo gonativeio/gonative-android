@@ -2,6 +2,7 @@ package io.gonative.android;
 
 import android.content.Context;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.AttributeSet;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
@@ -61,11 +62,21 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
 
     @Override
     public void goBack() {
-        WebBackForwardList list = copyBackForwardList();
-        int currentIndex = list.getCurrentIndex();
-        if (currentIndex > 0){
-            WebHistoryItem item = list.getItemAtIndex(currentIndex - 1);
-            loadUrl(item.getUrl());
+        try {
+            WebBackForwardList history = copyBackForwardList();
+            WebHistoryItem item =  history.getItemAtIndex(history.getCurrentIndex() - 1);
+            // this shouldn't be necessary, but sometimes we are not able to get an updated
+            // intercept url from onPageStarted, so this call to shouldOverrideUrlLoading ensures
+            // that our html interceptor knows about this url.
+            if (mClient.shouldOverrideUrlLoading(this, item.getUrl())) {
+                return;
+            }
+
+            super.goBack();
+            return;
+        } catch (Exception ignored) {
+            super.goBack();
+            return;
         }
     }
 
@@ -105,5 +116,15 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     @Override
     public boolean isCrosswalk() {
         return false;
+    }
+
+    @Override
+    public void saveStateToBundle(Bundle outBundle) {
+        saveState(outBundle);
+    }
+
+    @Override
+    public void restoreStateFromBundle(Bundle inBundle) {
+        restoreState(inBundle);
     }
 }

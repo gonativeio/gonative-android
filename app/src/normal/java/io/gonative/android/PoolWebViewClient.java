@@ -1,7 +1,11 @@
 package io.gonative.android;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -28,11 +32,23 @@ public class PoolWebViewClient extends WebViewClient {
             }
         });
 
-        webViewPoolCallback.onPageFinished((GoNativeWebviewInterface)view, url);
+        webViewPoolCallback.onPageFinished((GoNativeWebviewInterface) view, url);
     }
 
     @Override
-    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        return webViewPoolCallback.shouldOverrideUrlLoading((GoNativeWebviewInterface)view, url);
+    public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+        return webViewPoolCallback.interceptHtml((GoNativeWebviewInterface)view, url);
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        String method = request.getMethod();
+        if (method == null || !method.equalsIgnoreCase("GET")) return null;
+
+        android.net.Uri uri = request.getUrl();
+        if (uri == null || !uri.getScheme().startsWith("http")) return null;
+
+        return shouldInterceptRequest(view, uri.toString());
     }
 }
