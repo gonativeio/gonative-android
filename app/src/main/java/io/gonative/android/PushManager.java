@@ -54,6 +54,7 @@ public class PushManager {
 
     public void register() {
         AppConfig appConfig = AppConfig.getInstance(this.context);
+        if (!appConfig.pushNotifications) return;
 
         if (googleProjectId.equals(GONATIVE_GOOGLE_PROJECT_ID) && appConfig.publicKey == null) {
             Log.w(TAG, "publicKey is required for push");

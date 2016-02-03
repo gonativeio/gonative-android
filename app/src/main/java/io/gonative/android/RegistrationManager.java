@@ -33,7 +33,7 @@ public class RegistrationManager {
     public RegistrationManager(Context context) {
         this.context = context;
         this.registrationEndpoints = new LinkedList<RegistrationEndpoint>();
-        this.allDataTypes = EnumSet.allOf(RegistrationDataType.class);
+        this.allDataTypes = EnumSet.noneOf(RegistrationDataType.class);
     }
 
     public void processConfig(JSONArray endpoints) {
@@ -54,7 +54,7 @@ public class RegistrationManager {
 
             EnumSet<RegistrationDataType> dataTypes = null;
             if (endpoint.optJSONArray("dataType") != null) {
-                dataTypes = EnumSet.allOf(RegistrationDataType.class);
+                dataTypes = EnumSet.noneOf(RegistrationDataType.class);
                 JSONArray dataTypesArray = endpoint.optJSONArray("dataType");
                 for (int j = 0; j < dataTypesArray.length(); j++) {
                     String s = dataTypesArray.optString(j);
@@ -100,7 +100,7 @@ public class RegistrationManager {
     }
 
     private EnumSet<RegistrationDataType> getDataTypesFromString(String s) {
-        EnumSet<RegistrationDataType> dataTypes = EnumSet.allOf(RegistrationDataType.class);
+        EnumSet<RegistrationDataType> dataTypes = EnumSet.noneOf(RegistrationDataType.class);
 
         if (s == null) {
             return dataTypes;

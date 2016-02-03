@@ -176,8 +176,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             this.registrationManager = ((GoNativeApplication)getApplication()).getRegistrationManager();
 
             // Push notifications
-            if (appConfig.pushNotifications ||
-                    (this.registrationManager != null && this.registrationManager.pushEnabled())) {
+            if (appConfig.pushNotifications) {
                 this.pushManager = new PushManager(this);
                 this.pushManager.register();
             }
