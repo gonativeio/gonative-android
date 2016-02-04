@@ -60,8 +60,16 @@ public class WebViewSetup {
             return;
         }
 
+        AppConfig appConfig = AppConfig.getInstance(activity);
+
         LeanWebView wv = (LeanWebView)webview;
 
+        // we need to tell appconfig what the default crosswalk user agent is. It is not easy to get
+        // outside of actually creating an XWalkView with an activity context.
+        appConfig.setWebviewDefaultUserAgent(wv.getUserAgentString());
+
+        // setupwebview will actually set the user agent for crosswalk. Important to do it there
+        // rather than this function so that webview pools will also get the right user agent.
         setupWebview(wv, activity);
 
         UrlNavigation urlNavigation = new UrlNavigation(activity);
@@ -89,7 +97,6 @@ public class WebViewSetup {
             wv.addJavascriptInterface(new XWalkProfileBridge(profileJsBridge), "gonative_profile_picker");
         }
 
-        AppConfig appConfig = AppConfig.getInstance(activity);
         if (appConfig.updateConfigJS != null) {
             final AppConfig.AppConfigJsBridge appConfigJsBridge = appConfig.getJsBridge();
             wv.addJavascriptInterface(new XWalkDynamicAppConfigBridge(appConfigJsBridge), "gonative_dynamic_update");
@@ -104,6 +111,9 @@ public class WebViewSetup {
             Log.e(TAG, "Expected webview to be of class XWalkView and not " + webview.getClass().getName());
             return;
         }
+
+        AppConfig appConfig = AppConfig.getInstance(context);
+        ((LeanWebView)webview).setUserAgentString(appConfig.userAgent);
     }
 
     public static void setupWebviewGlobals(Context context) {
