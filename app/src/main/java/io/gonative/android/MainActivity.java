@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Random;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -334,7 +335,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         }
 
 		if (getSupportActionBar() != null) {
-            if (!isRoot || AppConfig.getInstance(this).showNavigationMenu) {
+            if (!isRoot || appConfig.showNavigationMenu) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             }
 
@@ -699,6 +700,23 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         else
             return false;
 	}
+
+    public void setDrawerEnabled(boolean enabled) {
+        if (!isRoot) return;
+
+        AppConfig appConfig = AppConfig.getInstance(this);
+        if (!appConfig.showNavigationMenu) return;
+
+        if (mDrawerLayout != null) {
+            mDrawerLayout.setDrawerLockMode(enabled ? DrawerLayout.LOCK_MODE_UNLOCKED :
+                    DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        }
+
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(enabled);
+        }
+    }
 	
 	protected void setupMenu(){
         menuAdapter = new JsonMenuAdapter(this);
@@ -859,7 +877,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
             // webviews can still send some extraneous events to this activity if we do not remove
             // its callbacks
-            WebViewSetup.removeCallbacks((LeanWebView)prev);
+            WebViewSetup.removeCallbacks((LeanWebView) prev);
 
             if (!this.isPoolWebview) {
                 ((GoNativeWebviewInterface)prev).destroy();
@@ -1008,6 +1026,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         startActivityForResult(intent, REQUEST_WEBFORM);
     }
 
+    // onPageFinished
     public void checkNavigationForPage(String url) {
         // don't change anything on navigation if the url that just finished was a file download
         if (url.equals(this.fileDownloader.getLastDownloadedUrl())) return;
@@ -1026,6 +1045,18 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (this.registrationManager != null) {
             this.registrationManager.checkUrl(url);
+        }
+    }
+
+    // onPageStarted
+    public void checkPreNavigationForPage(String url) {
+        if (this.tabManager != null) {
+            this.tabManager.autoSelectTab(url);
+        }
+
+        AppConfig appConfig = AppConfig.getInstance(this);
+        if (appConfig.sidebarEnabledRegex != null) {
+            setDrawerEnabled(appConfig.sidebarEnabledRegex.matcher(url).matches());
         }
     }
 

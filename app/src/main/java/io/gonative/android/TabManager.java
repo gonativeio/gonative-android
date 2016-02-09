@@ -16,6 +16,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
@@ -31,6 +34,7 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     private String currentUrl;
     private BroadcastReceiver broadcastReceiver;
     private JSONArray tabs;
+    private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
 
     private TabManager(){
         // disable instantiation without mainActivity
@@ -70,16 +74,22 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
             return;
         }
 
+        String menuId = null;
+
         for (int i = 0; i < regexes.size(); i++) {
             Pattern regex = regexes.get(i);
             if (regex.matcher(url).matches()) {
-                setMenuID(ids.get(i));
-                return;
+                menuId = ids.get(i);
+                break;
             }
         }
 
-        setMenuID(null);
+        setMenuID(menuId);
+
+        if (menuId != null) autoSelectTab(url);
     }
+
+
 
     private void setMenuID(String id){
         if (id == null) {
@@ -115,6 +125,47 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
                 mainActivity.hideTabs();
             }
         });
+    }
+
+    // regex used for auto tab selection
+    private List<Pattern> getRegexForTab(JSONObject tabConfig) {
+        if (tabConfig == null) return null;
+
+        Object regex = tabConfig.opt("regex");
+        if (regex == null) return null;
+
+        return LeanUtils.createRegexArrayFromStrings(regex);
+    }
+
+    private List<Pattern> getCachedRegexForTab(int position) {
+        if (tabs == null || position < 0 || position > tabs.length()) return null;
+
+        JSONObject tabConfig = tabs.optJSONObject(position);
+        if (tabConfig == null) return null;
+
+        if (tabRegexCache.containsKey(tabConfig)) {
+            return tabRegexCache.get(tabConfig);
+        } else {
+            List<Pattern> regex = getRegexForTab(tabConfig);
+            tabRegexCache.put(tabConfig, regex);
+            return regex;
+        }
+    }
+
+    public void autoSelectTab(String url) {
+        if (tabs == null) return;
+
+        for (int i = 0; i < tabs.length(); i++) {
+            List<Pattern> patternList = getCachedRegexForTab(i);
+            if (patternList == null) continue;
+
+            for(Pattern regex : patternList) {
+                if (regex.matcher(url).matches()) {
+                    viewPager.setCurrentItem(i);
+                    return;
+                }
+            }
+        }
     }
 
     public boolean selectTab(String url, String javascript) {

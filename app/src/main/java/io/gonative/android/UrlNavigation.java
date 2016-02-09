@@ -363,6 +363,8 @@ public class UrlNavigation {
         // check ready status
         mainActivity.startCheckingReadyStatus();
 
+        mainActivity.checkPreNavigationForPage(url);
+
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.STARTED_LOADING_MESSAGE));
     }
