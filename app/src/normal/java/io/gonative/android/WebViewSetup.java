@@ -83,6 +83,10 @@ public class WebViewSetup {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        }
+
         webSettings.setDomStorageEnabled(true);
         File cachePath = new File(context.getCacheDir(), MainActivity.webviewCacheSubdir);
         webSettings.setAppCachePath(cachePath.getAbsolutePath());

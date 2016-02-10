@@ -138,7 +138,7 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     }
 
     private List<Pattern> getCachedRegexForTab(int position) {
-        if (tabs == null || position < 0 || position > tabs.length()) return null;
+        if (tabs == null || position < 0 || position >= tabs.length()) return null;
 
         JSONObject tabConfig = tabs.optJSONObject(position);
         if (tabConfig == null) return null;
