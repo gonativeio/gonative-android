@@ -43,6 +43,7 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 
 import com.astuetz.PagerSlidingTabStrip;
+import com.facebook.appevents.AppEventsLogger;
 import com.parse.ParseAnalytics;
 import com.parse.ParsePushBroadcastReceiver;
 
@@ -376,6 +377,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (this.connectivityReceiver != null) {
             unregisterReceiver(this.connectivityReceiver);
         }
+
+        if (AppConfig.getInstance(this).facebookEnabled) {
+            AppEventsLogger.deactivateApp(this);
+        }
     }
 
     @Override
@@ -391,6 +396,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         // check login status
         LoginManager.getInstance().checkLogin();
+
+        if (AppConfig.getInstance(this).facebookEnabled) {
+            AppEventsLogger.activateApp(this);
+        }
     }
 
     @Override

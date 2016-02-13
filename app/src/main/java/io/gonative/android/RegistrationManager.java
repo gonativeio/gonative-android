@@ -23,9 +23,17 @@ import java.util.regex.Pattern;
 public class RegistrationManager {
     private final static String TAG = RegistrationManager.class.getName();
 
+    private enum RegistrationDataType {
+        Installation,
+        Push,
+        Parse,
+        OneSignal
+    }
+
     private Context context;
     private String pushRegistrationToken;
     private String parseInstallationId;
+    private String oneSignalUserId;
 
     private List<RegistrationEndpoint> registrationEndpoints;
     private EnumSet<RegistrationDataType> allDataTypes;
@@ -95,6 +103,11 @@ public class RegistrationManager {
         registrationDataChanged(RegistrationDataType.Parse);
     }
 
+    public void setOneSignalUserId(String oneSignalUserId) {
+        this.oneSignalUserId = oneSignalUserId;
+        registrationDataChanged(RegistrationDataType.OneSignal);
+    }
+
     public boolean pushEnabled() {
         return this.allDataTypes.contains(RegistrationDataType.Push);
     }
@@ -112,6 +125,9 @@ public class RegistrationManager {
         } else if (s.equalsIgnoreCase("parse")) {
             dataTypes.add(RegistrationDataType.Parse);
             dataTypes.add(RegistrationDataType.Installation);
+        } else if (s.equalsIgnoreCase("onesignal")) {
+            dataTypes.add(RegistrationDataType.OneSignal);
+            dataTypes.add(RegistrationDataType.Installation);
         }
 
         return dataTypes;
@@ -123,12 +139,6 @@ public class RegistrationManager {
         for (RegistrationEndpoint endpoint : registrationEndpoints) {
             if (endpoint.dataTypes.contains(type)) endpoint.sendRegistrationInfo();
         }
-    }
-
-    private enum RegistrationDataType {
-        Installation,
-        Push,
-        Parse
     }
 
 
@@ -157,8 +167,12 @@ public class RegistrationManager {
                         toSend.put("deviceToken", pushRegistrationToken);
                     }
 
-                    if (dataTypes.contains(RegistrationDataType.Installation) && parseInstallationId != null) {
+                    if (dataTypes.contains(RegistrationDataType.Parse) && parseInstallationId != null) {
                         toSend.put("parseInstallationId", parseInstallationId);
+                    }
+
+                    if (dataTypes.contains(RegistrationDataType.OneSignal) && oneSignalUserId != null) {
+                        toSend.put("oneSignalUserId", oneSignalUserId);
                     }
 
                     try {

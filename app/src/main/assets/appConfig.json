@@ -122,6 +122,16 @@
       "clientKey": "",
       "pushEnabled": false
     },
+    "oneSignal": {
+      "active": false,
+      "applicationId": "",
+      "googleProjectId": ""
+    },
+    "facebook": {
+      "active": false,
+      "appId": "",
+      "displayName": ""
+    },
     "push": {
       "active": false
     },

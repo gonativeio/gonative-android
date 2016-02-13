@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
@@ -23,13 +24,24 @@ public class GcmBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = GcmBroadcastReceiver.class.getName();
     @Override
     public void onReceive(Context context, Intent intent) {
+        // Do not handle if GoNative push is not enabled.
+        if (!AppConfig.getInstance(context).pushNotifications) return;
+
         Bundle extras = intent.getExtras();
         GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(context);
 
         String messageType = gcm.getMessageType(intent);
         if (messageType != null && !extras.isEmpty()) {
             if (messageType.equals(GoogleCloudMessaging.MESSAGE_TYPE_MESSAGE)) {
-                showNotification(context, extras);
+                // OneSignal push notifications will get received here, so we need to filter them
+                // out to prevent duplicates. By looking for a field named "custom" that looks like
+                // a JSON object, we can ignore it.
+                String custom = extras.getString("custom");
+                if (custom == null || !custom.startsWith("{")) {
+                    // this did not come from OneSignal, so go ahead and show notification
+                    showNotification(context, extras);
+                }
+
             }
         }
     }

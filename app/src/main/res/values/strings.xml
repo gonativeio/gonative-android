@@ -13,4 +13,5 @@
     <string name="download_canceled">Download canceled</string>
     <string name="file_handler_not_found">Could not find an app to open this file.</string>
 	<string name="cannot_open_file_chooser">Could not open file chooser to handle this file type.</string>
+	<string name="facebook_app_id"></string>
 </resources>

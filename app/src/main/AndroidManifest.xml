@@ -39,6 +39,7 @@
 
         <meta-data android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
 
         <activity
             android:name="io.gonative.android.MainActivity"
@@ -68,6 +69,14 @@
             android:theme="@style/GoNativeTheme.WithActionBar"
             android:configChanges="orientation|screenSize">
         </activity>
+
+        <!-- Declaring FacebookActivity is only necessary for Login or Share, so it is not needed
+        if we are only using analytics. However, declaring it does not harm and removes a warning. -->
+        <activity android:name="com.facebook.FacebookActivity"
+            android:configChanges=
+                "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/app_name" />
 
         <!--
   WakefulBroadcastReceiver that will receive intents from GCM
@@ -127,6 +136,14 @@
 
         <!-- set icon for parse push notifications -->
         <meta-data android:name="com.parse.push.notification_icon" android:resource="@drawable/ic_notification"/>
+
+        <!-- Handles OneSignal notification opened events -->
+        <receiver android:name=".OneSignalReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.onesignal.NotificationOpened.RECEIVE"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
