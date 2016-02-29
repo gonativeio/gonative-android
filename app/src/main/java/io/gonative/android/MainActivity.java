@@ -1064,9 +1064,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         }
 
         AppConfig appConfig = AppConfig.getInstance(this);
-        if (appConfig.sidebarEnabledRegex != null) {
-            setDrawerEnabled(appConfig.sidebarEnabledRegex.matcher(url).matches());
-        }
+        setDrawerEnabled(appConfig.shouldShowSidebarForUrl(url));
     }
 
     public int urlLevelForUrl(String url) {

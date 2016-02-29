@@ -128,7 +128,12 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
         if (acceptType == null) acceptType = "*/*";
         Intent intent = urlNavigation.createFileChooserIntent(new String[]{acceptType});
-        mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_OLD);
+        try {
+            mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_OLD);
+        } catch (ActivityNotFoundException e) {
+            mainActivity.setUploadMessage(null);
+            Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
+        }
     }
 
     // Android 3.0 +
