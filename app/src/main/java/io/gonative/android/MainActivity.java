@@ -3,9 +3,11 @@ package io.gonative.android;
 import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -13,6 +15,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewCompat;
@@ -41,6 +45,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.appevents.AppEventsLogger;
@@ -58,7 +63,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Random;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,8 +74,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
-	public static final int REQUEST_SELECT_FILE_OLD = 100;
-    public static final int REQUEST_SELECT_FILE_LOLLIPOP = 101;
+	public static final int REQUEST_SELECT_FILE = 100;
+    public static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
@@ -84,6 +88,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
 	private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
+    private Uri directUploadImageUri;
 	private DrawerLayout mDrawerLayout;
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
@@ -794,25 +799,104 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             }
         }
 
-        if (requestCode == REQUEST_SELECT_FILE_OLD) {
-            if (null == mUploadMessage)
+        if (requestCode == REQUEST_SELECT_FILE) {
+            if (resultCode != RESULT_OK) {
+                cancelFileUpload();
                 return;
-
-            if (resultCode == RESULT_OK) {
-                Uri selectedImageUri = data == null ? null : data.getData();
-                mUploadMessage.onReceiveValue(selectedImageUri);
-            } else {
-                mUploadMessage.onReceiveValue(null);
             }
 
+            // from documents (and video camera)
+            if (data != null && data.getData() != null) {
+                if (mUploadMessage != null) {
+                    mUploadMessage.onReceiveValue(data.getData());
+                    mUploadMessage = null;
+                }
+
+                if (uploadMessageLP != null) {
+                    uploadMessageLP.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+                    uploadMessageLP = null;
+                }
+
+                return;
+            }
+
+            // we may get clip data for multi-select documents
+            if (data != null && data.getClipData() != null) {
+                ClipData clipData = data.getClipData();
+                ArrayList<Uri> files = new ArrayList<>(clipData.getItemCount());
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    ClipData.Item item = clipData.getItemAt(i);
+                    if (item.getUri() != null) {
+                        files.add(item.getUri());
+                    }
+                }
+
+                if (mUploadMessage != null) {
+                    // shouldn never happen, but just in case, send the first item
+                    if (files.size() > 0) {
+                        mUploadMessage.onReceiveValue(files.get(0));
+                    } else {
+                        mUploadMessage.onReceiveValue(null);
+                    }
+                    mUploadMessage = null;
+                }
+
+                if (uploadMessageLP != null) {
+                    uploadMessageLP.onReceiveValue(files.toArray(new Uri[files.size()]));
+                    uploadMessageLP = null;
+                }
+
+                return;
+            }
+
+            // from camera
+            if (this.directUploadImageUri != null) {
+                // check if we have external storage permissions
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) !=
+                        PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                            android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                        Toast.makeText(this, R.string.external_storage_explanation, Toast.LENGTH_LONG).show();
+                    }
+
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
+                            REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
+                    // wait for the onRequestPermissionsResult callback
+                    return;
+                }
+
+
+                if (mUploadMessage != null) {
+                    mUploadMessage.onReceiveValue(this.directUploadImageUri);
+                    mUploadMessage = null;
+                }
+                if (uploadMessageLP != null) {
+                    uploadMessageLP.onReceiveValue(new Uri[]{this.directUploadImageUri});
+                    uploadMessageLP = null;
+                }
+                this.directUploadImageUri = null;
+
+                return;
+            }
+
+            // Should not reach here.
+            cancelFileUpload();
+        }
+    }
+
+    public void cancelFileUpload() {
+        if (mUploadMessage != null) {
+            mUploadMessage.onReceiveValue(null);
             mUploadMessage = null;
         }
 
-        if (requestCode == REQUEST_SELECT_FILE_LOLLIPOP) {
-            if (uploadMessageLP == null) return;
-            uploadMessageLP.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+        if (uploadMessageLP != null) {
+            uploadMessageLP.onReceiveValue(null);
             uploadMessageLP = null;
         }
+
+        this.directUploadImageUri = null;
     }
 
     @Override
@@ -1249,20 +1333,41 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         decorView.setSystemUiVisibility(visibility);
     }
 
-    public ValueCallback<Uri> getUploadMessage() {
-        return mUploadMessage;
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_PERMISSION_READ_EXTERNAL_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (this.directUploadImageUri == null) {
+                    cancelFileUpload();
+                    return;
+                }
+
+                if (mUploadMessage != null) {
+                    mUploadMessage.onReceiveValue(this.directUploadImageUri);
+                    mUploadMessage = null;
+                }
+                if (uploadMessageLP != null) {
+                    uploadMessageLP.onReceiveValue(new Uri[]{this.directUploadImageUri});
+                    uploadMessageLP = null;
+                }
+
+                this.directUploadImageUri = null;
+            } else {
+                cancelFileUpload();
+            }
+        }
     }
 
     public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
         this.mUploadMessage = mUploadMessage;
     }
 
-    public ValueCallback<Uri[]> getUploadMessageLP() {
-        return uploadMessageLP;
-    }
-
     public void setUploadMessageLP(ValueCallback<Uri[]> uploadMessageLP) {
         this.uploadMessageLP = uploadMessageLP;
+    }
+
+    public void setDirectUploadImageUri(Uri directUploadImageUri) {
+        this.directUploadImageUri = directUploadImageUri;
     }
 
     public RelativeLayout getFullScreenLayout() {

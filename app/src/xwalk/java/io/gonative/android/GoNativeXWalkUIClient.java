@@ -3,8 +3,6 @@ package io.gonative.android;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
 
@@ -45,19 +43,10 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
     @Override
     public void openFileChooser(XWalkView view, ValueCallback<Uri> uploadFile, String acceptType, String capture) {
         // make sure there is no existing message
-        if (mainActivity.getUploadMessage() != null) {
-            mainActivity.getUploadMessage().onReceiveValue(null);
-            mainActivity.setUploadMessage(null);
-        }
+        mainActivity.cancelFileUpload();
 
         mainActivity.setUploadMessage(uploadFile);
         if (acceptType == null || acceptType.trim().isEmpty()) acceptType = "*/*";
-        Intent intent = urlNavigation.createFileChooserIntent(new String[]{acceptType});
-        try {
-            mainActivity.startActivityForResult(intent, MainActivity.REQUEST_SELECT_FILE_OLD);
-        } catch (ActivityNotFoundException e) {
-            mainActivity.setUploadMessageLP(null);
-            Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
-        }
+        urlNavigation.chooseFileUpload(new String[]{acceptType});
     }
 }
