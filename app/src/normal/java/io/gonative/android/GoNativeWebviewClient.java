@@ -3,9 +3,12 @@ package io.gonative.android;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.http.SslError;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -65,7 +68,19 @@ public class GoNativeWebviewClient extends WebViewClient{
 
     @Override
     public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-        urlNavigation.onReceivedError((GoNativeWebviewInterface)view, errorCode, description, failingUrl);
+        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, errorCode);
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    @Override
+    public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, error.getErrorCode());
+    }
+
+    @Override
+    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+        handler.cancel();
+        urlNavigation.onReceivedSslError(error);
     }
 
     @Override

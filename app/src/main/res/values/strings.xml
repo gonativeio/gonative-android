@@ -14,5 +14,8 @@
     <string name="file_handler_not_found">Could not find an app to open this file.</string>
 	<string name="cannot_open_file_chooser">Could not open file chooser to handle this file type.</string>
 	<string name="external_storage_explanation">Allow photo access to upload file.</string>
+	<string name="ssl_error_generic">Error establishing SSL Connection</string>
+	<string name="ssl_error_expired">SSL certificate has expired</string>
+	<string name="ssl_error_cert">Invalid SSL certificate</string>
 	<string name="facebook_app_id"></string>
 </resources>

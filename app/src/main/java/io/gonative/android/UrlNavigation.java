@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Parcelable;
@@ -463,7 +464,7 @@ public class UrlNavigation {
         }
     }
 	
-	public void onReceivedError(GoNativeWebviewInterface view, int errorCode, String description, String failingUrl){
+	public void onReceivedError(GoNativeWebviewInterface view, int errorCode){
         mainActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -476,6 +477,27 @@ public class UrlNavigation {
             view.loadUrlDirect("file:///android_asset/offline.html");
 		}
 	}
+
+    public void onReceivedSslError(SslError error) {
+        int errorMessage;
+        switch (error.getPrimaryError()) {
+            case SslError.SSL_EXPIRED:
+                errorMessage = R.string.ssl_error_expired;
+                break;
+            case SslError.SSL_DATE_INVALID:
+            case SslError.SSL_IDMISMATCH:
+            case SslError.SSL_NOTYETVALID:
+            case SslError.SSL_UNTRUSTED:
+                errorMessage = R.string.ssl_error_cert;
+                break;
+            case SslError.SSL_INVALID:
+            default:
+                errorMessage = R.string.ssl_error_generic;
+                break;
+        }
+
+        Toast.makeText(mainActivity, errorMessage, Toast.LENGTH_LONG).show();
+    }
 
     public String getCurrentWebviewUrl() {
         return currentWebviewUrl;
