@@ -29,7 +29,7 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
         if (status == LoadStatus.FINISHED) {
             urlNavigation.onPageFinished((GoNativeWebviewInterface)view, url);
         } else if (status == LoadStatus.FAILED) {
-            urlNavigation.onReceivedError((GoNativeWebviewInterface)view, 0, null, url);
+            urlNavigation.onReceivedError((GoNativeWebviewInterface)view, 0);
         }
     }
 

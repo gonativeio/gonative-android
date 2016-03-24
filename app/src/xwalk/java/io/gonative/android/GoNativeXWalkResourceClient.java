@@ -45,7 +45,7 @@ public class GoNativeXWalkResourceClient extends XWalkResourceClient {
         if (description != null &&  description.startsWith("A network change was detected")) {
             view.reload(XWalkView.RELOAD_NORMAL);
         } else {
-            urlNavigation.onReceivedError((GoNativeWebviewInterface)view, errorCode, description, failingUrl);
+            urlNavigation.onReceivedError((GoNativeWebviewInterface)view, errorCode);
         }
     }
 
