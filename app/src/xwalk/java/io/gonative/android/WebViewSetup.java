@@ -125,6 +125,9 @@ public class WebViewSetup {
                 XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
             }
         }
+
+        // Fixes issues with setting alpha != 1.0
+        XWalkPreferences.setValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW, true);
     }
 
     public static void removeCallbacks(LeanWebView webview) {
