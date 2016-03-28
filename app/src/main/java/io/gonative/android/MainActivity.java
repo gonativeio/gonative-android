@@ -408,6 +408,17 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (isRoot) {
+            if (AppConfig.getInstance(this).clearCache) {
+                this.mWebview.clearCache(true);
+            }
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
 

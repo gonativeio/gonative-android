@@ -24,6 +24,7 @@ public interface GoNativeWebviewInterface {
     public int getProgress();
     public String getTitle();
     public boolean exitFullScreen();
+    public void clearCache(boolean includeDiskFiles);
 
     // view stuff
     public void setAlpha(float alpha);
