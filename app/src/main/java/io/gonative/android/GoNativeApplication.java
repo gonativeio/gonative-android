@@ -1,19 +1,11 @@
 package io.gonative.android;
 
 import android.app.Application;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.util.Log;
 
 import com.facebook.FacebookSdk;
 import com.onesignal.OneSignal;
 import com.parse.Parse;
 import com.parse.ParseInstallation;
-
-import org.json.JSONObject;
-
-import java.security.MessageDigest;
-import java.security.Signature;
 
 import io.gonative.android.library.AppConfig;
 
@@ -61,6 +53,9 @@ public class GoNativeApplication extends Application {
                 });
             }
         }
+
+        // some global webview setup
+        WebViewSetup.setupWebviewGlobals(this);
     }
 
     public RegistrationManager getRegistrationManager() {

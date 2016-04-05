@@ -192,9 +192,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         // webview pools
         WebViewPool.getInstance().init(this);
 
-        // some global webview setup
-        WebViewSetup.setupWebviewGlobals(this);
-
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu)

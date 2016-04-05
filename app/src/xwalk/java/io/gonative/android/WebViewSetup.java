@@ -122,12 +122,21 @@ public class WebViewSetup {
             Map<String,Object> installation = Installation.getInfo(context);
             String dist = (String)installation.get("distribution");
             if (dist != null && (dist.equals("debug") || dist.equals("adhoc"))) {
-                XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
+                try {
+                    XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error setting XWalkPreferences.REMOTE_DEBUGGING", e);
+                }
+
             }
         }
 
         // Fixes issues with setting alpha != 1.0
-        XWalkPreferences.setValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW, true);
+        try {
+            XWalkPreferences.setValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW, true);
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting XWalkPreferences.ANIMATABLE_XWALK_VIEW", e);
+        }
     }
 
     public static void removeCallbacks(LeanWebView webview) {
