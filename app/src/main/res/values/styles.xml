@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <style name="GoNativeTheme.NoActionBar" parent="GoNativeTheme.WithActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -51,5 +52,9 @@
 
     <style name="SplashScreenAnimation">
         <item name="android:windowExitAnimation">@anim/fast_fade_out</item>
+    </style>
+
+    <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:background">@drawable/splash</item>
     </style>
 </resources>

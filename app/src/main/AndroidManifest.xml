@@ -46,10 +46,6 @@
             android:name="io.gonative.android.MainActivity"
             android:label="@string/app_name"
             android:configChanges="orientation|screenSize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <!--additional intent filters-->
 
             <!--example: -->
@@ -145,6 +141,16 @@
                 <action android:name="com.onesignal.NotificationOpened.RECEIVE"/>
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".SplashActivity"
+            android:theme="@style/SplashTheme"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

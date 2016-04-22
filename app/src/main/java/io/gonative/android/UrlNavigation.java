@@ -29,7 +29,9 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
@@ -520,7 +522,7 @@ public class UrlNavigation {
         mainActivity.setDirectUploadImageUri(null);
 
         boolean isMultipleTypes = false;
-        List<String> mimeTypes = new ArrayList<String>();
+        Set<String> mimeTypes = new HashSet<String>();
         for (String spec : mimetypespec) {
             String[] splitSpec = spec.split("[,;\\s]");
             for (String s : splitSpec) {
@@ -595,13 +597,13 @@ public class UrlNavigation {
         documentIntent.addCategory(Intent.CATEGORY_OPENABLE);
 
         if (mimeTypes.size() == 1) {
-            documentIntent.setType(mimeTypes.get(0));
+            documentIntent.setType(mimeTypes.iterator().next());
         } else {
             documentIntent.setType("*/*");
 
             // If running kitkat or later, then we can specify multiple mime types
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                documentIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray());
+                documentIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray(new String[mimeTypes.size()]));
             }
         }
 

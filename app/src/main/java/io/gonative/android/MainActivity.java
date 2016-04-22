@@ -148,15 +148,14 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
 
         if (isRoot) {
-            if (appConfig.showSplash) {
-                boolean isFromLauncher = getIntent().hasCategory(Intent.CATEGORY_LAUNCHER);
-                // FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY does not seem to be set when it should
-                // for some devices. I have yet to find a good workaround.
-                boolean isFromRecents = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
+            // Splash screen stuff
+            boolean isFromLauncher = getIntent().hasCategory(Intent.CATEGORY_LAUNCHER);
+            // FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY does not seem to be set when it should
+            // for some devices. I have yet to find a good workaround.
+            boolean isFromRecents = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
 
-                if (isFromLauncher && !isFromRecents) {
-                    showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
-                }
+            if (isFromLauncher && !isFromRecents) {
+                showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
             }
 
             // html5 app cache (manifest)
