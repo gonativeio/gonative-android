@@ -59,9 +59,13 @@ public class WebViewSetup {
         if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
             // send to other webview
             Message resultMsg = ((GoNativeApplication)activity.getApplication()).getWebviewMessage();
-            WebView.WebViewTransport transport = (WebView.WebViewTransport)resultMsg.obj;
-            transport.setWebView(wv);
-            resultMsg.sendToTarget();
+            if (resultMsg != null) {
+                WebView.WebViewTransport transport = (WebView.WebViewTransport)resultMsg.obj;
+                if (transport != null) {
+                    transport.setWebView(wv);
+                    resultMsg.sendToTarget();
+                }
+            }
         }
     }
 

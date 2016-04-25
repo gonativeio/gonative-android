@@ -3,6 +3,7 @@ package io.gonative.android;
 import android.content.Context;
 import android.os.Build;
 import android.util.Log;
+import android.webkit.ValueCallback;
 
 import org.xwalk.core.JavascriptInterface;
 import org.xwalk.core.XWalkDownloadListener;
@@ -107,7 +108,10 @@ public class WebViewSetup {
 
         // pass back to webview that created it
         if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
-            ((GoNativeApplication)activity.getApplication()).getWebviewValueCallback().onReceiveValue(wv);
+            ValueCallback callback = ((GoNativeApplication) activity.getApplication()).getWebviewValueCallback();
+            if (callback != null) {
+                ((GoNativeApplication)activity.getApplication()).getWebviewValueCallback().onReceiveValue(wv);
+            }
         }
     }
 
