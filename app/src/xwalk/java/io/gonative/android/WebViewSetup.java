@@ -104,6 +104,11 @@ public class WebViewSetup {
 
         final MainActivity.StatusCheckerBridge statusCheckerBridge = activity.getStatusCheckerBridge();
         wv.addJavascriptInterface(new XWalkStatusBridge(statusCheckerBridge), "gonative_status_checker");
+
+        // pass back to webview that created it
+        if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
+            ((GoNativeApplication)activity.getApplication()).getWebviewValueCallback().onReceiveValue(wv);
+        }
     }
 
     public static void setupWebview(GoNativeWebviewInterface webview, Context context) {
@@ -137,6 +142,9 @@ public class WebViewSetup {
         } catch (Exception e) {
             Log.e(TAG, "Error setting XWalkPreferences.ANIMATABLE_XWALK_VIEW", e);
         }
+
+        XWalkPreferences.setValue(XWalkPreferences.SUPPORT_MULTIPLE_WINDOWS, true);
+        XWalkPreferences.setValue(XWalkPreferences.JAVASCRIPT_CAN_OPEN_WINDOW, true);
     }
 
     public static void removeCallbacks(LeanWebView webview) {

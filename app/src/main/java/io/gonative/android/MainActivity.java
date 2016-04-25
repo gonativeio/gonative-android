@@ -74,6 +74,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
+    public static final String EXTRA_WEBVIEW_WINDOW_OPEN = "io.gonative.android.MainActivity.Extra.WEBVIEW_WINDOW_OPEN";
 	public static final int REQUEST_SELECT_FILE = 100;
     public static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     private static final int REQUEST_WEBFORM = 300;
@@ -300,6 +301,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (url != null) {
             this.mWebview.loadUrl(url);
+        } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
+            // no worries
         } else {
             Log.e(TAG, "No url specified for MainActivity");
         }

@@ -27,6 +27,12 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
         super.onPageLoadStopped(view, url, status);
 
         if (status == LoadStatus.FINISHED) {
+            // workaround for crosswalk's window.open not working if features is specified
+            view.evaluateJavascript("if (!window.gonative_original_open) {\n" +
+                    "window.gonative_original_open = window.open;\n" +
+                    "window.open = function(url, name) {return gonative_original_open(url, name);}\n" +
+                    "}", null);
+
             urlNavigation.onPageFinished((GoNativeWebviewInterface)view, url);
         } else if (status == LoadStatus.FAILED) {
             urlNavigation.onReceivedError((GoNativeWebviewInterface)view, 0);
@@ -48,5 +54,15 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
         mainActivity.setUploadMessage(uploadFile);
         if (acceptType == null || acceptType.trim().isEmpty()) acceptType = "*/*";
         urlNavigation.chooseFileUpload(new String[]{acceptType});
+    }
+
+    @Override
+    public boolean onCreateWindowRequested(XWalkView view, InitiateBy initiator, ValueCallback<XWalkView> callback) {
+        return urlNavigation.createNewWindow(callback);
+    }
+
+    @Override
+    public void onJavascriptCloseWindow(XWalkView view) {
+        if (!mainActivity.isRoot()) mainActivity.finish();
     }
 }

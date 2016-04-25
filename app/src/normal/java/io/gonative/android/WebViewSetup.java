@@ -3,6 +3,7 @@ package io.gonative.android;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
+import android.os.Message;
 import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -55,6 +56,13 @@ public class WebViewSetup {
         wv.removeJavascriptInterface("gonative_status_checker");
         wv.addJavascriptInterface(activity.getStatusCheckerBridge(), "gonative_status_checker");
 
+        if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
+            // send to other webview
+            Message resultMsg = ((GoNativeApplication)activity.getApplication()).getWebviewMessage();
+            WebView.WebViewTransport transport = (WebView.WebViewTransport)resultMsg.obj;
+            transport.setWebView(wv);
+            resultMsg.sendToTarget();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -96,7 +104,7 @@ public class WebViewSetup {
         webSettings.setSaveFormData(false);
         webSettings.setSavePassword(false);
         webSettings.setUserAgentString(AppConfig.getInstance(context).userAgent);
-        webSettings.setSupportMultipleWindows(false);
+        webSettings.setSupportMultipleWindows(true);
         webSettings.setGeolocationEnabled(AppConfig.getInstance(context).usesGeolocation);
     }
 

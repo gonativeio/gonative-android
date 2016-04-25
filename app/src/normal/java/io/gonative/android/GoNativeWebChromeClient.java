@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Message;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.GeolocationPermissions;
@@ -141,5 +142,10 @@ class GoNativeWebChromeClient extends WebChromeClient {
     @Override
     public void onReceivedTitle(WebView view, String title){
         mainActivity.updatePageTitle();
+    }
+
+    @Override
+    public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+        return urlNavigation.createNewWindow(resultMsg);
     }
 }

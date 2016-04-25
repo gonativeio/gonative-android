@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Message;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v4.content.LocalBroadcastManager;
@@ -17,6 +18,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
+import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.widget.Toast;
@@ -631,5 +633,24 @@ public class UrlNavigation {
             Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
             return false;
         }
+    }
+
+    public boolean createNewWindow(Message resultMsg) {
+        ((GoNativeApplication)mainActivity.getApplication()).setWebviewMessage(resultMsg);
+        return createNewWindow();
+    }
+
+    public boolean createNewWindow(ValueCallback callback) {
+        ((GoNativeApplication) mainActivity.getApplication()).setWebviewValueCallback(callback);
+        return createNewWindow();
+    }
+
+    private boolean createNewWindow() {
+        Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
+        intent.putExtra("isRoot", false);
+        intent.putExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, true);
+        mainActivity.startActivity(intent);
+
+        return true;
     }
 }

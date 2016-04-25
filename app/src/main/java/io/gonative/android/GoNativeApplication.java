@@ -1,6 +1,8 @@
 package io.gonative.android;
 
 import android.app.Application;
+import android.os.Message;
+import android.webkit.ValueCallback;
 
 import com.facebook.FacebookSdk;
 import com.onesignal.OneSignal;
@@ -15,6 +17,8 @@ import io.gonative.android.library.AppConfig;
  */
 public class GoNativeApplication extends Application {
     private RegistrationManager registrationManager;
+    private Message webviewMessage;
+    private ValueCallback webviewValueCallback;
 
     @Override
     public void onCreate() {
@@ -60,5 +64,21 @@ public class GoNativeApplication extends Application {
 
     public RegistrationManager getRegistrationManager() {
         return registrationManager;
+    }
+
+    public Message getWebviewMessage() {
+        return webviewMessage;
+    }
+
+    public void setWebviewMessage(Message webviewMessage) {
+        this.webviewMessage = webviewMessage;
+    }
+
+    public ValueCallback getWebviewValueCallback() {
+        return webviewValueCallback;
+    }
+
+    public void setWebviewValueCallback(ValueCallback webviewValueCallback) {
+        this.webviewValueCallback = webviewValueCallback;
     }
 }
