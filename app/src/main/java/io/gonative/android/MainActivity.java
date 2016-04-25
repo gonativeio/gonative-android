@@ -207,7 +207,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         swipeRefresh.setOnRefreshListener(this);
         // only enable swipeRefresh if LeanWebView is a subclass of WebView, since XWalkView integrates
         // its own refresh controller.
-        if (appConfig.pullToRefresh && WebView.class.isAssignableFrom(LeanWebView.class)) {
+        if (appConfig.pullToRefresh) {
             swipeRefresh.setEnabled(true);
             swipeRefresh.setCanChildScrollUpCallback(new MySwipeRefreshLayout.CanChildScrollUpCallback() {
                 @Override
