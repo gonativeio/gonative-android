@@ -77,8 +77,9 @@ public class WebViewSetup {
             return;
         }
 
-        LeanWebView wv = (LeanWebView)webview;
+        AppConfig appConfig = AppConfig.getInstance(context);
 
+        LeanWebView wv = (LeanWebView)webview;
         WebSettings webSettings = wv.getSettings();
 
         if (AppConfig.getInstance(context).allowZoom) {
@@ -107,9 +108,9 @@ public class WebViewSetup {
 
         webSettings.setSaveFormData(false);
         webSettings.setSavePassword(false);
-        webSettings.setUserAgentString(AppConfig.getInstance(context).userAgent);
-        webSettings.setSupportMultipleWindows(true);
-        webSettings.setGeolocationEnabled(AppConfig.getInstance(context).usesGeolocation);
+        webSettings.setUserAgentString(appConfig.userAgent);
+        webSettings.setSupportMultipleWindows(appConfig.enableWindowOpen);
+        webSettings.setGeolocationEnabled(appConfig.usesGeolocation);
     }
 
     public static void setupWebviewGlobals(Context context) {

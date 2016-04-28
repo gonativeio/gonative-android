@@ -147,7 +147,8 @@ public class WebViewSetup {
             Log.e(TAG, "Error setting XWalkPreferences.ANIMATABLE_XWALK_VIEW", e);
         }
 
-        XWalkPreferences.setValue(XWalkPreferences.SUPPORT_MULTIPLE_WINDOWS, true);
+        XWalkPreferences.setValue(XWalkPreferences.SUPPORT_MULTIPLE_WINDOWS,
+                AppConfig.getInstance(context).enableWindowOpen);
         XWalkPreferences.setValue(XWalkPreferences.JAVASCRIPT_CAN_OPEN_WINDOW, true);
     }
 
