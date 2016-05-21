@@ -34,6 +34,7 @@ public class RegistrationManager {
     private String pushRegistrationToken;
     private String parseInstallationId;
     private String oneSignalUserId;
+    private String lastUrl;
 
     private List<RegistrationEndpoint> registrationEndpoints;
     private EnumSet<RegistrationDataType> allDataTypes;
@@ -86,6 +87,7 @@ public class RegistrationManager {
     }
 
     public void checkUrl(String url) {
+        this.lastUrl = url;
         for (RegistrationEndpoint endpoint : registrationEndpoints) {
             if (LeanUtils.stringMatchesAnyRegex(url, endpoint.urlRegexes)) {
                 endpoint.sendRegistrationInfo();
@@ -137,7 +139,12 @@ public class RegistrationManager {
         if (!allDataTypes.contains(type)) return;
 
         for (RegistrationEndpoint endpoint : registrationEndpoints) {
-            if (endpoint.dataTypes.contains(type)) endpoint.sendRegistrationInfo();
+            if (!endpoint.dataTypes.contains(type)) continue;
+
+            if (this.lastUrl != null &&
+                    LeanUtils.stringMatchesAnyRegex(this.lastUrl, endpoint.urlRegexes)) {
+                endpoint.sendRegistrationInfo();
+            }
         }
     }
 
