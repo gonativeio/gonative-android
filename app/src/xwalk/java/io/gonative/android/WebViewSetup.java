@@ -65,9 +65,12 @@ public class WebViewSetup {
 
         LeanWebView wv = (LeanWebView)webview;
 
-        // we need to tell appconfig what the default crosswalk user agent is. It is not easy to get
-        // outside of actually creating an XWalkView with an activity context.
-        appConfig.setWebviewDefaultUserAgent(wv.getUserAgentString());
+        // we need to tell appconfig what the default crosswalk user agent is. Crosswalk 14 does not
+        // have an API to get it, and rather than use async javascript, fake it here.
+        String userAgent = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE +
+                "; " + Build.MODEL + " Build/" + Build.DISPLAY +
+                ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Crosswalk/14.43.343.24 Mobile Safari/537.36";
+        appConfig.setWebviewDefaultUserAgent(userAgent);
 
         // setupwebview will actually set the user agent for crosswalk. Important to do it there
         // rather than this function so that webview pools will also get the right user agent.
