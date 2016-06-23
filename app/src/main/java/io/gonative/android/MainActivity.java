@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -77,6 +78,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     public static final String EXTRA_WEBVIEW_WINDOW_OPEN = "io.gonative.android.MainActivity.Extra.WEBVIEW_WINDOW_OPEN";
 	public static final int REQUEST_SELECT_FILE = 100;
     public static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
+    public static final int REQUEST_PERMISSION_GEOLOCATION = 102;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
@@ -135,6 +137,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
+    private Runnable geolocationPermissionCallback;
 
 
     @Override
@@ -300,7 +303,19 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (url == null) url = intent.getStringExtra("url");
 
         if (url != null) {
-            this.mWebview.loadUrl(url);
+            // Crosswalk does not give us callbacks when location is requested.
+            // Ask for it up front, then load the page.
+            if (this.mWebview.isCrosswalk() && appConfig.usesGeolocation) {
+                final String urlLoadAfterLocation = url;
+                this.getRuntimeGeolocationPermission(new Runnable() {
+                    @Override
+                    public void run() {
+                        mWebview.loadUrl(urlLoadAfterLocation);
+                    }
+                });
+            } else {
+                this.mWebview.loadUrl(url);
+            }
         } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
             // no worries
         } else {
@@ -1366,6 +1381,13 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
                 cancelFileUpload();
             }
         }
+        else if (requestCode == REQUEST_PERMISSION_GEOLOCATION) {
+            // don't care about result
+            if (this.geolocationPermissionCallback != null) {
+                this.geolocationPermissionCallback.run();
+                this.geolocationPermissionCallback = null;
+            }
+        }
     }
 
     public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
@@ -1401,5 +1423,24 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         public void onReceive(Context context, Intent intent) {
             retryFailedPage();
         }
+    }
+
+    public void getRuntimeGeolocationPermission(final Runnable callback) {
+        int checkFine = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
+        int checkCoarse = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
+
+        if (checkFine == PackageManager.PERMISSION_GRANTED && checkCoarse == PackageManager.PERMISSION_GRANTED) {
+            if (callback != null) callback.run();
+        }
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION) ||
+                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            Toast.makeText(this, R.string.request_permission_explanation_geolocation, Toast.LENGTH_SHORT).show();
+        }
+
+        this.geolocationPermissionCallback = callback;
+        ActivityCompat.requestPermissions(this, new String[]{
+                Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
+        }, REQUEST_PERMISSION_GEOLOCATION);
     }
 }

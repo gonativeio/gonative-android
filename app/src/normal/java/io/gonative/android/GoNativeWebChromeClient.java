@@ -41,8 +41,18 @@ class GoNativeWebChromeClient extends WebChromeClient {
     }
 
     @Override
-    public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-        callback.invoke(origin, AppConfig.getInstance(mainActivity).usesGeolocation, true);
+    public void onGeolocationPermissionsShowPrompt(final String origin, final GeolocationPermissions.Callback callback) {
+        if (!AppConfig.getInstance(mainActivity).usesGeolocation) {
+            callback.invoke(origin, false, false);
+            return;
+        }
+
+        mainActivity.getRuntimeGeolocationPermission(new Runnable() {
+            @Override
+            public void run() {
+                callback.invoke(origin, true, false);
+            }
+        });
     }
 
     @Override
