@@ -85,6 +85,8 @@ public class WebViewSetup {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+            
+            CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true);
         }
 
         webSettings.setDomStorageEnabled(true);
