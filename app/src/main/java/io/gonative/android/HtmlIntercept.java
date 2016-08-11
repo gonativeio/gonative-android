@@ -219,7 +219,7 @@ public class HtmlIntercept {
             if (!stringEquals(parsed1.getQuery(), parsed2.getQuery())) return false;
 
             String path1 = parsed1.getPath();
-            String path2 = parsed1.getPath();
+            String path2 = parsed2.getPath();
             if (path1 == null) path1 = "";
             if (path2 == null) path2 = "";
 
