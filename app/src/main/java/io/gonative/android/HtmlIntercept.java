@@ -68,46 +68,35 @@ public class HtmlIntercept {
             String protocol = parsedUrl.getProtocol();
             if (!protocol.equalsIgnoreCase("http") && !protocol.equalsIgnoreCase("https")) return null;
 
-            HttpURLConnection connection;
-            boolean wasRedirected = false;
-            int numRedirects = 0;
-            do {
-                connection = (HttpURLConnection)parsedUrl.openConnection();
-                connection.setInstanceFollowRedirects(false);
-                String customUserAgent = appConfig.userAgentForUrl(parsedUrl.toString());
-                if (customUserAgent != null) {
-                    connection.setRequestProperty("User-Agent", customUserAgent);
-                } else {
-                    connection.setRequestProperty("User-Agent", appConfig.userAgent);
+            HttpURLConnection connection = (HttpURLConnection)parsedUrl.openConnection();
+            connection.setInstanceFollowRedirects(false);
+            String customUserAgent = appConfig.userAgentForUrl(parsedUrl.toString());
+            if (customUserAgent != null) {
+                connection.setRequestProperty("User-Agent", customUserAgent);
+            } else {
+                connection.setRequestProperty("User-Agent", appConfig.userAgent);
+            }
+            connection.setRequestProperty("Cache-Control", "no-cache");
+
+            connection.connect();
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                    responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+                    responseCode == HttpURLConnection.HTTP_SEE_OTHER ||
+                    responseCode == 307) {
+                // run javascript to do redirect. We cannot pass headers in webresourceresponse until
+                // Android API 21, and we cannot return null or else the webview will handle the
+                // request entirely without intercept
+                String location = connection.getHeaderField("Location");
+                if (location != null) {
+                    String webpage = "<html><head><script>window.location=" +
+                            LeanUtils.jsWrapString(location) + "</script></head><body></body></html>";
+                    return new WebResourceResponse("text/html", "UTF-8",
+                            new ByteArrayInputStream(webpage.getBytes("UTF-8")));
                 }
-                connection.setRequestProperty("Cache-Control", "no-cache");
+            }
 
-                connection.connect();
-                int responseCode = connection.getResponseCode();
-
-                if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
-                        responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-
-                    wasRedirected = true;
-                    numRedirects++;
-                    parsedUrl = new URL(parsedUrl, connection.getHeaderField("Location"));
-
-                    // We may have been redirected to a page that should be intercepted.
-                    // check if this page should be intercepted
-                    if (urlNavigation != null &&
-                            urlNavigation.shouldOverrideUrlLoadingNoIntercept(view,
-                                    parsedUrl.toString(), true)) {
-
-                        urlNavigation.showWebViewImmediately();
-                        connection.disconnect();
-                        return null;
-                    }
-                } else {
-                    wasRedirected = false;
-                }
-            } while (wasRedirected && numRedirects < 10);
-
-            // done with redirects
             String mimetype = connection.getContentType();
             if (mimetype == null) {
                 try {
