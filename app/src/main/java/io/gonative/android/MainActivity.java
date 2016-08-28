@@ -8,6 +8,7 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
@@ -35,6 +36,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
@@ -143,6 +145,16 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
+
+        if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.PORTRAIT) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        }
+
+        if (appConfig.keepScreenOn) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
 
         this.hideWebviewAlpha  = appConfig.hideWebviewAlpha;
 
