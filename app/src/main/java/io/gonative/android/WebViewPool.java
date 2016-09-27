@@ -47,7 +47,7 @@ public class WebViewPool {
         }
 
         public WebResourceResponse interceptHtml(GoNativeWebviewInterface webview, String url) {
-            return htmlIntercept.interceptHtml(webview, url);
+            return htmlIntercept.interceptHtml(webview, url, null);
         }
     }
 

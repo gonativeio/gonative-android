@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Message;
 import android.util.Log;
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
@@ -98,6 +99,7 @@ public class WebViewSetup {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+            CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true);
         }
 
         webSettings.setDomStorageEnabled(true);

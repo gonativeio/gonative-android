@@ -513,7 +513,7 @@ public class UrlNavigation {
 
     public WebResourceResponse interceptHtml(LeanWebView view, String url) {
 //        Log.d(TAG, "intercept " + url);
-        return htmlIntercept.interceptHtml(view, url);
+        return htmlIntercept.interceptHtml(view, url, this.currentWebviewUrl);
     }
 
     public boolean chooseFileUpload(String[] mimetypespec) {

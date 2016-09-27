@@ -50,7 +50,7 @@ public class HtmlIntercept {
         this.interceptUrl = interceptUrl;
     }
 
-    public WebResourceResponse interceptHtml(GoNativeWebviewInterface view, String url) {
+    public WebResourceResponse interceptHtml(GoNativeWebviewInterface view, String url, String referer) {
         AppConfig appConfig = AppConfig.getInstance(context);
         if (!appConfig.interceptHtml) return null;
 
@@ -77,6 +77,10 @@ public class HtmlIntercept {
                 connection.setRequestProperty("User-Agent", appConfig.userAgent);
             }
             connection.setRequestProperty("Cache-Control", "no-cache");
+
+            if (referer != null) {
+                connection.setRequestProperty("Referer", referer);
+            }
 
             connection.connect();
             int responseCode = connection.getResponseCode();
