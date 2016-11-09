@@ -27,13 +27,15 @@ public class RegistrationManager {
         Installation,
         Push,
         Parse,
-        OneSignal
+        OneSignal,
+        CustomData
     }
 
     private Context context;
     private String pushRegistrationToken;
     private String parseInstallationId;
     private String oneSignalUserId;
+    private JSONObject customData;
     private String lastUrl;
 
     private List<RegistrationEndpoint> registrationEndpoints;
@@ -110,8 +112,19 @@ public class RegistrationManager {
         registrationDataChanged(RegistrationDataType.OneSignal);
     }
 
+    public void setCustomData(JSONObject customData) {
+        this.customData = customData;
+        registrationDataChanged(RegistrationDataType.CustomData);
+    }
+
     public boolean pushEnabled() {
         return this.allDataTypes.contains(RegistrationDataType.Push);
+    }
+
+    public void sendToAllEndpoints() {
+        for (RegistrationEndpoint endpoint : registrationEndpoints) {
+                endpoint.sendRegistrationInfo();
+        }
     }
 
     private EnumSet<RegistrationDataType> getDataTypesFromString(String s) {
@@ -121,15 +134,19 @@ public class RegistrationManager {
             return dataTypes;
         } else if (s.equalsIgnoreCase("installation")) {
             dataTypes.add(RegistrationDataType.Installation);
+            dataTypes.add(RegistrationDataType.CustomData);
         } else if (s.equalsIgnoreCase("push")) {
             dataTypes.add(RegistrationDataType.Push);
             dataTypes.add(RegistrationDataType.Installation);
+            dataTypes.add(RegistrationDataType.CustomData);
         } else if (s.equalsIgnoreCase("parse")) {
             dataTypes.add(RegistrationDataType.Parse);
             dataTypes.add(RegistrationDataType.Installation);
+            dataTypes.add(RegistrationDataType.CustomData);
         } else if (s.equalsIgnoreCase("onesignal")) {
             dataTypes.add(RegistrationDataType.OneSignal);
             dataTypes.add(RegistrationDataType.Installation);
+            dataTypes.add(RegistrationDataType.CustomData);
         }
 
         return dataTypes;
@@ -180,6 +197,10 @@ public class RegistrationManager {
 
                     if (dataTypes.contains(RegistrationDataType.OneSignal) && oneSignalUserId != null) {
                         toSend.put("oneSignalUserId", oneSignalUserId);
+                    }
+
+                    if (dataTypes.contains(RegistrationDataType.CustomData) && customData != null) {
+                        toSend.put("customData", customData);
                     }
 
                     try {

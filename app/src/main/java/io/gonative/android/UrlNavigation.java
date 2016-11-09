@@ -24,6 +24,7 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -173,6 +174,28 @@ public class UrlNavigation {
                 }
             } catch (Exception e) {
                 // do nothing
+            }
+
+            return true;
+        }
+
+        if ("gonative".equals(uri.getScheme()) && "registration".equals(uri.getHost()) &&
+                "/send".equals(uri.getPath())) {
+
+            RegistrationManager registrationManager = ((GoNativeApplication) mainActivity.getApplication()).getRegistrationManager();
+            String customDataString = uri.getQueryParameter("customData");
+            if (customDataString != null) {
+                try {
+                    JSONObject customData = new JSONObject(customDataString);
+                    if (customData != null) {
+                        registrationManager.setCustomData(customData);
+                        registrationManager.sendToAllEndpoints();
+                    }
+                } catch (JSONException e) {
+                    Log.d(TAG, "Gonative registration error: customData is not JSON object");
+                }
+            } else {
+                registrationManager.sendToAllEndpoints();
             }
 
             return true;
