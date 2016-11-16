@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 23
         applicationId "io.gonative.android"
         versionCode 1
@@ -67,7 +67,7 @@ android {
 }
 
 dependencies {
-    xwalkCompile 'org.xwalk:xwalk_core_library:14.43.343.24'
+    xwalkCompile 'org.xwalk:xwalk_core_library:22.52.561.4'
     compile 'com.onesignal:OneSignal:2.0.8@aar'
     compile 'com.facebook.android:facebook-android-sdk:4.15.0'
     compile 'com.android.support:support-v4:23.2.1'
