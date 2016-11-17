@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -200,7 +201,11 @@ public class RegistrationManager {
                     }
 
                     if (dataTypes.contains(RegistrationDataType.CustomData) && customData != null) {
-                        toSend.put("customData", customData);
+                        Iterator<String> keys = customData.keys();
+                        while(keys.hasNext()) {
+                            String key = keys.next();
+                            toSend.put("customData_" + key, customData.opt(key));
+                        }
                     }
 
                     try {
