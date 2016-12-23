@@ -19,4 +19,6 @@
 	<string name="ssl_error_cert">Invalid SSL certificate</string>
 	<string name="facebook_app_id"></string>
 	<string name="request_permission_explanation_geolocation">Please allow location permission</string>
+	<string name="request_permission_explanation_storage">Please allow storage permission for file download</string>
+	<string name="starting_download">Starting download</string>
 </resources>

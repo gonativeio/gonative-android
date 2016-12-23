@@ -115,6 +115,10 @@
     "menuAnimationDuration": 0.15,
     "transitionInteractiveDelayMax": 0.2
   },
+  "permissions": {
+    "usesGeolocation": false,
+    "androidDownloadToPublicStorage": false
+  },
   "services": {
     "parse": {
       "active": false,

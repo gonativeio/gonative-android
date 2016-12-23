@@ -81,6 +81,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 	public static final int REQUEST_SELECT_FILE = 100;
     public static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     public static final int REQUEST_PERMISSION_GEOLOCATION = 102;
+    public static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 103;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int REQUEST_PUSH_NOTIFICATION = 500;
@@ -1399,6 +1400,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
                 this.geolocationPermissionCallback.run();
                 this.geolocationPermissionCallback = null;
             }
+        } else if (requestCode == REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                this.fileDownloader.gotExternalStoragePermissions(true);
+            }
         }
     }
 
@@ -1454,5 +1459,24 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         ActivityCompat.requestPermissions(this, new String[]{
                 Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
         }, REQUEST_PERMISSION_GEOLOCATION);
+    }
+
+    public void getExternalStorageWritePermission() {
+        // check external storage permission
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                Toast.makeText(this, R.string.request_permission_explanation_storage, Toast.LENGTH_LONG).show();
+            }
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
+        } else {
+            this.fileDownloader.gotExternalStoragePermissions(true);
+        }
     }
 }

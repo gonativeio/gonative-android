@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -7,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.DownloadListener;
@@ -19,19 +21,37 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+import io.gonative.android.library.AppConfig;
 
 /**
  * Created by weiyin on 6/24/14.
  */
-public class FileDownloader implements DownloadListener{
+public class FileDownloader implements DownloadListener {
+    private enum DownloadLocation {
+        PUBLIC_DOWNLOADS, PRIVATE_INTERNAL
+    }
+
     private static final String TAG = DownloadListener.class.getName();
     public static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
-    private Context context;
+    private MainActivity context;
     private ProgressDialog progressDialog;
     private String lastDownloadedUrl;
+    private DownloadLocation defaultDownloadLocation;
+    private Map<String, DownloadManager.Request> pendingExternalDownloads;
 
-    public FileDownloader(Context context) {
+    public FileDownloader(MainActivity context) {
         this.context = context;
+        this.pendingExternalDownloads = new HashMap<>();
+
+        AppConfig appConfig = AppConfig.getInstance(this.context);
+        if (appConfig.downloadToPublicStorage) {
+            this.defaultDownloadLocation = DownloadLocation.PUBLIC_DOWNLOADS;
+        } else {
+            this.defaultDownloadLocation = DownloadLocation.PRIVATE_INTERNAL;
+        }
     }
 
     private FileDownloader() {
@@ -40,8 +60,45 @@ public class FileDownloader implements DownloadListener{
     @Override
     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
         lastDownloadedUrl = url;
+
+        if (this.defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
+            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                Uri uri = Uri.parse(url);
+                DownloadManager.Request request = new DownloadManager.Request(uri);
+                request.addRequestHeader("User-Agent", userAgent);
+                request.allowScanningByMediaScanner();
+                String guessedName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
+                request.setMimeType(mimetype);
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+
+                enqueueBackgroundDownload(url, request);
+
+                return;
+            } else {
+                Log.w(TAG, "External storage is not mounted. Downloading internally.");
+            }
+        }
+
         DownloadFileParams param = new DownloadFileParams(url, userAgent, mimetype, contentLength);
         new DownloadFileTask().execute(param);
+    }
+
+    private void enqueueBackgroundDownload(String url, DownloadManager.Request request) {
+        this.pendingExternalDownloads.put(url, request);
+        this.context.getExternalStorageWritePermission();
+    }
+
+    public void gotExternalStoragePermissions(boolean granted) {
+        if (granted) {
+            Toast.makeText(this.context, R.string.starting_download, Toast.LENGTH_SHORT);
+
+            DownloadManager downloadManager = (DownloadManager) this.context.getSystemService(Context.DOWNLOAD_SERVICE);
+            for (DownloadManager.Request request : this.pendingExternalDownloads.values()) {
+                downloadManager.enqueue(request);
+            }
+            this.pendingExternalDownloads.clear();
+        }
     }
 
     private class DownloadFileParams {
