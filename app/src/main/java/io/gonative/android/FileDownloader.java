@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.DownloadListener;
+import android.webkit.MimeTypeMap;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 
@@ -60,6 +61,19 @@ public class FileDownloader implements DownloadListener {
     @Override
     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
         lastDownloadedUrl = url;
+
+        // try to guess mimetype
+        if (mimetype == null || mimetype.equalsIgnoreCase("application/force-download") ||
+                mimetype.equalsIgnoreCase("application/octet-stream")) {
+            MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+            String extension = mimeTypeMap.getFileExtensionFromUrl(url);
+            if (extension != null && !extension.isEmpty()) {
+                String guessedMimeType = mimeTypeMap.getMimeTypeFromExtension(extension);
+                if (guessedMimeType != null) {
+                    mimetype = guessedMimeType;
+                }
+            }
+        }
 
         if (this.defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
