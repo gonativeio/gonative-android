@@ -52,8 +52,6 @@ import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.appevents.AppEventsLogger;
-import com.parse.ParseAnalytics;
-import com.parse.ParsePushBroadcastReceiver;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -110,7 +108,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private SegmentedController segmentedController = null;
-    private IdentityService identityService;
     private TabManager tabManager;
     private ActionManager actionManager;
     private boolean isRoot;
@@ -134,7 +131,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     };
     private FileDownloader fileDownloader = new FileDownloader(this);
     private boolean startedLoading = false; // document readystate checker
-    private PushManager pushManager;
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
@@ -191,18 +187,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             // Register launch
             configUpdater.registerEvent();
 
-            if (appConfig.parseAnalyticsEnabled) {
-                ParseAnalytics.trackAppOpenedInBackground(getIntent());
-            }
-
             // registration service
             this.registrationManager = ((GoNativeApplication)getApplication()).getRegistrationManager();
-
-            // Push notifications
-            if (appConfig.pushNotifications) {
-                this.pushManager = new PushManager(this);
-                this.pushManager.register();
-            }
         }
 
         // webview pools
@@ -290,21 +276,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (targetUrl != null && !targetUrl.isEmpty()){
             url = targetUrl;
         }
-        // if it came from parse, then a bit more work is necessary
-        if (url == null && intent.hasExtra(ParsePushBroadcastReceiver.KEY_PUSH_DATA)) {
-            try {
-                String pushJson = intent.getStringExtra(ParsePushBroadcastReceiver.KEY_PUSH_DATA);
-                JSONObject object = (JSONObject) new JSONTokener(pushJson).nextValue();
-                if (object.has("targetUrl") && !object.isNull("targetUrl")) {
-                    url = object.optString("targetUrl");
-                }
-                if (url == null && object.has("u") && !object.isNull("u")) {
-                    url = object.optString("u");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error parsing json from Parse push notification", e);
-            }
-        }
 
         if (intent.getAction() == Intent.ACTION_VIEW) {
             url = intent.getDataString();
@@ -379,9 +350,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
             mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
         }
-
-        // identity service
-        this.identityService = new IdentityService(this);
 
         // respond to navigation titles processed
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
@@ -1168,10 +1136,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (this.actionManager != null) {
             this.actionManager.checkActions(url);
-        }
-
-        if (this.identityService != null) {
-            this.identityService.checkUrl(url);
         }
 
         if (this.registrationManager != null) {

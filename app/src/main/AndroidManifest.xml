@@ -23,14 +23,6 @@
         android:protectionLevel="signature" />
     <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
 
-    <!-- additional permissions for parse push notifications -->
-    <!-- start parse permissions -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <!-- end parse permissions -->
-
     <application
         android:name=".GoNativeApplication"
         android:allowBackup="true"
@@ -76,24 +68,6 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:label="@string/app_name" />
 
-        <!--
-  WakefulBroadcastReceiver that will receive intents from GCM
-  services and hand them to the custom IntentService.
-
-  The com.google.android.c2dm.permission.SEND permission is necessary
-  so only GCM services can send data messages for the app.
--->
-        <receiver
-            android:name=".GcmBroadcastReceiver"
-            android:permission="com.google.android.c2dm.permission.SEND" >
-            <intent-filter>
-                <!-- Receives the actual messages. -->
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
-                <category android:name="io.gonative.android" />
-            </intent-filter>
-        </receiver>
-
         <!-- For file sharing without having to use external permissions. -->
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -105,43 +79,8 @@
                 android:resource="@xml/filepaths" />
         </provider>
 
-        <!-- Parse Integration -->
-        <!-- start parse service -->
-        <service android:name="com.parse.PushService" />
-        <receiver android:name="com.parse.ParseBroadcastReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.USER_PRESENT" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name=".GnParsePushBroadcastReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.parse.push.intent.RECEIVE" />
-                <action android:name="com.parse.push.intent.DELETE" />
-                <action android:name="com.parse.push.intent.OPEN" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name="com.parse.GcmBroadcastReceiver"
-            android:permission="com.google.android.c2dm.permission.SEND">
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
-                <category android:name="${applicationId}" />
-            </intent-filter>
-        </receiver>
-        <!-- end parse service -->
-
-        <!-- set icon for parse push notifications -->
-        <meta-data android:name="com.parse.push.notification_icon" android:resource="@drawable/ic_notification"/>
-
-        <!-- Handles OneSignal notification opened events -->
-        <receiver android:name=".OneSignalReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.onesignal.NotificationOpened.RECEIVE"/>
-            </intent-filter>
-        </receiver>
+        <!-- Disable default OneSignal handling -->
+        <meta-data android:name="com.onesignal.NotificationOpened.DEFAULT" android:value="DISABLE" />
 
         <activity
             android:name=".SplashActivity"

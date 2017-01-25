@@ -1,11 +1,10 @@
 package io.gonative.android;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
 
+import com.onesignal.OSNotification;
+import com.onesignal.OSNotificationOpenResult;
 import com.onesignal.OneSignal;
 
 import org.json.JSONObject;
@@ -13,25 +12,22 @@ import org.json.JSONObject;
 /**
  * Created by weiyin on 2/10/16.
  */
-public class OneSignalReceiver extends BroadcastReceiver implements OneSignal.NotificationOpenedHandler {
+public class OneSignalNotificationHandler implements OneSignal.NotificationOpenedHandler {
     private Context context;
 
-    public OneSignalReceiver() {
+    public OneSignalNotificationHandler() {
         // default construct needed to be a broadcast receiver
     }
 
-    public OneSignalReceiver(Context context) {
+    public OneSignalNotificationHandler(Context context) {
         this.context = context;
     }
 
     @Override
-    public void onReceive(Context context, Intent intent) {
-        // This broadcast receiver is only here to suppress OneSignal's default notification opened handling.
-        // Don't do any work here. The notification handling will be performed by OneSignalNotifcationOpenedHandler.
-    }
+    public void notificationOpened(OSNotificationOpenResult openedResult) {
+        OSNotification notification = openedResult.notification;
+        JSONObject additionalData = notification.payload.additionalData;
 
-    @Override
-    public void notificationOpened(String message, JSONObject additionalData, boolean isActive) {
         String targetUrl = LeanUtils.optString(additionalData, "targetUrl");
         if (targetUrl == null) targetUrl = LeanUtils.optString(additionalData, "u");
 

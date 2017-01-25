@@ -68,12 +68,11 @@ android {
 
 dependencies {
     xwalkCompile 'org.xwalk:xwalk_core_library:14.43.343.24'
-    compile 'com.onesignal:OneSignal:2.0.8@aar'
+    compile 'com.onesignal:OneSignal:3.4.3@aar'
     compile 'com.facebook.android:facebook-android-sdk:4.15.0'
     compile 'com.android.support:support-v4:23.2.1'
     compile 'com.android.support:appcompat-v7:23.2.1'
     compile 'com.google.android.gms:play-services-gcm:7.8.0'
-    compile 'com.parse.bolts:bolts-android:1.4.0'
     compile fileTree(dir: 'libs', include: '*.jar')
 }
 

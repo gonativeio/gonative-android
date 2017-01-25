@@ -120,24 +120,14 @@
     "androidDownloadToPublicStorage": false
   },
   "services": {
-    "parse": {
-      "active": false,
-      "applicationId": "",
-      "clientKey": "",
-      "pushEnabled": false
-    },
     "oneSignal": {
       "active": false,
-      "applicationId": "",
-      "googleProjectId": ""
+      "applicationId": ""
     },
     "facebook": {
       "active": false,
       "appId": "",
       "displayName": ""
-    },
-    "push": {
-      "active": false
     },
     "analytics": {
       "active": false
@@ -146,7 +136,7 @@
       "active": false,
       "endpoints": [{
         "url": "https://gonative.io/example_push_endpoint",
-        "dataType": "push",
+        "dataType": "onesignal",
         "urlRegex": ".*/loginfinished"
       }]
     }

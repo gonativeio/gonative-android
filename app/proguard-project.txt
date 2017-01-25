@@ -71,7 +71,3 @@
 -keepclassmembers class io.gonative.android.WebViewSetup$* {
     <methods>;
 }
-
-# parse.com sdk
--dontwarn com.parse.**
--keep class com.parse.** { *; }
