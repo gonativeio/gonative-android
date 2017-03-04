@@ -52,9 +52,7 @@ import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.appevents.AppEventsLogger;
-
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import com.onesignal.OneSignal;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -143,11 +141,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 	protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
 
-        if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.PORTRAIT) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        } else if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.LANDSCAPE) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-        }
+        setScreenOrientationPreference();
 
         if (appConfig.keepScreenOn) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -380,6 +374,14 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
 
         if (AppConfig.getInstance(this).facebookEnabled) {
             AppEventsLogger.deactivateApp(this);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (AppConfig.getInstance(this).oneSignalEnabled) {
+            OneSignal.clearOneSignalNotifications();
         }
     }
 
@@ -1268,7 +1270,7 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     }
 
     public void checkReadyStatus() {
-        this.mWebview.runJavascript("gonative_status_checker.onReadyState(document.readyState)");
+        this.mWebview.runJavascript("if (gonative_status_checker && typeof gonative_status_checker.onReadyState === 'function') gonative_status_checker.onReadyState(document.readyState);");
     }
 
     public void checkReadyStatusResult(String status) {
@@ -1333,6 +1335,14 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         }
 
         decorView.setSystemUiVisibility(visibility);
+
+        // Full-screen is used for playing videos.
+        // Allow sensor-based rotation when in full screen (even overriding user rotation preference)
+        if (fullscreen) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+        } else {
+            setScreenOrientationPreference();
+        }
     }
 
     @Override
@@ -1441,6 +1451,18 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
                     REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
         } else {
             this.fileDownloader.gotExternalStoragePermissions(true);
+        }
+    }
+
+    private void setScreenOrientationPreference() {
+        AppConfig appConfig = AppConfig.getInstance(this);
+
+        if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.UNSPECIFIED) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        } else if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.PORTRAIT) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         }
     }
 }

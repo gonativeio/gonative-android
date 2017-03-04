@@ -26,6 +26,7 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.File;
 import java.net.URL;
@@ -196,6 +197,24 @@ public class UrlNavigation {
                 }
             } else {
                 registrationManager.sendToAllEndpoints();
+            }
+
+            return true;
+        }
+
+        if ("gonative".equals(uri.getScheme())) {
+            if ("sidebar".equals(uri.getHost())) {
+                if ("/setItems".equals(uri.getPath())) {
+                    String itemsString = uri.getQueryParameter("items");
+                    if (itemsString != null) {
+                        try {
+                            Object items = new JSONTokener(itemsString).nextValue();
+                            AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
+                        } catch (JSONException e) {
+                            Log.d(TAG, "Gonative registration error: customData is not JSON object");
+                        }
+                    }
+                }
             }
 
             return true;

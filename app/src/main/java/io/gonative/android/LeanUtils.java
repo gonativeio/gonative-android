@@ -192,4 +192,23 @@ public class LeanUtils {
 
         return format.format(date);
     }
+
+    public static String createJsForCallback(String functionName, JSONObject data) {
+        String jsonString = data.toString();
+
+        String js = "function gonative_do_callback(functionName, jsonString) { \n" +
+                "    if (typeof window[functionName] !== 'function') return; \n" +
+                " \n" +
+                "    try { \n" +
+                "        var data = JSON.parse(jsonString); \n" +
+                "        var callbackFunction = window[functionName]; \n" +
+                "        callbackFunction(data); \n" +
+                "    } catch (ignored) { \n" +
+                " \n" +
+                "    } \n" +
+                "} \n" +
+                "gonative_do_callback('" + functionName + "', " + jsWrapString(jsonString) + ");";
+
+        return js;
+    }
 }
