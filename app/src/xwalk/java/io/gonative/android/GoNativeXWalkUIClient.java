@@ -1,10 +1,7 @@
 package io.gonative.android;
 
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.net.Uri;
 import android.webkit.ValueCallback;
-import android.widget.Toast;
 
 import org.xwalk.core.XWalkUIClient;
 import org.xwalk.core.XWalkView;
@@ -33,9 +30,9 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
                     "window.open = function(url, name) {return gonative_original_open(url, name);}\n" +
                     "}", null);
 
-            urlNavigation.onPageFinished((GoNativeWebviewInterface)view, url);
+            urlNavigation.onPageFinished((GoNativeWebviewInterface) view, url);
         } else if (status == LoadStatus.FAILED) {
-            urlNavigation.onReceivedError((GoNativeWebviewInterface)view, 0);
+            urlNavigation.onReceivedError((GoNativeWebviewInterface) view, 0);
         }
     }
 
@@ -64,5 +61,10 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
     @Override
     public void onJavascriptCloseWindow(XWalkView view) {
         if (!mainActivity.isRoot()) mainActivity.finish();
+    }
+
+    @Override
+    public void onFullscreenToggled(XWalkView view, boolean enterFullscreen) {
+        mainActivity.toggleFullscreen(enterFullscreen);
     }
 }
