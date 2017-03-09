@@ -134,7 +134,7 @@ public class ActionManager {
         String url = this.itemToUrl.get(item);
         if (url != null) {
             if (url.equals(ACTION_SHARE)) {
-                this.activity.sharePage();
+                this.activity.sharePage(null);
                 return true;
             }
 

@@ -57,6 +57,7 @@ import com.onesignal.OneSignal;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -483,13 +484,30 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         this.mWebview.goBack();
     }
 
-    public void sharePage() {
-        String url = this.mWebview.getUrl();
-        if (url == null) return;
+    public void sharePage(String optionalUrl) {
+        String shareUrl;
+        String currentUrl = this.mWebview.getUrl();
+        if (optionalUrl == null || optionalUrl.isEmpty()) {
+            shareUrl = currentUrl;
+        } else {
+            try {
+                java.net.URI optionalUri = new java.net.URI(optionalUrl);
+                if (optionalUri.isAbsolute()) {
+                    shareUrl = optionalUrl.toString();
+                } else {
+                    java.net.URI currentUri = new java.net.URI(currentUrl);
+                    shareUrl = currentUri.resolve(optionalUri).toString();
+                }
+            } catch (URISyntaxException e) {
+                shareUrl = optionalUrl;
+            }
+        }
+
+        if (shareUrl == null || shareUrl.isEmpty()) return;
 
         Intent share = new Intent(Intent.ACTION_SEND);
         share.setType("text/plain");
-        share.putExtra(Intent.EXTRA_TEXT, mWebview.getUrl());
+        share.putExtra(Intent.EXTRA_TEXT, shareUrl);
         startActivity(Intent.createChooser(share, getString(R.string.action_share)));
     }
 

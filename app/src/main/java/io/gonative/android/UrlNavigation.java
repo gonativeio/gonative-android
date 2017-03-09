@@ -215,6 +215,16 @@ public class UrlNavigation {
                         }
                     }
                 }
+                return true;
+            }
+
+            if ("share".equals(uri.getHost())) {
+                if ("/sharePage".equals(uri.getPath())) {
+                    String urlString = uri.getQueryParameter("url");
+                    this.mainActivity.sharePage(urlString);
+                }
+
+                return true;
             }
 
             return true;
