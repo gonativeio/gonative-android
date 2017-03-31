@@ -6,8 +6,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.joanzapata.android.iconify.IconDrawable;
-import com.joanzapata.android.iconify.Iconify;
+import com.joanzapata.iconify.IconDrawable;
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -111,7 +111,7 @@ public class ActionManager {
                     if (icon != null) {
                         icon = icon.replaceAll("-", "_");
                         try {
-                            iconDrawable = new IconDrawable(this.activity, Iconify.IconValue.valueOf(icon))
+                            iconDrawable = new IconDrawable(this.activity, FontAwesomeIcons.valueOf(icon))
                                     .actionBarSize().color(appConfig.actionbarForegroundColor);
                         } catch (IllegalArgumentException e) {
                             // icon was not found in IconValue enum

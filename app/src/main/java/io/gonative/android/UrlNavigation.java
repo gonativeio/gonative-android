@@ -528,8 +528,9 @@ public class UrlNavigation {
             }
         });
 
-		// first check connectivity
-		if (!mainActivity.isConnected()){
+		// show offline page if not connected to internet
+        AppConfig appConfig = AppConfig.getInstance(this.mainActivity);
+		if (appConfig.showOfflinePage && !mainActivity.isConnected()){
             view.loadUrlDirect("file:///android_asset/offline.html");
 		}
 	}

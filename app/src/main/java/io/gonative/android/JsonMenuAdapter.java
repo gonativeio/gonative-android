@@ -15,8 +15,8 @@ import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.joanzapata.android.iconify.IconDrawable;
-import com.joanzapata.android.iconify.Iconify;
+import com.joanzapata.iconify.IconDrawable;
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -224,9 +224,9 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         if (isGrouping(groupPosition)) {
             IconDrawable iconDrawable = null;
             if (isExpanded)
-                iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.fa_angle_up);
+                iconDrawable = new IconDrawable(mainActivity, FontAwesomeIcons.fa_angle_up);
             else
-                iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.fa_angle_down);
+                iconDrawable = new IconDrawable(mainActivity, FontAwesomeIcons.fa_angle_down);
 
             iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_expand_indicator_size);
             if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
@@ -249,7 +249,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         if (icon != null && !icon.isEmpty()) {
             icon = icon.replaceAll("-", "_");
             try {
-                IconDrawable iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.valueOf(icon));
+                IconDrawable iconDrawable = new IconDrawable(mainActivity, FontAwesomeIcons.valueOf(icon));
                 iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_icon_size);
                 if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                     iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
@@ -297,7 +297,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         if (icon != null && !icon.isEmpty()) {
             icon = icon.replaceAll("-", "_");
             try {
-                IconDrawable iconDrawable = new IconDrawable(mainActivity, Iconify.IconValue.valueOf(icon));
+                IconDrawable iconDrawable = new IconDrawable(mainActivity, FontAwesomeIcons.valueOf(icon));
                 iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_icon_size);
                 if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                     iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);

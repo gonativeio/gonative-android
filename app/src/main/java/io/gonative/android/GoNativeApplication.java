@@ -5,6 +5,8 @@ import android.os.Message;
 import android.webkit.ValueCallback;
 
 import com.facebook.FacebookSdk;
+import com.joanzapata.iconify.Iconify;
+import com.joanzapata.iconify.fonts.FontAwesomeModule;
 import com.onesignal.OneSignal;
 
 import io.gonative.android.library.AppConfig;
@@ -50,6 +52,8 @@ public class GoNativeApplication extends Application {
 
         // some global webview setup
         WebViewSetup.setupWebviewGlobals(this);
+
+        Iconify.with(new FontAwesomeModule());
     }
 
     public RegistrationManager getRegistrationManager() {

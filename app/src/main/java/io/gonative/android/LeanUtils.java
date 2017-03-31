@@ -196,19 +196,24 @@ public class LeanUtils {
     public static String createJsForCallback(String functionName, JSONObject data) {
         String jsonString = data.toString();
 
-        String js = "function gonative_do_callback(functionName, jsonString) { \n" +
-                "    if (typeof window[functionName] !== 'function') return; \n" +
-                " \n" +
-                "    try { \n" +
-                "        var data = JSON.parse(jsonString); \n" +
-                "        var callbackFunction = window[functionName]; \n" +
-                "        callbackFunction(data); \n" +
-                "    } catch (ignored) { \n" +
-                " \n" +
-                "    } \n" +
-                "} \n" +
-                "gonative_do_callback('" + functionName + "', " + jsWrapString(jsonString) + ");";
+        StringBuilder js = new StringBuilder();
+        js.append("function gonative_do_callback(functionName, jsonString) { \n");
+        js.append("    if (typeof window[functionName] !== 'function') return; \n");
+        js.append(" \n");
+        js.append("    try { \n");
+        js.append("        var data = JSON.parse(jsonString); \n");
+        js.append("        var callbackFunction = window[functionName]; \n");
+        js.append("        callbackFunction(data); \n");
+        js.append("    } catch (ignored) { \n");
+        js.append(" \n");
+        js.append("    } \n");
+        js.append("} \n");
+        js.append("gonative_do_callback('");
+        js.append(functionName);
+        js.append("', ");
+        js.append(jsWrapString(jsonString));
+        js.append(");");
 
-        return js;
+        return js.toString();
     }
 }
