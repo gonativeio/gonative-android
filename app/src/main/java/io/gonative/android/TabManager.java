@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import com.astuetz.PagerSlidingTabStrip;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     private BroadcastReceiver broadcastReceiver;
     private JSONArray tabs;
     private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
+    private boolean useJavascript; // do not use tabs from config
 
     private TabManager(){
         // disable instantiation without mainActivity
@@ -62,6 +64,11 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
         this.currentUrl = url;
 
         if (this.mainActivity == null || url == null) {
+            return;
+        }
+
+        if (this.useJavascript) {
+            autoSelectTab(url);
             return;
         }
 
@@ -107,6 +114,21 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     private void setTabs(JSONArray tabs) {
         this.tabs = tabs;
         notifyDataSetChanged();
+
+        // auto-select tab number
+        int selectedNumber = -1;
+        for (int i = 0; i < tabs.length(); i++) {
+            JSONObject item = tabs.optJSONObject(i);
+            if (item == null) continue;
+
+            if (item.optBoolean("selected")) {
+                selectedNumber = i;
+            }
+        }
+
+        if (selectedNumber > -1) {
+            selectTabNumber(selectedNumber);
+        }
     }
 
     private void showTabs() {
@@ -196,6 +218,38 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
 
         return false;
     }
+
+    public void setTabsWithJson(String tabsJson) {
+        JSONObject tabsConfig;
+        try {
+            tabsConfig = new JSONObject(tabsJson);
+        } catch (JSONException e) {
+            return;
+        }
+
+        this.useJavascript = true;
+
+        JSONArray tabs = tabsConfig.optJSONArray("items");
+        if (tabs != null) setTabs(tabs);
+
+        Object enabled = tabsConfig.opt("enabled");
+        if (enabled instanceof Boolean) {
+            if ((Boolean)enabled) {
+                this.showTabs();
+            } else {
+                this.hideTabs();
+            }
+        }
+    }
+
+    public void selectTabNumber(int tabNumber) {
+        if (tabNumber < 0 || tabNumber >= getCount()) {
+            return;
+        }
+
+        this.viewPager.setCurrentItem(tabNumber);
+    }
+
 
     @Override
     public int getCount() {

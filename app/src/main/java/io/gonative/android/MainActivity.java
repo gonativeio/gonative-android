@@ -1483,4 +1483,8 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         }
     }
+
+    public TabManager getTabManager() {
+        return tabManager;
+    }
 }

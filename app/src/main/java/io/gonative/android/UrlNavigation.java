@@ -23,6 +23,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.onesignal.OneSignal;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -226,6 +229,36 @@ public class UrlNavigation {
 
                 return true;
             }
+
+            if ("tabs".equals(uri.getHost())) {
+                TabManager tabManager = this.mainActivity.getTabManager();
+                if (tabManager == null) return true;
+
+                if (uri.getPath().startsWith("/select/")) {
+                    List<String> segments = uri.getPathSegments();
+                    if (segments.size() == 2) {
+                        String tabNumberString = segments.get(1);
+                        try {
+                            int tabNumber = Integer.parseInt(tabNumberString);
+                            if (tabNumber >= 0) {
+                                tabManager.selectTabNumber(tabNumber);
+                            }
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "Invalid tab number " + tabNumberString, e);
+                            return true;
+                        }
+
+                    }
+                } else if ("/setTabs".equals(uri.getPath())) {
+                    String tabsJson = uri.getQueryParameter("tabs");
+                    if (tabsJson != null && !tabsJson.isEmpty()) {
+                        tabManager.setTabsWithJson(tabsJson);
+                    }
+                }
+
+                return true;
+            }
+
 
             return true;
         }
@@ -512,6 +545,31 @@ public class UrlNavigation {
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.FINISHED_LOADING_MESSAGE));
 
+        // onesignal javsacript callback
+        if (appConfig.oneSignalEnabled) {
+            OneSignal.idsAvailable(new OneSignal.IdsAvailableHandler() {
+                @Override
+                public void idsAvailable(String userId, String registrationId) {
+                    try {
+                        Map installationInfo = Installation.getInfo(mainActivity);
+
+                        JSONObject jsonObject = new JSONObject(installationInfo);
+                        if (userId != null) {
+                            jsonObject.put("oneSignalUserId", userId);
+                        }
+                        if (registrationId != null) {
+                            jsonObject.put("oneSignalregistrationId", registrationId);
+                        }
+                        String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
+                        if (js != null) {
+                            mainActivity.runJavascript(js);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error with onesignal javscript callback", e);
+                    }
+                }
+            });
+        }
 	}
 
     public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
