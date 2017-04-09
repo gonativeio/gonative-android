@@ -28,6 +28,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -69,7 +70,7 @@ import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
 
-public class MainActivity extends ActionBarActivity implements Observer, SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends AppCompatActivity implements Observer, SwipeRefreshLayout.OnRefreshListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     public static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -81,8 +82,6 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
     public static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 103;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
-    public static final int REQUEST_PUSH_NOTIFICATION = 500;
-    public static final int REQUEST_PLAY_SERVICES_RESOLUTION = 9000;
     private static final float ACTIONBAR_ELEVATION = 12.0f;
 
     private GoNativeWebviewInterface mWebview;
@@ -259,6 +258,10 @@ public class MainActivity extends ActionBarActivity implements Observer, SwipeRe
         if (appConfig.tabBarIndicatorColor != null)
             this.slidingTabStrip.setIndicatorColor(appConfig.tabBarIndicatorColor);
         hideTabs();
+
+        if (!appConfig.showActionBar && getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
 
         // actions in action bar
         this.actionManager = new ActionManager(this);
