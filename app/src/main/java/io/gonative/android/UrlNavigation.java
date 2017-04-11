@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
 import android.provider.MediaStore;
@@ -259,6 +260,50 @@ public class UrlNavigation {
                 return true;
             }
 
+            if ("onesignal".equals(uri.getHost())) {
+                if ("/tags/get".equals(uri.getPath())) {
+                    final String callback = uri.getQueryParameter("callback");
+                    if (callback == null || callback.isEmpty()) return true;
+
+                    OneSignal.getTags(new OneSignal.GetTagsHandler() {
+                        @Override
+                        public void tagsAvailable(JSONObject tags) {
+                            JSONObject results = new JSONObject();
+                            try {
+                                results.put("success", true);
+                                if (tags != null) {
+                                    results.put("tags", tags);
+                                }
+                                final String js = LeanUtils.createJsForCallback(callback, results);
+                                // run on main thread
+                                Handler mainHandler = new Handler(mainActivity.getMainLooper());
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mainActivity.runJavascript(js);
+                                    }
+                                });
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error json encoding tags", e);
+                            }
+                        }
+                    });
+
+                    return true;
+                }
+
+                if ("/tags/set".equals(uri.getPath())) {
+                    String tagsString = uri.getQueryParameter("tags");
+                    if (tagsString == null || tagsString.isEmpty()) return true;
+
+                    try {
+                        JSONObject tags = new JSONObject(tagsString);
+                        OneSignal.sendTags(tags);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing tags JSON", e);
+                    }
+                }
+            }
 
             return true;
         }
