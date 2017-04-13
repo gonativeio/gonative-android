@@ -1352,7 +1352,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             if (actionBar != null) actionBar.hide();
         } else {
             visibility &= ~fullscreenFlags;
-            if (actionBar != null) actionBar.show();
+            if (actionBar != null && AppConfig.getInstance(this).showActionBar) actionBar.show();
         }
 
         decorView.setSystemUiVisibility(visibility);
