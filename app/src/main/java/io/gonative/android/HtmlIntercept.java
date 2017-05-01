@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 import io.gonative.android.library.AppConfig;
 
@@ -52,7 +53,7 @@ public class HtmlIntercept {
 
     public WebResourceResponse interceptHtml(GoNativeWebviewInterface view, String url, String referer) {
         AppConfig appConfig = AppConfig.getInstance(context);
-        if (!appConfig.interceptHtml) return null;
+        if (!appConfig.interceptHtml && (appConfig.customHeaders == null || appConfig.customHeaders.isEmpty())) return null;
 
         if (!hasIntercepted) {
             interceptUrl = url;
@@ -80,6 +81,11 @@ public class HtmlIntercept {
 
             if (referer != null) {
                 connection.setRequestProperty("Referer", referer);
+            }
+
+            Map<String, String> customHeaders = CustomHeaders.getCustomHeaders(context);
+            for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
+                connection.setRequestProperty(entry.getKey(), entry.getValue());
             }
 
             connection.connect();
