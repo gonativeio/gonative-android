@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.content.Context;
+import android.os.Build;
 import android.provider.Settings;
 import android.util.Base64;
 
@@ -48,8 +49,14 @@ public class CustomHeaders {
 
         if (value.contains("%DEVICENAME64%")) {
             // base 64 encoded name
-            String name = Settings.Secure.getString(context.getContentResolver(), "device_name");
-            if (name == null) name = "";
+            String manufacturer = Build.MANUFACTURER;
+            String model = Build.MODEL;
+            String name;
+            if (model.startsWith(manufacturer)) {
+                name = model;
+            } else {
+                name = manufacturer + " " + model;
+            }
 
             String name64 = Base64.encodeToString(name.getBytes("UTF-8"), Base64.NO_WRAP);
             value = value.replace("%DEVICENAME64%", name64);
