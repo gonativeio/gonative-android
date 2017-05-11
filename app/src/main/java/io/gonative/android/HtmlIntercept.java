@@ -84,8 +84,10 @@ public class HtmlIntercept {
             }
 
             Map<String, String> customHeaders = CustomHeaders.getCustomHeaders(context);
-            for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
-                connection.setRequestProperty(entry.getKey(), entry.getValue());
+            if (customHeaders != null) {
+                for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                }
             }
 
             connection.connect();
