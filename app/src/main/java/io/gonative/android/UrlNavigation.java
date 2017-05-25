@@ -590,6 +590,12 @@ public class UrlNavigation {
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.FINISHED_LOADING_MESSAGE));
 
+        // send installation info
+        Map installationInfo = Installation.getInfo(mainActivity);
+        JSONObject jsonObject = new JSONObject(installationInfo);
+        String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
+        mainActivity.runJavascript(js);
+
         // onesignal javsacript callback
         if (appConfig.oneSignalEnabled) {
             OneSignal.idsAvailable(new OneSignal.IdsAvailableHandler() {
