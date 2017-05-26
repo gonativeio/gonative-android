@@ -302,6 +302,12 @@ public class UrlNavigation {
                     } catch (JSONException e) {
                         Log.e(TAG, "Error parsing tags JSON", e);
                     }
+                    return true;
+                }
+
+                if ("/promptLocation".equals(uri.getPath())) {
+                    OneSignal.promptLocation();
+                    return true;
                 }
             }
 
