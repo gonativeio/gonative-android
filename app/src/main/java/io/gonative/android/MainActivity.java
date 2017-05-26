@@ -62,6 +62,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -80,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     public static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     public static final int REQUEST_PERMISSION_GEOLOCATION = 102;
     public static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 103;
+    public static final int REQUEST_PERMISSION_GENERIC = 199;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     private static final float ACTIONBAR_ELEVATION = 12.0f;
@@ -135,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
     private Runnable geolocationPermissionCallback;
-
+    private ArrayList<PermissionsCallbackPair> pendingPermiissionRequests = new ArrayList<>();
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -160,8 +162,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             // FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY does not seem to be set when it should
             // for some devices. I have yet to find a good workaround.
             boolean isFromRecents = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
+            boolean noSplash = getIntent().getBooleanExtra("noSplash", false);
 
-            if (isFromLauncher && !isFromRecents) {
+            if (!noSplash && isFromLauncher && !isFromRecents) {
                 showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
             }
 
@@ -1400,6 +1403,22 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                 this.fileDownloader.gotExternalStoragePermissions(true);
             }
         }
+        else if (requestCode == REQUEST_PERMISSION_GENERIC) {
+            Iterator<PermissionsCallbackPair> it = pendingPermiissionRequests.iterator();
+            while(it.hasNext()) {
+                PermissionsCallbackPair pair = it.next();
+                if (pair.permissions.length != permissions.length) continue;
+                for (int i = 0; i < pair.permissions.length && i < permissions.length; i++) {
+                    if (!pair.permissions[i].equals(permissions[i])) continue;
+                }
+
+                // matches PermissionsCallbackPair
+                if (pair.callback != null) {
+                    pair.callback.onPermissionResult(permissions, grantResults);
+                }
+                it.remove();
+            }
+        }
     }
 
     public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
@@ -1475,6 +1494,34 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
+    public void getPermission(String[] permissions, PermissionCallback callback) {
+        boolean needToRequest = false;
+        for (int i = 0; i < permissions.length; i++) {
+            String permission = permissions[i];
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                needToRequest = true;
+                break;
+            }
+        }
+
+        if (needToRequest) {
+            if (callback != null) {
+                pendingPermiissionRequests.add(new PermissionsCallbackPair(permissions, callback));
+            }
+
+            ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION_GENERIC);
+        } else {
+            // send all granted result
+            if (callback != null) {
+                int[] results = new int[permissions.length];
+                for (int i = 0; i < results.length; i++) {
+                    results[i] = PackageManager.PERMISSION_GRANTED;
+                }
+                callback.onPermissionResult(permissions, results);
+            }
+        }
+    }
+
     private void setScreenOrientationPreference() {
         AppConfig appConfig = AppConfig.getInstance(this);
 
@@ -1489,5 +1536,19 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     public TabManager getTabManager() {
         return tabManager;
+    }
+
+    public interface PermissionCallback {
+        public void onPermissionResult(String[] permissions, int[] grantResults);
+    }
+
+    private class PermissionsCallbackPair {
+        public String[] permissions;
+        public PermissionCallback callback;
+
+        public PermissionsCallbackPair(String[] permissions, PermissionCallback callback) {
+            this.permissions = permissions;
+            this.callback = callback;
+        }
     }
 }

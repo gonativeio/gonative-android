@@ -1,19 +1,25 @@
 package io.gonative.android;
 
+import android.*;
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Message;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsResult;
+import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 import io.gonative.android.library.AppConfig;
 
@@ -157,5 +163,54 @@ class GoNativeWebChromeClient extends WebChromeClient {
     @Override
     public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
         return urlNavigation.createNewWindow(resultMsg);
+    }
+
+    @Override
+    @TargetApi(21)
+    public void onPermissionRequest(final PermissionRequest request) {
+        String[] resources = request.getResources();
+
+        ArrayList<String> permissions = new ArrayList<>();
+        for (int i = 0; i < resources.length; i++) {
+            if (resources[i].equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                permissions.add(Manifest.permission.RECORD_AUDIO);
+            } else if (resources[i].equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                permissions.add(Manifest.permission.CAMERA);
+            }
+        }
+
+        String[] permissionsArray = new String[permissions.size()];
+        permissionsArray = permissions.toArray(permissionsArray);
+
+        mainActivity.getPermission(permissionsArray, new MainActivity.PermissionCallback() {
+            @Override
+            public void onPermissionResult(String[] permissions, int[] grantResults) {
+                ArrayList<String> grantedPermissions = new ArrayList<String>();
+                for (int i = 0; i < grantResults.length; i++) {
+                    if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                        continue;
+                    }
+
+                    if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
+                        grantedPermissions.add(PermissionRequest.RESOURCE_AUDIO_CAPTURE);
+                    } else if (permissions[i].equals(Manifest.permission.CAMERA)) {
+                        grantedPermissions.add(PermissionRequest.RESOURCE_VIDEO_CAPTURE);
+                    }
+                }
+
+                if (grantedPermissions.isEmpty()) {
+                    request.deny();
+                } else {
+                    String[] grantedPermissionsArray = new String[grantedPermissions.size()];
+                    grantedPermissionsArray = grantedPermissions.toArray(grantedPermissionsArray);
+                    request.grant(grantedPermissionsArray);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onPermissionRequestCanceled(PermissionRequest request) {
+        super.onPermissionRequestCanceled(request);
     }
 }
