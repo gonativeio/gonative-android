@@ -522,6 +522,14 @@ public class UrlNavigation {
 
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.STARTED_LOADING_MESSAGE));
+
+
+        // enable swipe refresh controller if offline page
+        if ("file:///android_asset/offline.html".equals(url)) {
+            mainActivity.enableSwipeRefresh();
+        } else {
+            mainActivity.restoreSwipRefreshDefault();
+        }
     }
 
     public void showWebViewImmediately() {

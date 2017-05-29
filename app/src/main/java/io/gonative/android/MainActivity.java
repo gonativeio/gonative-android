@@ -26,7 +26,6 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
@@ -43,7 +42,6 @@ import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebView;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -203,20 +201,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         this.fullScreenLayout = (RelativeLayout)findViewById(R.id.fullscreen);
 
         swipeRefresh = (MySwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh.setEnabled(appConfig.pullToRefresh);
         swipeRefresh.setOnRefreshListener(this);
-        // only enable swipeRefresh if LeanWebView is a subclass of WebView, since XWalkView integrates
-        // its own refresh controller.
-        if (appConfig.pullToRefresh) {
-            swipeRefresh.setEnabled(true);
-            swipeRefresh.setCanChildScrollUpCallback(new MySwipeRefreshLayout.CanChildScrollUpCallback() {
-                @Override
-                public boolean canSwipeRefreshChildScrollUp() {
-                    return mWebview.getScrollY() > 0;
-                }
-            });
-        } else {
-            swipeRefresh.setEnabled(false);
-        }
+        swipeRefresh.setCanChildScrollUpCallback(new MySwipeRefreshLayout.CanChildScrollUpCallback() {
+            @Override
+            public boolean canSwipeRefreshChildScrollUp() {
+                return mWebview.getScrollY() > 0;
+            }
+        });
         if (appConfig.pullToRefreshColor != null) {
             swipeRefresh.setColorSchemeColors(appConfig.pullToRefreshColor);
         }
@@ -1549,6 +1541,19 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         public PermissionsCallbackPair(String[] permissions, PermissionCallback callback) {
             this.permissions = permissions;
             this.callback = callback;
+        }
+    }
+
+    public void enableSwipeRefresh() {
+        if (this.swipeRefresh != null) {
+            this.swipeRefresh.setEnabled(true);
+        }
+    }
+
+    public void restoreSwipRefreshDefault() {
+        if (this.swipeRefresh != null) {
+            AppConfig appConfig = AppConfig.getInstance(this);
+            this.swipeRefresh.setEnabled(appConfig.pullToRefresh);
         }
     }
 }

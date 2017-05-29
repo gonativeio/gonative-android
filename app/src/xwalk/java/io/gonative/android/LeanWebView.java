@@ -2,15 +2,9 @@ package io.gonative.android;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
-import android.webkit.WebBackForwardList;
-import android.webkit.WebChromeClient;
-import android.webkit.WebHistoryItem;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import org.xwalk.core.XWalkNavigationHistory;
 import org.xwalk.core.XWalkView;
