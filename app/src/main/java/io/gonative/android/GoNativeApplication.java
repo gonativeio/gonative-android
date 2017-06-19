@@ -44,7 +44,7 @@ public class GoNativeApplication extends Application {
                 OneSignal.idsAvailable(new OneSignal.IdsAvailableHandler() {
                     @Override
                     public void idsAvailable(String userId, String registrationId) {
-                        registrationManager.setOneSignalUserId(userId);
+                        registrationManager.setOneSignalUserId(userId, registrationId);
                     }
                 });
             }
