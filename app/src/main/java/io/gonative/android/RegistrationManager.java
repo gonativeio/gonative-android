@@ -167,7 +167,7 @@ public class RegistrationManager {
                     if (dataTypes.contains(RegistrationDataType.OneSignal) && oneSignalUserId != null) {
                         toSend.put("oneSignalUserId", oneSignalUserId);
                         if (oneSignalRegistrationId != null) {
-                            toSend.put("oneSignalregistrationId", oneSignalRegistrationId);
+                            toSend.put("oneSignalRegistrationId", oneSignalRegistrationId);
                         }
                     }
 
