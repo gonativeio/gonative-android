@@ -69,10 +69,10 @@ android {
 dependencies {
     xwalkCompile 'org.xwalk:xwalk_core_library:14.43.343.24'
     compile 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
-    compile 'com.onesignal:OneSignal:3.5.8@aar'
+    compile 'com.onesignal:OneSignal:3.6.1@aar'
     compile 'com.facebook.android:facebook-android-sdk:4.15.0'
-    compile 'com.android.support:support-v4:23.2.1'
-    compile 'com.android.support:appcompat-v7:23.2.1'
+    compile 'com.android.support:support-v4:23.4.0'
+    compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.google.android.gms:play-services-gcm:9.0.2'
     compile 'com.google.android.gms:play-services-location:9.0.2'
     compile fileTree(dir: 'libs', include: '*.jar')

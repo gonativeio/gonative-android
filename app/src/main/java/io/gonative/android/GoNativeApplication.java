@@ -7,7 +7,14 @@ import android.webkit.ValueCallback;
 import com.facebook.FacebookSdk;
 import com.joanzapata.iconify.Iconify;
 import com.joanzapata.iconify.fonts.FontAwesomeModule;
+import com.onesignal.OSSubscriptionObserver;
+import com.onesignal.OSSubscriptionState;
+import com.onesignal.OSSubscriptionStateChanges;
 import com.onesignal.OneSignal;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.gonative.android.library.AppConfig;
 
@@ -19,6 +26,9 @@ public class GoNativeApplication extends Application {
     private RegistrationManager registrationManager;
     private Message webviewMessage;
     private ValueCallback webviewValueCallback;
+    private boolean oneSignalRegistered = false;
+    private int numOneSignalChecks = 0;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @Override
     public void onCreate() {
@@ -41,12 +51,38 @@ public class GoNativeApplication extends Application {
             registrationManager.processConfig(appConfig.registrationEndpoints);
 
             if (appConfig.oneSignalEnabled) {
-                OneSignal.idsAvailable(new OneSignal.IdsAvailableHandler() {
+                OneSignal.addSubscriptionObserver(new OSSubscriptionObserver() {
                     @Override
-                    public void idsAvailable(String userId, String registrationId) {
-                        registrationManager.setOneSignalUserId(userId, registrationId);
+                    public void onOSSubscriptionChanged(OSSubscriptionStateChanges stateChanges) {
+                        OSSubscriptionState to = stateChanges.getTo();
+                        if (to.getSubscribed()) {
+                            registrationManager.setOneSignalUserId(to.getUserId(), to.getPushToken());
+                            oneSignalRegistered = true;
+                        }
                     }
                 });
+
+                // sometimes the subscription observer doesn't get fired, so check a few times on a timer
+                final Runnable checkOneSignal = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (oneSignalRegistered) {
+                            scheduler.shutdown();
+                            return;
+                        }
+
+                        OSSubscriptionState state = OneSignal.getPermissionSubscriptionState().getSubscriptionStatus();
+                        if (state.getSubscribed()) {
+                            scheduler.shutdown();
+                            registrationManager.setOneSignalUserId(state.getUserId(), state.getPushToken());
+                            oneSignalRegistered = true;
+
+                        } else if (numOneSignalChecks++ > 10) {
+                            scheduler.shutdown();
+                        }
+                    }
+                };
+                scheduler.scheduleAtFixedRate(checkOneSignal, 2, 2, TimeUnit.SECONDS);
             }
         }
 
