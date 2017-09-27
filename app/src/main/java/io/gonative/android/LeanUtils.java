@@ -121,6 +121,10 @@ public class LeanUtils {
     public static Integer parseColor(String colorString) {
         if (colorString == null) return null;
 
+        if (!colorString.startsWith("#")) {
+            colorString = "#" + colorString;
+        }
+
         try {
             return Color.parseColor(colorString);
         } catch (IllegalArgumentException e) {

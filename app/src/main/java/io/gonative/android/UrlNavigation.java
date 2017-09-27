@@ -17,6 +17,7 @@ import android.provider.MediaStore;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.util.Pair;
+import android.view.View;
 import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
@@ -308,6 +309,59 @@ public class UrlNavigation {
                 if ("/promptLocation".equals(uri.getPath())) {
                     OneSignal.promptLocation();
                     return true;
+                }
+            }
+
+            if ("connectivity".equals(uri.getHost())) {
+                String callback = uri.getQueryParameter("callback");
+                if ("/get".equals(uri.getPath())) {
+                    if (callback != null && !callback.isEmpty()) {
+                        this.mainActivity.sendConnectivityOnce(callback);
+                    }
+                } else if ("/subscribe".equals(uri.getPath())) {
+                    if (callback != null && !callback.isEmpty()) {
+                        this.mainActivity.subscribeConnectivity(callback);
+                    }
+                } else if ("/unsubscribe".equals(uri.getPath())) {
+                    this.mainActivity.unsubscribeConnectivity();
+                }
+            }
+
+            if ("statusbar".equals(uri.getHost())) {
+                if ("/set".equals(uri.getPath())) {
+                    String style = uri.getQueryParameter("style");
+                    if (style != null && !style.isEmpty() && Build.VERSION.SDK_INT >= 23) {
+                        if (style.equals("light")) {
+                            // light icons and text
+                            View decor = this.mainActivity.getWindow().getDecorView();
+                            decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                        } else if (style.equals("dark")) {
+                            // dark icons and text
+                            View decor = this.mainActivity.getWindow().getDecorView();
+                            decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                        }
+                    }
+
+                    String color = uri.getQueryParameter("color");
+                    Integer parsedColor = LeanUtils.parseColor(color);
+                    if (parsedColor != null && Build.VERSION.SDK_INT >= 21) {
+                        this.mainActivity.getWindow().setStatusBarColor(parsedColor.intValue());
+                    }
+
+                    String overlay = uri.getQueryParameter("overlay");
+                    if (overlay != null) {
+                        if (overlay.equals("true") || overlay.equals("1")) {
+                            View decor = this.mainActivity.getWindow().getDecorView();
+                            decor.setSystemUiVisibility(decor.getSystemUiVisibility() |
+                                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+                        } else {
+                            View decor = this.mainActivity.getWindow().getDecorView();
+                            decor.setSystemUiVisibility(decor.getSystemUiVisibility() &
+                                    ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN &
+                                    ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+                        }
+                    }
                 }
             }
 

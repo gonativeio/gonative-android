@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -29,6 +30,10 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
+import android.telephony.CellInfo;
+import android.telephony.PhoneStateListener;
+import android.telephony.SignalStrength;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -36,6 +41,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -53,6 +59,9 @@ import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.appevents.AppEventsLogger;
 import com.onesignal.OneSignal;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
@@ -61,6 +70,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -136,6 +146,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private Stack<Bundle>previousWebviewStates;
     private Runnable geolocationPermissionCallback;
     private ArrayList<PermissionsCallbackPair> pendingPermiissionRequests = new ArrayList<>();
+    private String connectivityCallback;
+    private String connectivityOnceCallback;
+    private PhoneStateListener phoneStateListener;
+    private SignalStrength latestSignalStrength;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -1445,6 +1459,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         @Override
         public void onReceive(Context context, Intent intent) {
             retryFailedPage();
+            if (connectivityCallback != null) {
+                sendConnectivity(connectivityCallback);
+            }
         }
     }
 
@@ -1555,5 +1572,104 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             AppConfig appConfig = AppConfig.getInstance(this);
             this.swipeRefresh.setEnabled(appConfig.pullToRefresh);
         }
+    }
+
+    public void listenForSignalStrength() {
+        if (this.phoneStateListener != null) return;
+
+        this.phoneStateListener = new PhoneStateListener() {
+            @Override
+            public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+                latestSignalStrength = signalStrength;
+                sendConnectivityOnce();
+                if (connectivityCallback != null) {
+                    sendConnectivity(connectivityCallback);
+                }
+            }
+        };
+
+        try {
+            TelephonyManager telephonyManager = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
+            telephonyManager.listen(this.phoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        } catch (Exception e) {
+            Log.e(TAG, "Error listening for signal strength", e);
+        }
+
+    }
+
+    public void sendConnectivityOnce(String callback) {
+        if (callback == null) return;
+
+        this.connectivityOnceCallback = callback;
+        if (this.phoneStateListener != null) {
+            sendConnectivity(callback);
+        } else {
+            listenForSignalStrength();
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    sendConnectivityOnce();
+                }
+            }, 500);
+        }
+    }
+
+    private void sendConnectivityOnce() {
+        if (this.connectivityOnceCallback == null) return;
+        sendConnectivity(this.connectivityOnceCallback);
+        this.connectivityOnceCallback = null;
+    }
+
+    private void sendConnectivity(String callback) {
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean connected = activeNetwork != null && activeNetwork.isConnected();
+        String typeString;
+        if (activeNetwork != null) {
+            typeString = activeNetwork.getTypeName();
+        } else {
+            typeString = "DISCONNECTED";
+        }
+
+        try {
+            JSONObject data = new JSONObject();
+            data.put("connected", connected);
+            data.put("type", typeString);
+
+            if (this.latestSignalStrength != null) {
+                JSONObject signalStrength = new JSONObject();
+
+                signalStrength.put("cdmaDbm", latestSignalStrength.getCdmaDbm());
+                signalStrength.put("cdmaEcio", latestSignalStrength.getCdmaEcio());
+                signalStrength.put("evdoDbm", latestSignalStrength.getEvdoDbm());
+                signalStrength.put("evdoEcio", latestSignalStrength.getEvdoEcio());
+                signalStrength.put("evdoSnr", latestSignalStrength.getEvdoSnr());
+                signalStrength.put("gsmBitErrorRate", latestSignalStrength.getGsmBitErrorRate());
+                signalStrength.put("gsmSignalStrength", latestSignalStrength.getGsmSignalStrength());
+                if (Build.VERSION.SDK_INT >= 23) {
+                    signalStrength.put("level", latestSignalStrength.getLevel());
+                }
+                data.put("cellSignalStrength", signalStrength);
+            }
+
+            String js = LeanUtils.createJsForCallback(callback, data);
+            runJavascript(js);
+        } catch (JSONException e) {
+            Log.e(TAG, "JSON error sending connectivity", e);
+        }
+    }
+
+    public void subscribeConnectivity(final String callback) {
+        this.connectivityCallback = callback;
+        listenForSignalStrength();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sendConnectivity(callback);
+            }
+        }, 500);
+    }
+
+    public void unsubscribeConnectivity() {
+        this.connectivityCallback = null;
     }
 }
