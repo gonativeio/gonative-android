@@ -285,7 +285,18 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
 
         if (intent.getAction() == Intent.ACTION_VIEW) {
-            url = intent.getDataString();
+            Uri uri = intent.getData();
+            if (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https")) {
+                Uri.Builder builder = uri.buildUpon();
+                if (uri.getScheme().endsWith(".https")) {
+                    builder.scheme("https");
+                } else if (uri.getScheme().endsWith(".http")) {
+                    builder.scheme("http");
+                }
+                url = builder.build().toString();
+            } else {
+                url = intent.getDataString();
+            }
         }
 
         if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
