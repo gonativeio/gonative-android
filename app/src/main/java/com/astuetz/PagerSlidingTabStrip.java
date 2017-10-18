@@ -775,10 +775,4 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
     public void setTabClickListener(OnTabClickListener tabClickListener) {
         this.tabClickListener = tabClickListener;
     }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        tabsContainer.measure(widthMeasureSpec, heightMeasureSpec);
-    }
 }
