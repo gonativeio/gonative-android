@@ -136,6 +136,8 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
     private Locale locale;
 
+    private boolean deselected = false;
+
     public PagerSlidingTabStrip(Context context) {
         this(context, null);
     }
@@ -295,6 +297,8 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
         tabView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                disableDeselect();
+
                 if (tabClickListener != null) {
                     tabClickListener.onTabClick(position);
                 }
@@ -319,7 +323,8 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
             if (tab_title != null) {
                 tab_title.setTextSize(TypedValue.COMPLEX_UNIT_PX, tabTextSize);
-                tab_title.setTypeface(tabTypeface, pager.getCurrentItem() == i ? tabTypefaceSelectedStyle : tabTypefaceStyle);
+                boolean isTabSelected = !deselected &&  pager.getCurrentItem() == i;
+                tab_title.setTypeface(tabTypeface, isTabSelected ? tabTypefaceSelectedStyle : tabTypefaceStyle);
                 if (tabTextColor != null) {
                     tab_title.setTextColor(tabTextColor);
                 }
@@ -423,9 +428,11 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
         final int height = getHeight();
         // draw indicator line
-        rectPaint.setColor(indicatorColor);
-        Pair<Float, Float> lines = getIndicatorCoordinates();
-        canvas.drawRect(lines.first + paddingLeft, height - indicatorHeight, lines.second + paddingRight, height, rectPaint);
+        if (!deselected) {
+            rectPaint.setColor(indicatorColor);
+            Pair<Float, Float> lines = getIndicatorCoordinates();
+            canvas.drawRect(lines.first + paddingLeft, height - indicatorHeight, lines.second + paddingRight, height, rectPaint);
+        }
         // draw underline
         rectPaint.setColor(underlineColor);
         canvas.drawRect(paddingLeft, height - underlineHeight, tabsContainer.getWidth() + paddingRight, height, rectPaint);
@@ -460,6 +467,8 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
         @Override
         public void onPageScrollStateChanged(int state) {
+            disableDeselect();
+
             if (state == ViewPager.SCROLL_STATE_IDLE) {
                 scrollToChild(pager.getCurrentItem(), 0);
             }
@@ -511,6 +520,11 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
     }
 
     private void selected(View tab) {
+        if (this.deselected) {
+            notSelected(tab);
+            return;
+        }
+
         TextView title = (TextView) tab.findViewById(R.id.tab_title);
         if (title != null) {
             title.setTypeface(tabTypeface, tabTypefaceSelectedStyle);
@@ -774,5 +788,21 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
     public void setTabClickListener(OnTabClickListener tabClickListener) {
         this.tabClickListener = tabClickListener;
+    }
+
+    public void deselect() {
+        this.deselected = true;
+        updateTabStyles();
+        View currentTab = tabsContainer.getChildAt(pager.getCurrentItem());
+        if (currentTab != null) {
+            notSelected(currentTab);
+        }
+        invalidate();
+    }
+
+    private void disableDeselect() {
+        this.deselected = false;
+        updateTabStyles();
+        invalidate();
     }
 }

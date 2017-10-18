@@ -1585,6 +1585,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
+    public void deselectTabs() {
+        this.slidingTabStrip.deselect();
+    }
+
     public void listenForSignalStrength() {
         if (this.phoneStateListener != null) return;
 

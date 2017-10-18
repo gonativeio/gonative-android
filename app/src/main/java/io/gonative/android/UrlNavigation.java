@@ -251,6 +251,8 @@ public class UrlNavigation {
                         }
 
                     }
+                } else if ("/deselect".equals(uri.getPath())) {
+                    mainActivity.deselectTabs();
                 } else if ("/setTabs".equals(uri.getPath())) {
                     String tabsJson = uri.getQueryParameter("tabs");
                     if (tabsJson != null && !tabsJson.isEmpty()) {
