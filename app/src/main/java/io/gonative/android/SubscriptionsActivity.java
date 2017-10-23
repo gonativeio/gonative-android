@@ -117,10 +117,12 @@ public class SubscriptionsActivity extends AppCompatActivity {
                     OneSignal.getTags(new OneSignal.GetTagsHandler() {
                         @Override
                         public void tagsAvailable(JSONObject tags) {
-                            for (SubscriptionsModel.SubscriptionsSection section : model.sections) {
-                                for (SubscriptionsModel.SubscriptionItem item : section.items) {
-                                    if (item.identifier != null && tags.has(item.identifier)) {
-                                        item.isSubscribed = true;
+                            if (tags != null) {
+                                for (SubscriptionsModel.SubscriptionsSection section : model.sections) {
+                                    for (SubscriptionsModel.SubscriptionItem item : section.items) {
+                                        if (item.identifier != null && tags.has(item.identifier)) {
+                                            item.isSubscribed = true;
+                                        }
                                     }
                                 }
                             }
