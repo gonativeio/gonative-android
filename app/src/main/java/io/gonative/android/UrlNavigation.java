@@ -312,6 +312,11 @@ public class UrlNavigation {
                     OneSignal.promptLocation();
                     return true;
                 }
+
+                if ("/showTagsUI".equals(uri.getPath())) {
+                    Intent intent = new Intent(mainActivity, SubscriptionsActivity.class);
+                    mainActivity.startActivity(intent);
+                }
             }
 
             if ("connectivity".equals(uri.getHost())) {

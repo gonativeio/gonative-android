@@ -91,6 +91,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".SubscriptionsActivity"
+            android:label="@string/subscriptions_activity_title"/>
     </application>
 
 </manifest>
