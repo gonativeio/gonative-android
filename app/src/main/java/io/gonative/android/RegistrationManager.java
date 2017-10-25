@@ -33,6 +33,7 @@ public class RegistrationManager {
     private Context context;
     private String oneSignalUserId;
     private String oneSignalRegistrationId;
+    private Boolean oneSignalSubscribed = false;
     private JSONObject customData;
     private String lastUrl;
 
@@ -95,9 +96,11 @@ public class RegistrationManager {
         }
     }
 
-    public void setOneSignalUserId(String oneSignalUserId, String oneSignalregistrationId) {
+    public void setOneSignalUserId(String oneSignalUserId, String oneSignalregistrationId,
+                                   Boolean oneSignalSubscribed) {
         this.oneSignalUserId = oneSignalUserId;
         this.oneSignalRegistrationId = oneSignalregistrationId;
+        this.oneSignalSubscribed = oneSignalSubscribed;
         registrationDataChanged(RegistrationDataType.OneSignal);
     }
 
@@ -169,6 +172,7 @@ public class RegistrationManager {
                         if (oneSignalRegistrationId != null) {
                             toSend.put("oneSignalRegistrationId", oneSignalRegistrationId);
                         }
+                        toSend.put("oneSignalSubscribed", oneSignalSubscribed);
                     }
 
                     if (dataTypes.contains(RegistrationDataType.CustomData) && customData != null) {

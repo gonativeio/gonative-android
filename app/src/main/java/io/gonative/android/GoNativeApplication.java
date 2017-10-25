@@ -55,8 +55,9 @@ public class GoNativeApplication extends Application {
                     @Override
                     public void onOSSubscriptionChanged(OSSubscriptionStateChanges stateChanges) {
                         OSSubscriptionState to = stateChanges.getTo();
+                        registrationManager.setOneSignalUserId(to.getUserId(), to.getPushToken(), to.getSubscribed());
+
                         if (to.getSubscribed()) {
-                            registrationManager.setOneSignalUserId(to.getUserId(), to.getPushToken());
                             oneSignalRegistered = true;
                         }
                     }
@@ -72,9 +73,10 @@ public class GoNativeApplication extends Application {
                         }
 
                         OSSubscriptionState state = OneSignal.getPermissionSubscriptionState().getSubscriptionStatus();
+                        registrationManager.setOneSignalUserId(state.getUserId(), state.getPushToken(), state.getSubscribed());
+
                         if (state.getSubscribed()) {
                             scheduler.shutdown();
-                            registrationManager.setOneSignalUserId(state.getUserId(), state.getPushToken());
                             oneSignalRegistered = true;
 
                         } else if (numOneSignalChecks++ > 10) {
