@@ -53,10 +53,11 @@ class GoNativeWebChromeClient extends WebChromeClient {
             return;
         }
 
-        mainActivity.getRuntimeGeolocationPermission(new Runnable() {
+        mainActivity.getRuntimeGeolocationPermission(new MainActivity.GeolocationPermissionCallback() {
             @Override
-            public void run() {
-                callback.invoke(origin, true, false);
+            public void onResult(boolean granted) {
+                // only retain if granted
+                callback.invoke(origin, granted, granted);
             }
         });
     }

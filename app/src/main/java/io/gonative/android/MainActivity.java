@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
-    private Runnable geolocationPermissionCallback;
+    private GeolocationPermissionCallback geolocationPermissionCallback;
     private ArrayList<PermissionsCallbackPair> pendingPermiissionRequests = new ArrayList<>();
     private String connectivityCallback;
     private String connectivityOnceCallback;
@@ -309,9 +309,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             // Ask for it up front, then load the page.
             if (this.mWebview.isCrosswalk() && appConfig.usesGeolocation) {
                 final String urlLoadAfterLocation = url;
-                this.getRuntimeGeolocationPermission(new Runnable() {
+
+                this.getRuntimeGeolocationPermission(new GeolocationPermissionCallback() {
                     @Override
-                    public void run() {
+                    public void onResult(boolean granted) {
+                        // ignore result
                         mWebview.loadUrl(urlLoadAfterLocation);
                     }
                 });
@@ -1410,9 +1412,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             }
         }
         else if (requestCode == REQUEST_PERMISSION_GEOLOCATION) {
-            // don't care about result
             if (this.geolocationPermissionCallback != null) {
-                this.geolocationPermissionCallback.run();
+                if (grantResults.length >= 2 &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                        grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    this.geolocationPermissionCallback.onResult(true);
+                } else {
+                    this.geolocationPermissionCallback.onResult(false);
+                }
                 this.geolocationPermissionCallback = null;
             }
         } else if (requestCode == REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE) {
@@ -1476,12 +1483,12 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
-    public void getRuntimeGeolocationPermission(final Runnable callback) {
+    public void getRuntimeGeolocationPermission(final GeolocationPermissionCallback callback) {
         int checkFine = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
         int checkCoarse = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
 
         if (checkFine == PackageManager.PERMISSION_GRANTED && checkCoarse == PackageManager.PERMISSION_GRANTED) {
-            if (callback != null) callback.run();
+            callback.onResult(true);
         }
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION) ||
@@ -1686,5 +1693,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     public void unsubscribeConnectivity() {
         this.connectivityCallback = null;
+    }
+
+    public interface GeolocationPermissionCallback {
+        public void onResult(boolean granted);
     }
 }
