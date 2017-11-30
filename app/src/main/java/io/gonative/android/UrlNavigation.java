@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -757,7 +758,17 @@ public class UrlNavigation {
         return chooseFileUpload(mimetypespec, false);
     }
 
-    public boolean chooseFileUpload(String[] mimetypespec, boolean multiple) {
+    public boolean chooseFileUpload(final String[] mimetypespec, final boolean multiple) {
+        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, new MainActivity.PermissionCallback() {
+            @Override
+            public void onPermissionResult(String[] permissions, int[] grantResults) {
+                chooseFileUploadAfterPermission(mimetypespec, multiple);
+            }
+        });
+        return true;
+    }
+
+    public boolean chooseFileUploadAfterPermission(String[] mimetypespec, boolean multiple) {
         mainActivity.setDirectUploadImageUri(null);
 
         boolean isMultipleTypes = false;
