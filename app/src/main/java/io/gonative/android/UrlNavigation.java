@@ -60,7 +60,6 @@ public class UrlNavigation {
 
 	private MainActivity mainActivity;
     private String profilePickerExec;
-    private String analyticsExec;
     private String dynamicUpdateExec;
     private String currentWebviewUrl;
     private HtmlIntercept htmlIntercept;
@@ -78,26 +77,6 @@ public class UrlNavigation {
             this.profilePickerExec = "gonative_profile_picker.parseJson(eval("
                     + LeanUtils.jsWrapString(appConfig.profilePickerJS)
                     + "))";
-        }
-
-        // analytics
-        if (appConfig.analytics) {
-            String distribution = (String)Installation.getInfo(mainActivity).get("distribution");
-            int idsite;
-            if (distribution != null && (distribution.equals("playstore") || distribution.equals("amazon")))
-                idsite = appConfig.idsite_prod;
-            else idsite = appConfig.idsite_test;
-
-            this.analyticsExec = String.format("var _paq = _paq || [];\n" +
-                    "  _paq.push(['trackPageView']);\n" +
-                    "  _paq.push(['enableLinkTracking']);\n" +
-                    "  (function() {\n" +
-                    "    var u = 'https://analytics.gonative.io/';\n" +
-                    "    _paq.push(['setTrackerUrl', u+'piwik.php']);\n" +
-                    "    _paq.push(['setSiteId', %d]);\n" +
-                    "    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript';\n" +
-                    "    g.defer=true; g.async=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);\n" +
-                    "  })();", idsite);
         }
 
         // dynamic config updates
@@ -646,11 +625,6 @@ public class UrlNavigation {
         // profile picker
         if (this.profilePickerExec != null) {
             view.runJavascript(this.profilePickerExec);
-        }
-
-        // analytics
-        if (this.analyticsExec != null) {
-            view.runJavascript(this.analyticsExec);
         }
 
         // tabs

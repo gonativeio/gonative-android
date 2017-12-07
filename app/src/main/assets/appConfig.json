@@ -129,9 +129,6 @@
       "appId": "",
       "displayName": ""
     },
-    "analytics": {
-      "active": false
-    },
     "registration": {
       "active": false,
       "endpoints": [{
