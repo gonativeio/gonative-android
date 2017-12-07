@@ -77,16 +77,22 @@ public class FileDownloader implements DownloadListener {
 
         if (this.defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                Uri uri = Uri.parse(url);
-                DownloadManager.Request request = new DownloadManager.Request(uri);
-                request.addRequestHeader("User-Agent", userAgent);
-                request.allowScanningByMediaScanner();
-                String guessedName = URLUtil.guessFileName(url, contentDisposition, mimetype);
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
-                request.setMimeType(mimetype);
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                try {
+                    Uri uri = Uri.parse(url);
+                    DownloadManager.Request request = new DownloadManager.Request(uri);
+                    request.addRequestHeader("User-Agent", userAgent);
+                    request.allowScanningByMediaScanner();
+                    String guessedName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                    request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
+                    request.setMimeType(mimetype);
+                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
 
-                enqueueBackgroundDownload(url, request);
+                    enqueueBackgroundDownload(url, request);
+
+                } catch (Exception e) {
+                    Log.e(TAG, e.getMessage(), e);
+                    Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                }
 
                 return;
             } else {
@@ -140,6 +146,8 @@ public class FileDownloader implements DownloadListener {
     }
 
     private class DownloadFileTask extends AsyncTask<DownloadFileParams, Integer, DownloadFileResult> {
+        private Exception exception;
+
         @Override
         protected void onPreExecute() {
             progressDialog = new ProgressDialog(context);
@@ -165,7 +173,7 @@ public class FileDownloader implements DownloadListener {
             try {
                 url = new URL(param.url);
             } catch (MalformedURLException e) {
-                Log.e(TAG, e.getMessage(), e);
+                exception = e;
                 return null;
             }
 
@@ -244,6 +252,11 @@ public class FileDownloader implements DownloadListener {
         @Override
         protected void onPostExecute(DownloadFileResult result) {
             progressDialog.dismiss();
+
+            if (exception != null) {
+                Log.e(TAG, exception.getMessage(), exception);
+                Toast.makeText(context, exception.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            }
 
             if (result != null && result.file != null) {
                 String fileString = result.file.toString();
