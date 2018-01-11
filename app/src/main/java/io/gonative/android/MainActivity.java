@@ -57,6 +57,7 @@ import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.applinks.AppLinkData;
 import com.onesignal.OneSignal;
 
 import org.json.JSONException;
@@ -324,6 +325,38 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             // no worries
         } else {
             Log.e(TAG, "No url specified for MainActivity");
+        }
+
+        if (isRoot && appConfig.facebookEnabled) {
+            AppLinkData.fetchDeferredAppLinkData(this, new AppLinkData.CompletionHandler() {
+                @Override
+                public void onDeferredAppLinkDataFetched(AppLinkData appLinkData) {
+                    if (appLinkData == null) return;
+                    Uri uri = appLinkData.getTargetUri();
+                    if (uri == null) return;
+                    String url;
+                    if (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https")) {
+                        Uri.Builder builder = uri.buildUpon();
+                        if (uri.getScheme().endsWith(".https")) {
+                            builder.scheme("https");
+                        } else if (uri.getScheme().endsWith(".http")) {
+                            builder.scheme("http");
+                        }
+                        url = builder.build().toString();
+                    } else {
+                        url = uri.toString();
+                    }
+                    if (url != null) {
+                        final String finalUrl = url;
+                        new Handler(MainActivity.this.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mWebview.loadUrl(finalUrl);
+                            }
+                        });
+                    }
+                }
+            });
         }
 
         if (isRoot && appConfig.showNavigationMenu) {
