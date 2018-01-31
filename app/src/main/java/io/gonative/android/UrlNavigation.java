@@ -165,6 +165,24 @@ public class UrlNavigation {
             return true;
         }
 
+        final AppConfig appConfig = AppConfig.getInstance(mainActivity);
+
+        // Check native bridge urls
+        if ("gonative".equals(uri.getScheme()) && currentWebviewUrl != null &&
+                appConfig.nativeBridgeUrls != null && !appConfig.nativeBridgeUrls.isEmpty()) {
+            boolean matches = false;
+            for (Pattern regex : appConfig.nativeBridgeUrls) {
+                if (regex.matcher(currentWebviewUrl).matches()) {
+                    matches = true;
+                    break;
+                }
+            }
+            if (!matches) {
+                Log.e(TAG, "URL not authorized for native bridge: " + currentWebviewUrl);
+                return true;
+            }
+        }
+
         if ("gonative".equals(uri.getScheme()) && "registration".equals(uri.getHost()) &&
                 "/send".equals(uri.getPath())) {
 
@@ -354,8 +372,6 @@ public class UrlNavigation {
 
             return true;
         }
-
-        final AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
         // check redirects
         if (appConfig.redirects != null) {
