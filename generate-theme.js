@@ -102,7 +102,7 @@ if (statusBarColor !== '' && statusBarColor !== defaultStatusBarColor) {
 // set actionbar title color
 if (titleColor !== '' && titleColor !== defaultTitleColor) {
     console.log('Setting action bar title color to ' + titleColor);
-    var s = '<item name="android:textColorPrimary">#' + titleColor + '</item>';
+    var s = '<item name="titleTextColor">#' + titleColor + '</item>';
     replaceStringInFile(styleFile, '<!--GoNative placeholder: titleTextColor-->', s);
 }
 
