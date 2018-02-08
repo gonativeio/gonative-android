@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+'use strict';
 
 var DARK_DEFAULT_ACTIONBAR_COLOR = '212121';
 var DARK_DEFAULT_STATUSBAR_COLOR = '030303';
@@ -104,10 +105,13 @@ if (titleColor !== '' && titleColor !== defaultTitleColor) {
     console.log('Setting action bar title color to ' + titleColor);
     var s = '<item name="titleTextColor">#' + titleColor + '</item>';
     replaceStringInFile(styleFile, '<!--GoNative placeholder: titleTextColor-->', s);
+    console.log('Setting drawerArrowColor to ' + titleColor);
+    s = '<item name="color">#' + titleColor + '</item>';
+    replaceStringInFile(styleFile, '<!--GoNative placeholder: drawerArrowColor-->', s);
 }
 
 // tab foreground color
-var tabForegroundColor = titleColor == '' ? defaultTitleColor : titleColor;
+var tabForegroundColor = titleColor === '' ? defaultTitleColor : titleColor;
 console.log('Setting tab foreground color to ' + tabForegroundColor);
 replaceStringInFile(colorFile, '<color name="tab_foreground_color">#FFFFFF</color>', 
     '<color name="tab_foreground_color">#' + tabForegroundColor +'</color>');
@@ -121,7 +125,7 @@ if (accentColor !== '' && accentColor !== defaultAccentColor) {
 
 function replaceStringInFile(filename, searchvalue, newvalue) {
     var fs = require('fs');
-    contents = fs.readFileSync(filename, {
+    var contents = fs.readFileSync(filename, {
         encoding: 'utf8'
     });
     var newContents = contents.replace(searchvalue, newvalue);

@@ -10,10 +10,17 @@
         <!--Remove action bar shadow. We are managing it ourselves with the tabs.-->
         <item name="android:windowContentOverlay">@null</item>
 
+        <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
+
         <!--GoNative placeholder: colorPrimary-->
         <!--GoNative placeholder: colorPrimaryDark-->
         <!--GoNative placeholder: titleTextColor-->
         <!--GoNative placeholder: colorAccent-->
+    </style>
+
+    <style name="DrawerArrowStyle" parent="@style/Widget.AppCompat.DrawerArrowToggle">
+        <item name="spinBars">true</item>
+        <!--GoNative placeholder: drawerArrowColor-->
     </style>
 
     <attr name="ic_action_refresh" format="reference"/>
