@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import java.io.File;
@@ -91,6 +92,18 @@ public class Installation {
         info.put("model", new StringBuilder(Build.MANUFACTURER).append(" ").append(Build.MODEL).toString());
         info.put("hardware", Build.FINGERPRINT);
         info.put("timeZone", TimeZone.getDefault().getID());
+
+        String carrier = null;
+        try {
+            TelephonyManager telephonyManager =((TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE));
+            carrier = telephonyManager.getNetworkOperatorName();
+        } catch (Error error) {
+            Log.e(TAG, "Error getting carrier name", error);
+        }
+
+        if (carrier != null) {
+            info.put("carrierName", carrier);
+        }
 
         info.put("installationId", Installation.id(context));
 
