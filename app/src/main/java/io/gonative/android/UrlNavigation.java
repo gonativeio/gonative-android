@@ -169,18 +169,9 @@ public class UrlNavigation {
 
         // Check native bridge urls
         if ("gonative".equals(uri.getScheme()) && currentWebviewUrl != null &&
-                appConfig.nativeBridgeUrls != null && !appConfig.nativeBridgeUrls.isEmpty()) {
-            boolean matches = false;
-            for (Pattern regex : appConfig.nativeBridgeUrls) {
-                if (regex.matcher(currentWebviewUrl).matches()) {
-                    matches = true;
-                    break;
-                }
-            }
-            if (!matches) {
-                Log.e(TAG, "URL not authorized for native bridge: " + currentWebviewUrl);
-                return true;
-            }
+                !LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity)) {
+            Log.e(TAG, "URL not authorized for native bridge: " + currentWebviewUrl);
+            return true;
         }
 
         if ("gonative".equals(uri.getScheme()) && "registration".equals(uri.getHost()) &&
@@ -656,17 +647,28 @@ public class UrlNavigation {
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.FINISHED_LOADING_MESSAGE));
 
+        boolean doNativeBridge = true;
+        if (currentWebviewUrl != null) {
+            doNativeBridge = LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity);
+        }
+
         // send installation info
-        Map installationInfo = Installation.getInfo(mainActivity);
-        JSONObject jsonObject = new JSONObject(installationInfo);
-        String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
-        mainActivity.runJavascript(js);
+        if (doNativeBridge) {
+            Map installationInfo = Installation.getInfo(mainActivity);
+            JSONObject jsonObject = new JSONObject(installationInfo);
+            String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
+            mainActivity.runJavascript(js);
+        }
 
         // onesignal javsacript callback
-        if (appConfig.oneSignalEnabled) {
+        if (appConfig.oneSignalEnabled && doNativeBridge) {
             OneSignal.idsAvailable(new OneSignal.IdsAvailableHandler() {
                 @Override
                 public void idsAvailable(String userId, String registrationId) {
+                    if (currentWebviewUrl != null && !LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity)) {
+                        return;
+                    }
+
                     try {
                         Map installationInfo = Installation.getInfo(mainActivity);
 

@@ -220,4 +220,20 @@ public class LeanUtils {
 
         return js.toString();
     }
+
+    public static boolean checkNativeBridgeUrls(String url, Context context) {
+        AppConfig appConfig = AppConfig.getInstance(context);
+        if (appConfig.nativeBridgeUrls == null || appConfig.nativeBridgeUrls.isEmpty()) {
+            return true;
+        }
+
+        boolean matches = false;
+        for (Pattern regex : appConfig.nativeBridgeUrls) {
+            if (regex.matcher(url).matches()) {
+                matches = true;
+                break;
+            }
+        }
+        return matches;
+    }
 }
