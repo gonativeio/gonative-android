@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                 this.mWebview.loadUrl(url);
             }
         } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
-            // no worries
+            // no worries, loadUrl will be called when this new web view is passed back to the message
         } else {
             Log.e(TAG, "No url specified for MainActivity");
         }

@@ -65,6 +65,7 @@ public class UrlNavigation {
     private HtmlIntercept htmlIntercept;
 
     private boolean mVisitedLoginOrSignup = false;
+    private boolean finishOnExternalUrl = false;
 
 	public UrlNavigation(MainActivity activity) {
 		this.mainActivity = activity;
@@ -84,6 +85,10 @@ public class UrlNavigation {
             this.dynamicUpdateExec = "gonative_dynamic_update.parseJson(eval("
                     + LeanUtils.jsWrapString(appConfig.updateConfigJS)
                     + "))";
+        }
+
+        if (mainActivity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
+            finishOnExternalUrl = true;
         }
 	}
 	
@@ -532,7 +537,14 @@ public class UrlNavigation {
         if (url == null) return false;
 
         boolean shouldOverride = shouldOverrideUrlLoadingNoIntercept(view, url, false);
-        if (shouldOverride) return true;
+        if (shouldOverride) {
+            if (finishOnExternalUrl) {
+                mainActivity.finish();
+            }
+            return true;
+        } else {
+            finishOnExternalUrl = false;
+        }
 
         // intercept html
         this.htmlIntercept.setInterceptUrl(null);
