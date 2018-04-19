@@ -26,6 +26,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.onesignal.OSPermissionSubscriptionState;
+import com.onesignal.OSSubscriptionState;
 import com.onesignal.OneSignal;
 
 import org.json.JSONArray;
@@ -674,32 +676,37 @@ public class UrlNavigation {
 
         // onesignal javsacript callback
         if (appConfig.oneSignalEnabled && doNativeBridge) {
-            OneSignal.idsAvailable(new OneSignal.IdsAvailableHandler() {
-                @Override
-                public void idsAvailable(String userId, String registrationId) {
-                    if (currentWebviewUrl != null && !LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity)) {
-                        return;
-                    }
+            try {
+                String userId = null;
+                String pushToken = null;
+                boolean subscribed = false;
 
-                    try {
-                        Map installationInfo = Installation.getInfo(mainActivity);
-
-                        JSONObject jsonObject = new JSONObject(installationInfo);
-                        if (userId != null) {
-                            jsonObject.put("oneSignalUserId", userId);
-                        }
-                        if (registrationId != null) {
-                            jsonObject.put("oneSignalregistrationId", registrationId);
-                        }
-                        String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
-                        if (js != null) {
-                            mainActivity.runJavascript(js);
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error with onesignal javscript callback", e);
-                    }
+                OSPermissionSubscriptionState state = OneSignal.getPermissionSubscriptionState();
+                if (state != null && state.getSubscriptionStatus() != null) {
+                    userId = state.getSubscriptionStatus().getUserId();
+                    pushToken = state.getSubscriptionStatus().getPushToken();
+                    subscribed = state.getSubscriptionStatus().getSubscribed();
                 }
-            });
+
+                Map installationInfo = Installation.getInfo(mainActivity);
+
+                JSONObject jsonObject = new JSONObject(installationInfo);
+                if (userId != null) {
+                    jsonObject.put("oneSignalUserId", userId);
+                }
+                if (pushToken != null) {
+                    // registration id is old GCM name, but keep it for compatibility
+                    jsonObject.put("oneSignalregistrationId", pushToken);
+                    jsonObject.put("oneSignalPushToken", pushToken);
+                }
+                jsonObject.put("oneSignalSubscribed", subscribed);
+                String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
+                if (js != null) {
+                    mainActivity.runJavascript(js);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error with onesignal javscript callback", e);
+            }
         }
 	}
 
