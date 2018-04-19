@@ -1085,6 +1085,22 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
             final SearchView searchView = (SearchView) searchItem.getActionView();
             if (searchView != null) {
+                SearchView.SearchAutoComplete searchAutoComplete =
+                        (SearchView.SearchAutoComplete)searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
+                if (searchAutoComplete != null) {
+                    searchAutoComplete.setTextColor(appConfig.actionbarForegroundColor);
+                    int hintColor = appConfig.actionbarForegroundColor;
+                    hintColor = Color.argb(192, Color.red(hintColor), Color.green(hintColor),
+                            Color.blue(hintColor));
+                    searchAutoComplete.setHintTextColor(hintColor);
+                }
+
+                ImageView closeButtonImage = (ImageView)searchView.findViewById(android.support.v7.appcompat.R.id.search_close_btn);
+                if (closeButtonImage != null) {
+                    closeButtonImage.setColorFilter(appConfig.actionbarForegroundColor);
+                }
+
+
                 // listener to process query
                 searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                     @Override
