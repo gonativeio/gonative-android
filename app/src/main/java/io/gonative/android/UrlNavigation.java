@@ -549,18 +549,7 @@ public class UrlNavigation {
         }
 
         // intercept html
-        this.htmlIntercept.setInterceptUrl(null);
-        if (AppConfig.getInstance(mainActivity).interceptHtml) {
-            try {
-                URL parsedUrl = new URL(url);
-                if (parsedUrl.getProtocol().equals("http") || parsedUrl.getProtocol().equals("https")) {
-                    this.htmlIntercept.setInterceptUrl(url);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-        }
-
+        this.htmlIntercept.setInterceptUrl(url);
         mainActivity.hideWebview();
         return false;
     }
