@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -14,6 +15,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -658,6 +660,14 @@ public class UrlNavigation {
         // send installation info
         if (doNativeBridge) {
             Map installationInfo = Installation.getInfo(mainActivity);
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
+            if (!sharedPreferences.getBoolean("hasLaunched", false)) {
+                sharedPreferences.edit().putBoolean("hasLaunched", true).commit();
+                installationInfo.put("isFirstLaunch", true);
+            } else {
+                installationInfo.put("isFirstLaunch", false);
+            }
+
             JSONObject jsonObject = new JSONObject(installationInfo);
             String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
             mainActivity.runJavascript(js);
