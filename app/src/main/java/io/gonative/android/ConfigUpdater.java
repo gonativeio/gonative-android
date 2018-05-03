@@ -33,12 +33,6 @@ public class ConfigUpdater {
         this.context = context;
     }
 
-    public void updateConfig() {
-        if (AppConfig.getInstance(context).disableConfigUpdater) return;
-
-        new UpdateConfigTask().execute();
-    }
-
     public void registerEvent() {
         if (AppConfig.getInstance(context).disableEventRecorder) return;
 
@@ -68,45 +62,6 @@ public class ConfigUpdater {
                 writer.close();
                 connection.connect();
                 int result = connection.getResponseCode();
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-
-            return null;
-        }
-    }
-
-    private class UpdateConfigTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected Void doInBackground(Void... params) {
-            String appnumHashed = AppConfig.getInstance(context).publicKey;
-            if (appnumHashed == null) return null;
-
-            try {
-                URL url = new URL(String.format("https://gonative.io/static/appConfig/%s.json", appnumHashed));
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.connect();
-                int responseCode = connection.getResponseCode();
-                if (responseCode >= 400) return null;
-
-                // verify json
-                ByteArrayOutputStream baos;
-                if (connection.getContentLength() > 0) baos = new ByteArrayOutputStream(connection.getContentLength());
-                else baos = new ByteArrayOutputStream();
-
-                InputStream is = new BufferedInputStream(connection.getInputStream());
-                IOUtils.copy(is, baos);
-                is.close();
-                baos.close();
-                new JSONObject(baos.toString("UTF-8"));
-
-                // save file
-                File destination = AppConfig.getInstance(context).fileForOTAconfig();
-                OutputStream os = new BufferedOutputStream(new FileOutputStream(destination));
-                is = new BufferedInputStream(new ByteArrayInputStream(baos.toByteArray()));
-                IOUtils.copy(is, os);
-                is.close();
-                os.close();
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage(), e);
             }

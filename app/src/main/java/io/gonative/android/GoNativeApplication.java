@@ -3,6 +3,7 @@ package io.gonative.android;
 import android.app.Application;
 import android.os.Message;
 import android.webkit.ValueCallback;
+import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
 import com.joanzapata.iconify.Iconify;
@@ -35,6 +36,9 @@ public class GoNativeApplication extends Application {
         super.onCreate();
 
         AppConfig appConfig = AppConfig.getInstance(this);
+        if (appConfig.configError != null) {
+            Toast.makeText(this, "Invalid appConfig json", Toast.LENGTH_LONG).show();
+        }
 
         if (appConfig.oneSignalEnabled) {
             OneSignal.init(this, "REMOTE", appConfig.oneSignalAppId,

@@ -190,11 +190,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             // url inspector
             UrlInspector.getInstance().init(this);
 
-            // OTA configs
-            ConfigUpdater configUpdater = new ConfigUpdater(this);
-            configUpdater.updateConfig();
-
             // Register launch
+            ConfigUpdater configUpdater = new ConfigUpdater(this);
             configUpdater.registerEvent();
 
             // registration service
