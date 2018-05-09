@@ -311,6 +311,16 @@ public class UrlNavigation {
                     return true;
                 }
 
+                if ("/userPrivacyConsent/grant".equals(uri.getPath())) {
+                    OneSignal.provideUserConsent(true);
+                    return true;
+                }
+
+                if ("/userPrivacyConsent/revoke".equals(uri.getPath())) {
+                    OneSignal.provideUserConsent(false);
+                    return true;
+                }
+
                 if ("/showTagsUI".equals(uri.getPath())) {
                     Intent intent = new Intent(mainActivity, SubscriptionsActivity.class);
                     mainActivity.startActivity(intent);
@@ -699,6 +709,7 @@ public class UrlNavigation {
                     jsonObject.put("oneSignalPushToken", pushToken);
                 }
                 jsonObject.put("oneSignalSubscribed", subscribed);
+                jsonObject.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
                 String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
                 if (js != null) {
                     mainActivity.runJavascript(js);

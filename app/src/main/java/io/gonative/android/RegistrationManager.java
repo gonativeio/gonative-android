@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.onesignal.OneSignal;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -173,6 +175,7 @@ public class RegistrationManager {
                             toSend.put("oneSignalRegistrationId", oneSignalRegistrationId);
                         }
                         toSend.put("oneSignalSubscribed", oneSignalSubscribed);
+                        toSend.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
                     }
 
                     if (dataTypes.contains(RegistrationDataType.CustomData) && customData != null) {

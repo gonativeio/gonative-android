@@ -41,6 +41,7 @@ public class GoNativeApplication extends Application {
         }
 
         if (appConfig.oneSignalEnabled) {
+            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
             OneSignal.init(this, "REMOTE", appConfig.oneSignalAppId,
                     new OneSignalNotificationHandler(this));
             OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
