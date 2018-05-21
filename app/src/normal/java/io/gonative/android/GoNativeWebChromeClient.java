@@ -175,6 +175,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
         for (int i = 0; i < resources.length; i++) {
             if (resources[i].equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
                 permissions.add(Manifest.permission.RECORD_AUDIO);
+                permissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS);
             } else if (resources[i].equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
                 permissions.add(Manifest.permission.CAMERA);
             }

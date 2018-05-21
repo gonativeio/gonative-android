@@ -25,27 +25,24 @@ public class SplashActivity extends AppCompatActivity {
         setTheme(R.style.SplashScreen);
         super.onCreate(savedInstanceState);
 
-        if (WebView.class.isAssignableFrom(LeanWebView.class)) {
-            // regular webview, can ask for permissions at runtime
-            startMainActivity(false);
-        } else {
-            // CrossWalk webview, need to get permissions at app launch
-            AppConfig config = AppConfig.getInstance(this);
-            if (!config.enableWebRTC) {
+        // Get permissions for webRTC.
+        // We *could* get permissions for regular webview when the web page requests, but there is
+        // bug where the entire app will crash if we ask for permissions at that point
+        AppConfig config = AppConfig.getInstance(this);
+        if (config.enableWebRTC) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.MODIFY_AUDIO_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
                 startMainActivity(false);
             } else {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
-                                PackageManager.PERMISSION_GRANTED) {
-                    startMainActivity(false);
-                } else {
-                    ActivityCompat.requestPermissions(this, new String[]{
-                            Manifest.permission.CAMERA,
-                            Manifest.permission.RECORD_AUDIO
-                    }, REQUEST_PERMISSIONS_WEBRTC);
-                }
+                ActivityCompat.requestPermissions(this, new String[]{
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.MODIFY_AUDIO_SETTINGS
+                }, REQUEST_PERMISSIONS_WEBRTC);
             }
+        } else {
+            startMainActivity(false);
         }
     }
 

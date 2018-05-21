@@ -113,8 +113,7 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
         }
     }
 
-    @Override
-    public boolean isCrosswalk() {
+    static public boolean isCrosswalk() {
         return false;
     }
 

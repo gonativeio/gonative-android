@@ -96,8 +96,7 @@ public class LeanWebView extends XWalkView implements GoNativeWebviewInterface {
         this.checkLoginSignup = checkLoginSignup;
     }
 
-    @Override
-    public boolean isCrosswalk() {
+    static public boolean isCrosswalk() {
         return true;
     }
 

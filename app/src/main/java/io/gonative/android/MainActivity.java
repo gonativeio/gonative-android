@@ -305,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (url != null) {
             // Crosswalk does not give us callbacks when location is requested.
             // Ask for it up front, then load the page.
-            if (this.mWebview.isCrosswalk() && appConfig.usesGeolocation) {
+            if (LeanWebView.isCrosswalk() && appConfig.usesGeolocation) {
                 final String urlLoadAfterLocation = url;
 
                 this.getRuntimeGeolocationPermission(new GeolocationPermissionCallback() {
@@ -530,7 +530,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     }
 
     public void goBack() {
-        if (this.mWebview.isCrosswalk()) {
+        if (LeanWebView.isCrosswalk()) {
             // not safe to do for non-crosswalk, as we may never get a page finished callback
             // for single-page apps
             hideWebview();

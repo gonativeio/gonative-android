@@ -36,8 +36,6 @@ public interface GoNativeWebviewInterface {
     public boolean checkLoginSignup();
     public void setCheckLoginSignup(boolean checkLoginSignup);
 
-    public boolean isCrosswalk();
-
     public void saveStateToBundle(Bundle outBundle);
     public void restoreStateFromBundle(Bundle inBundle);
 }

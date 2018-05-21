@@ -57,11 +57,13 @@ public class ConfigUpdater {
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setDoOutput(true);
+                connection.setDoInput(false); // we do not care about response
                 OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
                 writer.write(json.toString());
                 writer.close();
                 connection.connect();
-                int result = connection.getResponseCode();
+                connection.getResponseCode();
+                connection.disconnect();
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage(), e);
             }
