@@ -36,17 +36,13 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     private boolean groupsHaveIcons = false;
     private boolean childrenHaveIcons = false;
     private String status;
-    private BroadcastReceiver broadcastReceiver;
 
-    private JsonMenuAdapter() {
-    }
-
-    public JsonMenuAdapter(MainActivity activity) {
+    JsonMenuAdapter(MainActivity activity) {
         this.mainActivity = activity;
         menuItems = null;
 
         // broadcast messages
-        this.broadcastReceiver = new BroadcastReceiver() {
+        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction() != null && intent.getAction().equals(AppConfig.PROCESSED_MENU_MESSAGE)) {
@@ -55,11 +51,11 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             }
         };
         LocalBroadcastManager.getInstance(this.mainActivity)
-                .registerReceiver(this.broadcastReceiver,
+                .registerReceiver(broadcastReceiver,
                         new IntentFilter(AppConfig.PROCESSED_MENU_MESSAGE));
     }
 
-    public synchronized void update (){
+    private synchronized void update (){
         update(this.status);
     }
 
@@ -100,7 +96,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     }
 
 
-    String itemString(String s, int groupPosition) {
+    private String itemString(String s, int groupPosition) {
         String value = null;
         try {
             JSONObject section = (JSONObject)menuItems.get(groupPosition);
@@ -113,7 +109,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         return value;
     }
 
-    String itemString(String s, int groupPosition, int childPosition) {
+    private String itemString(String s, int groupPosition, int childPosition) {
         String value = null;
         try {
             JSONObject section = (JSONObject)menuItems.get(groupPosition);
@@ -127,28 +123,27 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         return value;
     }
 
-    String getTitle(int groupPosition) {
+    private String getTitle(int groupPosition) {
         return itemString("label", groupPosition);
     }
 
-    String getTitle(int groupPosition, int childPosition) {
+    private String getTitle(int groupPosition, int childPosition) {
         return itemString("label", groupPosition, childPosition);
     }
 
-    Pair<String,String> getUrlAndJavascript(int groupPosition) {
+    private Pair<String,String> getUrlAndJavascript(int groupPosition) {
         String url = itemString("url", groupPosition);
         String js = itemString("javascript", groupPosition);
-        return new Pair<String, String>(url, js);
-
+        return new Pair<>(url, js);
     }
 
-    Pair<String,String> getUrlAndJavascript(int groupPosition, int childPosition) {
+    private Pair<String,String> getUrlAndJavascript(int groupPosition, int childPosition) {
         String url = itemString("url", groupPosition, childPosition);
         String js = itemString("javascript", groupPosition, childPosition);
-        return new Pair<String, String>(url, js);
+        return new Pair<>(url, js);
     }
 
-    boolean isGrouping(int groupPosition) {
+    private boolean isGrouping(int groupPosition) {
         try {
             JSONObject section = (JSONObject)menuItems.get(groupPosition);
             return section.optBoolean("isGrouping", false);
@@ -214,15 +209,15 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
             // style it
             if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                TextView title = (TextView) convertView.findViewById(R.id.menu_item_title);
+                TextView title = convertView.findViewById(R.id.menu_item_title);
                 title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
             }
         }
 
         // expand/collapse indicator
-        ImageView indicator = (ImageView)convertView.findViewById(R.id.menu_group_indicator);
+        ImageView indicator = convertView.findViewById(R.id.menu_group_indicator);
         if (isGrouping(groupPosition)) {
-            IconDrawable iconDrawable = null;
+            IconDrawable iconDrawable;
             if (isExpanded)
                 iconDrawable = new IconDrawable(mainActivity, FontAwesomeIcons.fa_angle_up);
             else
@@ -240,12 +235,12 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
 
         //set the title
-        TextView title = (TextView) convertView.findViewById(R.id.menu_item_title);
+        TextView title = convertView.findViewById(R.id.menu_item_title);
         title.setText(getTitle(groupPosition));
 
         // set icon
         String icon = itemString("icon", groupPosition);
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.menu_item_icon);
+        ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
             icon = icon.replaceAll("-", "_");
             try {
@@ -275,25 +270,25 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             LayoutInflater inflater = mainActivity.getLayoutInflater();
 
             if (groupsHaveIcons || childrenHaveIcons)
-                convertView = inflater.inflate(R.layout.menu_child_icon, null);
+                convertView = inflater.inflate(R.layout.menu_child_icon, parent, false);
             else
-                convertView = inflater.inflate(R.layout.menu_child_noicon, null);
+                convertView = inflater.inflate(R.layout.menu_child_noicon, parent, false);
 
             // style it
             if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                TextView title = (TextView) convertView.findViewById(R.id.menu_item_title);
+                TextView title = convertView.findViewById(R.id.menu_item_title);
                 title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
             }
         }
 
         // set title
-        TextView title = (TextView) convertView.findViewById(R.id.menu_item_title);
+        TextView title = convertView.findViewById(R.id.menu_item_title);
         title.setText(getTitle(groupPosition, childPosition));
 
 
         // set icon
         String icon = itemString("icon", groupPosition, childPosition);
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.menu_item_icon);
+        ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
             icon = icon.replaceAll("-", "_");
             try {
@@ -346,7 +341,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         return true;
     }
 
-    void loadUrlAndJavascript(String url, String javascript) {
+    private void loadUrlAndJavascript(String url, String javascript) {
         // check for GONATIVE_USERID
         if (UrlInspector.getInstance().getUserId() != null) {
             url = url.replaceAll("GONATIVE_USERID", UrlInspector.getInstance().getUserId());

@@ -42,9 +42,9 @@ public class RegistrationManager {
     private List<RegistrationEndpoint> registrationEndpoints;
     private EnumSet<RegistrationDataType> allDataTypes;
 
-    public RegistrationManager(Context context) {
+    RegistrationManager(Context context) {
         this.context = context;
-        this.registrationEndpoints = new LinkedList<RegistrationEndpoint>();
+        this.registrationEndpoints = new LinkedList<>();
         this.allDataTypes = EnumSet.noneOf(RegistrationDataType.class);
     }
 
@@ -60,7 +60,7 @@ public class RegistrationManager {
 
             String url = LeanUtils.optString(endpoint, "url");
             if (url == null) {
-                Log.w(TAG, "Invalid registration endpoint url " + url);
+                Log.w(TAG, "Invalid registration: endpoint url is null");
                 continue;
             }
 
@@ -153,63 +153,73 @@ public class RegistrationManager {
         private List<Pattern> urlRegexes;
         private EnumSet<RegistrationDataType> dataTypes;
 
-        public RegistrationEndpoint(String postUrl, List<Pattern> urlRegexes, EnumSet<RegistrationDataType> dataTypes) {
+        RegistrationEndpoint(String postUrl, List<Pattern> urlRegexes, EnumSet<RegistrationDataType> dataTypes) {
             this.postUrl = postUrl;
             this.urlRegexes = urlRegexes;
             this.dataTypes = dataTypes;
         }
 
-        public void sendRegistrationInfo() {
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... voids) {
-                    Map<String, Object> toSend = new HashMap<String, Object>();
+        void sendRegistrationInfo() {
+            new SendRegistrationTask(this, RegistrationManager.this).execute();
+        }
+    }
 
-                    if (dataTypes.contains(RegistrationDataType.Installation)) {
-                        toSend.putAll(Installation.getInfo(context));
-                    }
+    private static class SendRegistrationTask extends AsyncTask<Void,Void,Void> {
+        private RegistrationEndpoint registrationEndpoint;
+        private RegistrationManager registrationManager;
 
-                    if (dataTypes.contains(RegistrationDataType.OneSignal) && oneSignalUserId != null) {
-                        toSend.put("oneSignalUserId", oneSignalUserId);
-                        if (oneSignalRegistrationId != null) {
-                            toSend.put("oneSignalRegistrationId", oneSignalRegistrationId);
-                        }
-                        toSend.put("oneSignalSubscribed", oneSignalSubscribed);
-                        toSend.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
-                    }
+        SendRegistrationTask(RegistrationEndpoint registrationEndpoint, RegistrationManager registrationManager) {
+            this.registrationEndpoint = registrationEndpoint;
+            this.registrationManager = registrationManager;
+        }
 
-                    if (dataTypes.contains(RegistrationDataType.CustomData) && customData != null) {
-                        Iterator<String> keys = customData.keys();
-                        while(keys.hasNext()) {
-                            String key = keys.next();
-                            toSend.put("customData_" + key, customData.opt(key));
-                        }
-                    }
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Map<String, Object> toSend = new HashMap<>();
 
-                    try {
-                        JSONObject json = new JSONObject(toSend);
+            if (registrationEndpoint.dataTypes.contains(RegistrationDataType.Installation)) {
+                toSend.putAll(Installation.getInfo(registrationManager.context));
+            }
 
-                        URL url = new URL(postUrl);
-                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                        connection.setRequestMethod("POST");
-                        connection.setRequestProperty("Content-Type", "application/json");
-                        connection.setDoOutput(true);
-                        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
-                        writer.write(json.toString());
-                        writer.close();
-                        connection.connect();
-                        int result = connection.getResponseCode();
-
-                        if (result < 200 || result > 299) {
-                            Log.w(TAG, "Recevied status code " + result + " when posting to " + postUrl);
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error posting to " + postUrl, e);
-                    }
-
-                    return null;
+            if (registrationEndpoint.dataTypes.contains(RegistrationDataType.OneSignal) && registrationManager.oneSignalUserId != null) {
+                toSend.put("oneSignalUserId", registrationManager.oneSignalUserId);
+                if (registrationManager.oneSignalRegistrationId != null) {
+                    toSend.put("oneSignalRegistrationId", registrationManager.oneSignalRegistrationId);
                 }
-            }.execute();
+                toSend.put("oneSignalSubscribed", registrationManager.oneSignalSubscribed);
+                toSend.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
+            }
+
+            if (registrationEndpoint.dataTypes.contains(RegistrationDataType.CustomData) && registrationManager.customData != null) {
+                Iterator<String> keys = registrationManager.customData.keys();
+                while(keys.hasNext()) {
+                    String key = keys.next();
+                    toSend.put("customData_" + key, registrationManager.customData.opt(key));
+                }
+            }
+
+            try {
+                JSONObject json = new JSONObject(toSend);
+
+                URL url = new URL(registrationEndpoint.postUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setDoOutput(true);
+                OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+                writer.write(json.toString());
+                writer.close();
+                connection.connect();
+                int result = connection.getResponseCode();
+
+                if (result < 200 || result > 299) {
+                    Log.w(TAG, "Recevied status code " + result + " when posting to " + registrationEndpoint.postUrl);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error posting to " + registrationEndpoint.postUrl, e);
+            }
+
+            return null;
         }
     }
 }

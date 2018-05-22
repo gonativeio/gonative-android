@@ -6,6 +6,7 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
@@ -20,28 +21,14 @@ import io.gonative.android.library.AppConfig;
 public class LoginManager extends Observable {
     private static final String TAG = LoginManager.class.getName();
 
-    // singleton
-    private static LoginManager instance = null;
     private Context context;
     private CheckRedirectionTask task = null;
 
     private boolean loggedIn = false;
-    public String loginStatus;
 
-    public static LoginManager getInstance(){
-        if (instance == null) {
-            instance = new LoginManager();
-        }
-        return instance;
-    }
-
-    public void init(Context context) {
-        this.context = context.getApplicationContext();
-        this.checkLogin();
-    }
-
-    private LoginManager() {
-        // prevent direct initialization
+    LoginManager(Context context) {
+        this.context = context;
+        checkLogin();
     }
 
     public void checkLogin() {
@@ -54,13 +41,8 @@ public class LoginManager extends Observable {
             return;
         }
 
-        task = new CheckRedirectionTask();
+        task = new CheckRedirectionTask(this);
         task.execute(AppConfig.getInstance(context).loginDetectionUrl);
-    }
-
-    public void checkIfNotAlreadyChecking() {
-        if (task == null || task.getStatus() == AsyncTask.Status.FINISHED)
-            checkLogin();
     }
 
     public boolean isLoggedIn() {
@@ -68,13 +50,22 @@ public class LoginManager extends Observable {
     }
 
 
-    private class CheckRedirectionTask extends AsyncTask<String, Void, String> {
+    private static class CheckRedirectionTask extends AsyncTask<String, Void, String> {
+        private WeakReference<LoginManager> loginManagerReference;
+
+        public CheckRedirectionTask(LoginManager loginManager) {
+            this.loginManagerReference = new WeakReference<>(loginManager);
+        }
+
         @Override
         protected String doInBackground(String... urls){
+            LoginManager loginManager = loginManagerReference.get();
+            if (loginManager == null) return null;
+
             try {
                 URL parsedUrl = new URL(urls[0]);
                 HttpURLConnection connection = null;
-                boolean wasRedirected = false;
+                boolean wasRedirected;
                 int numRedirects = 0;
                 do {
                     if (connection != null)
@@ -82,7 +73,7 @@ public class LoginManager extends Observable {
 
                     connection = (HttpURLConnection) parsedUrl.openConnection();
                     connection.setInstanceFollowRedirects(true);
-                    connection.setRequestProperty("User-Agent", AppConfig.getInstance(context).userAgent);
+                    connection.setRequestProperty("User-Agent", AppConfig.getInstance(loginManager.context).userAgent);
 
                     connection.connect();
                     int responseCode = connection.getResponseCode();
@@ -109,31 +100,35 @@ public class LoginManager extends Observable {
 
         @Override
         protected void onPostExecute(String finalUrl) {
+            LoginManager loginManager = loginManagerReference.get();
+            if (loginManager == null) return;
+
             UrlInspector.getInstance().inspectUrl(finalUrl);
+            String loginStatus;
 
             if (finalUrl == null) {
-                loggedIn = false;
+                loginManager.loggedIn = false;
                 loginStatus = "default";
-                setChanged();
-                notifyObservers();
+                loginManager.setChanged();
+                loginManager.notifyObservers();
                 return;
             }
 
             // iterate through loginDetectionRegexes
-            AppConfig appConfig = AppConfig.getInstance(LoginManager.this.context);
+            AppConfig appConfig = AppConfig.getInstance(loginManager.context);
 
             List<Pattern> regexes = appConfig.loginDetectRegexes;
             for (int i = 0; i < regexes.size(); i++) {
                 Pattern regex = regexes.get(i);
                 if (regex.matcher(finalUrl).matches()) {
                     JSONObject entry = appConfig.loginDetectLocations.get(i);
-                    loggedIn = entry.optBoolean("loggedIn", false);
+                    loginManager.loggedIn = entry.optBoolean("loggedIn", false);
 
                     loginStatus = AppConfig.optString(entry, "menuName");
-                    if (loginStatus == null) loginStatus = loggedIn ? "loggedIn" : "default";
+                    if (loginStatus == null) loginStatus = loginManager.loggedIn ? "loggedIn" : "default";
 
-                    setChanged();
-                    notifyObservers();
+                    loginManager.setChanged();
+                    loginManager.notifyObservers();
                     break;
                 }
             }

@@ -29,9 +29,9 @@ public class ActionManager {
     private String currentMenuID;
     private HashMap<MenuItem, String>itemToUrl;
 
-    public ActionManager(MainActivity activity) {
+    ActionManager(MainActivity activity) {
         this.activity = activity;
-        this.itemToUrl = new HashMap<MenuItem, String>();
+        this.itemToUrl = new HashMap<>();
     }
 
     public void checkActions(String url) {
@@ -63,11 +63,7 @@ public class ActionManager {
         if (this.currentMenuID == null) {
             changed = menuID != null;
         } else {
-            if (menuID == null) {
-                changed = true;
-            } else {
-                changed = !this.currentMenuID.equals(menuID);
-            }
+            changed = menuID == null || !this.currentMenuID.equals(menuID);
         }
 
         if (changed) {
@@ -87,9 +83,8 @@ public class ActionManager {
         JSONArray actions = appConfig.actions.get(currentMenuID);
         if (actions == null) return;
 
-        for (int i = 0; i < actions.length(); i++) {
-            int itemID = i;
-            JSONObject entry = actions.optJSONObject(i);
+        for (int itemID = 0; itemID < actions.length(); itemID++) {
+            JSONObject entry = actions.optJSONObject(itemID);
             if (entry != null) {
                 String system = AppConfig.optString(entry, "system");
                 if (system != null && system.equals("share")) {

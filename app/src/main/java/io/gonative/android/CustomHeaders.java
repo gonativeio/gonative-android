@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.provider.Settings;
@@ -42,6 +43,7 @@ public class CustomHeaders {
         if (value == null) return null;
 
         if (value.contains("%DEVICEID%")) {
+            @SuppressLint("HardwareIds")
             String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
             if (androidId == null) androidId = "";
             value = value.replace("%DEVICEID%", androidId);

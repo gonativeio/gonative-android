@@ -57,7 +57,7 @@ public class UrlInspector {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    private void setUserId(String userId) {
         this.userId = userId;
     }
 }

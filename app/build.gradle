@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 23
+        targetSdkVersion 27
         applicationId "io.gonative.android"
         versionCode 1
 
@@ -67,15 +67,24 @@ android {
 }
 
 dependencies {
-    xwalkCompile 'org.xwalk:xwalk_core_library:14.43.343.24'
-    compile 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
-    compile 'com.onesignal:OneSignal:3.9.0@aar'
-    compile 'com.facebook.android:facebook-android-sdk:4.15.0'
-    compile 'com.android.support:support-v4:23.4.0'
-    compile 'com.android.support:appcompat-v7:23.4.0'
-    compile 'com.google.android.gms:play-services-gcm:9.0.2'
-    compile 'com.google.android.gms:play-services-location:9.0.2'
-    compile fileTree(dir: 'libs', include: '*.jar')
+    xwalkImplementation 'org.xwalk:xwalk_core_library:23.53.589.4'
+    implementation 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
+    implementation 'com.onesignal:OneSignal:3.9.0@aar'
+    implementation 'com.facebook.android:facebook-android-sdk:4.33.0'
+    implementation 'com.android.support:cardview-v7:27.1.1'
+    implementation 'com.android.support:customtabs:27.1.1'
+    implementation 'com.android.support:support-v4:27.1.1'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.google.android.gms:play-services-gcm:12.0.1'
+    implementation 'com.google.android.gms:play-services-location:12.0.1'
+    implementation fileTree(dir: 'libs', include: '*.jar')
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Crosswalk will otherwise use version 28, breaking the build
+        force 'com.android.support:support-v4:27.1.1'
+    }
 }
 
 repositories {

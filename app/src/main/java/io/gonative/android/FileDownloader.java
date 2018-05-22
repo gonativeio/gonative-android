@@ -19,6 +19,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -36,14 +37,14 @@ public class FileDownloader implements DownloadListener {
     }
 
     private static final String TAG = DownloadListener.class.getName();
-    public static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
+    private static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private MainActivity context;
     private ProgressDialog progressDialog;
     private String lastDownloadedUrl;
     private DownloadLocation defaultDownloadLocation;
     private Map<String, DownloadManager.Request> pendingExternalDownloads;
 
-    public FileDownloader(MainActivity context) {
+    FileDownloader(MainActivity context) {
         this.context = context;
         this.pendingExternalDownloads = new HashMap<>();
 
@@ -55,9 +56,6 @@ public class FileDownloader implements DownloadListener {
         }
     }
 
-    private FileDownloader() {
-    }
-
     @Override
     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
         lastDownloadedUrl = url;
@@ -66,7 +64,7 @@ public class FileDownloader implements DownloadListener {
         if (mimetype == null || mimetype.equalsIgnoreCase("application/force-download") ||
                 mimetype.equalsIgnoreCase("application/octet-stream")) {
             MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
-            String extension = mimeTypeMap.getFileExtensionFromUrl(url);
+            String extension = MimeTypeMap.getFileExtensionFromUrl(url);
             if (extension != null && !extension.isEmpty()) {
                 String guessedMimeType = mimeTypeMap.getMimeTypeFromExtension(extension);
                 if (guessedMimeType != null) {
@@ -101,7 +99,7 @@ public class FileDownloader implements DownloadListener {
         }
 
         DownloadFileParams param = new DownloadFileParams(url, userAgent, mimetype, contentLength);
-        new DownloadFileTask().execute(param);
+        new DownloadFileTask(this).execute(param);
     }
 
     private void enqueueBackgroundDownload(String url, DownloadManager.Request request) {
@@ -111,9 +109,13 @@ public class FileDownloader implements DownloadListener {
 
     public void gotExternalStoragePermissions(boolean granted) {
         if (granted) {
-            Toast.makeText(this.context, R.string.starting_download, Toast.LENGTH_SHORT);
+            Toast.makeText(this.context, R.string.starting_download, Toast.LENGTH_SHORT).show();
 
             DownloadManager downloadManager = (DownloadManager) this.context.getSystemService(Context.DOWNLOAD_SERVICE);
+            if (downloadManager == null) {
+                Log.e(TAG, "Error getting system download manager");
+                return;
+            }
             for (DownloadManager.Request request : this.pendingExternalDownloads.values()) {
                 downloadManager.enqueue(request);
             }
@@ -135,7 +137,7 @@ public class FileDownloader implements DownloadListener {
         }
     }
 
-    private class DownloadFileResult {
+    private static class DownloadFileResult {
         public File file;
         public String mimetype;
 
@@ -145,30 +147,41 @@ public class FileDownloader implements DownloadListener {
         }
     }
 
-    private class DownloadFileTask extends AsyncTask<DownloadFileParams, Integer, DownloadFileResult> {
+    private static class DownloadFileTask extends AsyncTask<DownloadFileParams, Integer, DownloadFileResult> {
+        private WeakReference<FileDownloader> fileDownloaderReference;
         private Exception exception;
+
+        DownloadFileTask(FileDownloader fileDownloader) {
+            this.fileDownloaderReference = new WeakReference<>(fileDownloader);
+        }
 
         @Override
         protected void onPreExecute() {
-            progressDialog = new ProgressDialog(context);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            progressDialog.setTitle(R.string.download);
-            progressDialog.setIndeterminate(false);
-            progressDialog.setMax(10000);
-            progressDialog.setProgressNumberFormat(null);
-            progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            FileDownloader fileDownloader = fileDownloaderReference.get();
+            if (fileDownloader == null) return;
+
+            fileDownloader.progressDialog = new ProgressDialog(fileDownloader.context);
+            fileDownloader.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            fileDownloader.progressDialog.setTitle(R.string.download);
+            fileDownloader.progressDialog.setIndeterminate(false);
+            fileDownloader.progressDialog.setMax(10000);
+            fileDownloader.progressDialog.setProgressNumberFormat(null);
+            fileDownloader.progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialog) {
                     DownloadFileTask.this.cancel(true);
                 }
             });
-            progressDialog.show();
+            fileDownloader.progressDialog.show();
         }
 
         @Override
         protected DownloadFileResult doInBackground(DownloadFileParams... params) {
-            HttpURLConnection connection = null;
-            URL url = null;
+            FileDownloader fileDownloader = fileDownloaderReference.get();
+            if (fileDownloader == null) return null;
+
+            HttpURLConnection connection;
+            URL url;
             DownloadFileParams param = params[0];
             try {
                 url = new URL(param.url);
@@ -186,8 +199,10 @@ public class FileDownloader implements DownloadListener {
 
                 connection.connect();
                 if (connection.getResponseCode() < 400) {
-                    File downloadDir = new File(context.getCacheDir(), "downloads");
-                    downloadDir.mkdirs();
+                    File downloadDir = new File(fileDownloader.context.getCacheDir(), "downloads");
+                    if (!downloadDir.mkdirs()) {
+                        Log.v(TAG, "Download directory " + downloadDir.toString() + " exists");
+                    }
 
                     // guess file name and extension
                     String guessedName = URLUtil.guessFileName(url.toString(),
@@ -211,14 +226,16 @@ public class FileDownloader implements DownloadListener {
 
                     File downloadFile = File.createTempFile(filename, extension, downloadDir);
 
-                    downloadFile.createNewFile();
+                    if (!downloadFile.createNewFile() ){
+                        Log.e(TAG, "Error creating download file " + downloadFile.toString());
+                    }
                     FileOutputStream os = new FileOutputStream(downloadFile);
                     byte buffer[] = new byte[16 * 1024];
 
                     InputStream is = connection.getInputStream();
 
                     long totalLen = 0;
-                    int len1 = 0;
+                    int len1;
                     while ((len1 = is.read(buffer)) > 0) {
                         os.write(buffer, 0, len1);
                         totalLen += len1;
@@ -246,24 +263,28 @@ public class FileDownloader implements DownloadListener {
 
         @Override
         protected void onProgressUpdate(Integer... values) {
-            progressDialog.setProgress(values[0]);
+            FileDownloader fileDownloader = fileDownloaderReference.get();
+            if (fileDownloader != null) {
+                fileDownloader.progressDialog.setProgress(values[0]);
+            }
         }
 
         @Override
         protected void onPostExecute(DownloadFileResult result) {
-            progressDialog.dismiss();
+            FileDownloader fileDownloader = fileDownloaderReference.get();
+            if (fileDownloader == null) return;
+
+            fileDownloader.progressDialog.dismiss();
 
             if (exception != null) {
                 Log.e(TAG, exception.getMessage(), exception);
-                Toast.makeText(context, exception.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(fileDownloader.context, exception.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             }
 
             if (result != null && result.file != null) {
-                String fileString = result.file.toString();
-
-                Uri content = null;
+                Uri content;
                 try {
-                    content = FileProvider.getUriForFile(context, AUTHORITY, result.file);
+                    content = FileProvider.getUriForFile(fileDownloader.context, AUTHORITY, result.file);
                 } catch (IllegalArgumentException e) {
                     Log.e(TAG, "Unable to get content url from FileProvider", e);
                     return;
@@ -273,17 +294,20 @@ public class FileDownloader implements DownloadListener {
                 intent.setDataAndType(content, result.mimetype);
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 try {
-                    context.startActivity(intent);
+                    fileDownloader.context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
-                    String message = context.getResources().getString(R.string.file_handler_not_found);
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                    String message = fileDownloader.context.getResources().getString(R.string.file_handler_not_found);
+                    Toast.makeText(fileDownloader.context, message, Toast.LENGTH_LONG).show();
                 }
             }
         }
 
         @Override
         protected void onCancelled(DownloadFileResult downloadFileResult) {
-            Toast.makeText(context, R.string.download_canceled, Toast.LENGTH_SHORT).show();
+            FileDownloader fileDownloader = fileDownloaderReference.get();
+            if (fileDownloader == null) return;
+
+            Toast.makeText(fileDownloader.context, R.string.download_canceled, Toast.LENGTH_SHORT).show();
         }
     }
 

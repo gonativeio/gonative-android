@@ -60,7 +60,7 @@ public class GoNativeXWalkUIClient extends XWalkUIClient {
 
     @Override
     public void onJavascriptCloseWindow(XWalkView view) {
-        if (!mainActivity.isRoot()) mainActivity.finish();
+        if (mainActivity.isNotRoot()) mainActivity.finish();
     }
 
     @Override

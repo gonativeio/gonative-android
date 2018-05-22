@@ -7,15 +7,8 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -29,19 +22,28 @@ public class ConfigUpdater {
 
     private Context context;
 
-    public ConfigUpdater(Context context) {
+    ConfigUpdater(Context context) {
         this.context = context;
     }
 
     public void registerEvent() {
         if (AppConfig.getInstance(context).disableEventRecorder) return;
 
-        new EventTask().execute();
+        new EventTask(context).execute();
     }
 
-    private class EventTask extends AsyncTask<Void, Void, Void> {
+    private static class EventTask extends AsyncTask<Void, Void, Void> {
+        WeakReference<Context> contextReference;
+
+        EventTask(Context context) {
+            this.contextReference = new WeakReference<>(context);
+        }
+
         @Override
         protected Void doInBackground(Void... params) {
+            Context context = contextReference.get();
+            if (context == null) return null;
+
             JSONObject json = new JSONObject(Installation.getInfo(context));
 
             try {

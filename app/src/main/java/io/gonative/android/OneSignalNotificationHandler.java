@@ -15,11 +15,12 @@ import org.json.JSONObject;
 public class OneSignalNotificationHandler implements OneSignal.NotificationOpenedHandler {
     private Context context;
 
+    @SuppressWarnings("unused")
     public OneSignalNotificationHandler() {
         // default construct needed to be a broadcast receiver
     }
 
-    public OneSignalNotificationHandler(Context context) {
+    OneSignalNotificationHandler(Context context) {
         this.context = context;
     }
 

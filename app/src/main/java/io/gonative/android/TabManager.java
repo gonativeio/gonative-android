@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -33,20 +34,20 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     private ViewPager viewPager;
     private String currentMenuId;
     private String currentUrl;
-    private BroadcastReceiver broadcastReceiver;
     private JSONArray tabs;
     private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
     private boolean useJavascript; // do not use tabs from config
 
+    @SuppressWarnings("unused")
     private TabManager(){
         // disable instantiation without mainActivity
     }
 
-    public TabManager(MainActivity mainActivity, ViewPager viewPager) {
+    TabManager(MainActivity mainActivity, ViewPager viewPager) {
         this.mainActivity = mainActivity;
         this.viewPager = viewPager;
 
-        this.broadcastReceiver = new BroadcastReceiver() {
+        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction() != null && intent.getAction().equals(AppConfig.PROCESSED_TAB_NAVIGATION_MESSAGE)) {
@@ -56,7 +57,7 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
             }
         };
         LocalBroadcastManager.getInstance(this.mainActivity)
-                .registerReceiver(this.broadcastReceiver,
+                .registerReceiver(broadcastReceiver,
                         new IntentFilter(AppConfig.PROCESSED_TAB_NAVIGATION_MESSAGE));
     }
 
@@ -190,6 +191,7 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean selectTab(String url, String javascript) {
         if (url == null) return false;
 
@@ -262,17 +264,18 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
 
     // the following three methods are there for our dummy viewpager.
     @Override
-    public boolean isViewFromObject(View view, Object o) {
+    public boolean isViewFromObject(@NonNull View view, @NonNull Object o) {
         return view == o;
     }
 
+    @NonNull
     @Override
-    public Object instantiateItem(ViewGroup container, int position) {
+    public Object instantiateItem(@NonNull ViewGroup container, int position) {
         return mainActivity.getLayoutInflater().inflate(R.layout.empty, container);
     }
 
     @Override
-    public void destroyItem(ViewGroup container, int position, Object object) {
+    public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
         if (object instanceof View) {
             container.removeView((View)object);
         }

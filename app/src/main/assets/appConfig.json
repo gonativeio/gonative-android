@@ -15,8 +15,8 @@
           "label": "Home",
           "subLinks": []
         }, {
-          "url": "https://gonative.io/features/",
-          "label": "Features",
+          "url": "https://gonative.io/about/",
+          "label": "About",
           "subLinks": []
         }, {
           "url": "https://gonative.io/examples/",
@@ -29,20 +29,20 @@
     "tabNavigation": {
       "tabSelectionConfig": [{
         "id": "1",
-        "regex": ".*features.*"
+        "regex": ".*about.*"
       }],
       "tabMenus": [{
         "id": "1",
         "items": [{
           "icon": "fa-inbox",
           "label": "Tab 1",
-          "url": "javascript:alert('You selected tab 1. These tabs are only shown on the features page')"
+          "url": "javascript:alert('You selected tab 1. These tabs are only shown on the about page')"
         }, {
           "label": "Tab 2",
-          "url": "javascript:alert('You selected tab 2. These tabs are only shown on the features page')"
+          "url": "javascript:alert('You selected tab 2. These tabs are only shown on the about page')"
         }, {
           "label": "Tab 3",
-          "url": "javascript:alert('You selected tab 3. These tabs are only shown on the features page')"
+          "url": "javascript:alert('You selected tab 3. These tabs are only shown on the about page')"
         }]
       }],
       "active": true

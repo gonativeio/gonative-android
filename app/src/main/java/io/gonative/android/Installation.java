@@ -44,7 +44,7 @@ public class Installation {
     }
 
     public static Map<String,Object> getInfo(Context context) {
-        HashMap<String,Object> info = new HashMap<String,Object>();
+        HashMap<String,Object> info = new HashMap<>();
 
         info.put("platform", "android");
 
@@ -68,7 +68,7 @@ public class Installation {
             Log.e(TAG, e.getMessage(), e);
         }
 
-        String distribution = null;
+        String distribution;
         boolean isDebuggable =  ( 0 != ( context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE ) );
         if (isDebuggable) {
             distribution = "debug";
@@ -89,14 +89,16 @@ public class Installation {
         info.put("language", Locale.getDefault().getLanguage());
         info.put("os", "Android");
         info.put("osVersion", Build.VERSION.RELEASE);
-        info.put("model", new StringBuilder(Build.MANUFACTURER).append(" ").append(Build.MODEL).toString());
+        info.put("model", Build.MANUFACTURER + " " + Build.MODEL);
         info.put("hardware", Build.FINGERPRINT);
         info.put("timeZone", TimeZone.getDefault().getID());
 
         String carrier = null;
         try {
             TelephonyManager telephonyManager =((TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE));
-            carrier = telephonyManager.getNetworkOperatorName();
+            if (telephonyManager != null) {
+                carrier = telephonyManager.getNetworkOperatorName();
+            }
         } catch (Error error) {
             Log.e(TAG, "Error getting carrier name", error);
         }

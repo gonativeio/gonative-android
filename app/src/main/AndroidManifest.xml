@@ -52,21 +52,6 @@
                 <!--<data android:pathPrefix="/"></data>-->
             <!--</intent-filter>-->
         </activity>
-        <activity
-            android:name="io.gonative.android.WebFormActivity"
-            android:label="@string/title_activity_web_form"
-            android:windowSoftInputMode="adjustResize|stateHidden"
-            android:theme="@style/GoNativeTheme.WithActionBar"
-            android:configChanges="orientation|screenSize">
-        </activity>
-
-        <!-- Declaring FacebookActivity is only necessary for Login or Share, so it is not needed
-        if we are only using analytics. However, declaring it does not harm and removes a warning. -->
-        <activity android:name="com.facebook.FacebookActivity"
-            android:configChanges=
-                "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:label="@string/app_name" />
 
         <!-- For file sharing without having to use external permissions. -->
         <provider

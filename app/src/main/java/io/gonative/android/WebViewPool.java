@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Point;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.util.Pair;
 import android.view.Display;
 import android.view.WindowManager;
@@ -16,7 +15,6 @@ import android.webkit.WebResourceResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +32,7 @@ import io.gonative.android.library.AppConfig;
 
 public class WebViewPool {
     public class WebViewPoolCallback {
+        @SuppressWarnings("unused")
         public void onPageFinished(final GoNativeWebviewInterface webview, String url) {
             WebViewPool pool = WebViewPool.this;
 
@@ -51,9 +50,6 @@ public class WebViewPool {
         }
     }
 
-    private static final String TAG = WebViewPool.class.getName();
-    // singleton
-    private static WebViewPool instance;
     private Activity context;
     private HtmlIntercept htmlIntercept;
 
@@ -71,19 +67,6 @@ public class WebViewPool {
     private String lastUrlRequest;
     private boolean isMainActivityLoading;
 
-    private BroadcastReceiver messageReceiver;
-
-    public static synchronized WebViewPool getInstance(){
-        if (instance == null) {
-            instance = new WebViewPool();
-        }
-        return instance;
-    }
-
-    protected WebViewPool() {
-        // prevent external instantiation
-    }
-
     public void init(Activity activity) {
         if (this.isInitialized) return;
         this.isInitialized = true;
@@ -92,44 +75,51 @@ public class WebViewPool {
         this.context = activity;
         this.htmlIntercept = new HtmlIntercept(activity);
 
-        this.urlToWebview = new HashMap<String, GoNativeWebviewInterface>();
-        this.urlToDisownPolicy = new HashMap<String, WebViewPoolDisownPolicy>();
-        this.urlSets = new ArrayList<Set<String>>();
-        this.urlsToLoad = new HashSet<String>();
+        this.urlToWebview = new HashMap<>();
+        this.urlToDisownPolicy = new HashMap<>();
+        this.urlSets = new ArrayList<>();
+        this.urlsToLoad = new HashSet<>();
 
         // register for broadcast messages
-        this.messageReceiver = new BroadcastReceiver() {
+        BroadcastReceiver messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent == null || intent.getAction() == null) return;
 
-                if (intent.getAction().equals(UrlNavigation.STARTED_LOADING_MESSAGE)) {
-                    WebViewPool pool = WebViewPool.this;
-                    pool.isMainActivityLoading = true;
-                    if (pool.currentLoadingWebview != null) {
-                        // onReceive is always called on the main thread, so this is safe.
-                        pool.currentLoadingWebview.stopLoading();
-                        pool.isLoading = false;
+                switch (intent.getAction()) {
+                    case UrlNavigation.STARTED_LOADING_MESSAGE: {
+                        WebViewPool pool = WebViewPool.this;
+                        pool.isMainActivityLoading = true;
+                        if (pool.currentLoadingWebview != null) {
+                            // onReceive is always called on the main thread, so this is safe.
+                            pool.currentLoadingWebview.stopLoading();
+                            pool.isLoading = false;
+                        }
+                        break;
                     }
-                } else if (intent.getAction().equals(UrlNavigation.FINISHED_LOADING_MESSAGE)) {
-                    WebViewPool pool = WebViewPool.this;
-                    pool.isMainActivityLoading = false;
-                    pool.resumeLoading();
-                } else if (intent.getAction().equals(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE)) {
-                    processConfig();
-                } else if (intent.getAction().equals(UrlNavigation.CLEAR_POOLS_MESSAGE)) {
-                    WebViewPool.this.flushAll();
+                    case UrlNavigation.FINISHED_LOADING_MESSAGE: {
+                        WebViewPool pool = WebViewPool.this;
+                        pool.isMainActivityLoading = false;
+                        pool.resumeLoading();
+                        break;
+                    }
+                    case AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE:
+                        processConfig();
+                        break;
+                    case UrlNavigation.CLEAR_POOLS_MESSAGE:
+                        WebViewPool.this.flushAll();
+                        break;
                 }
             }
         };
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(UrlNavigation.STARTED_LOADING_MESSAGE));
+                messageReceiver, new IntentFilter(UrlNavigation.STARTED_LOADING_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(UrlNavigation.FINISHED_LOADING_MESSAGE));
+                messageReceiver, new IntentFilter(UrlNavigation.FINISHED_LOADING_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(UrlNavigation.CLEAR_POOLS_MESSAGE));
+                messageReceiver, new IntentFilter(UrlNavigation.CLEAR_POOLS_MESSAGE));
         LocalBroadcastManager.getInstance(this.context).registerReceiver(
-                this.messageReceiver, new IntentFilter(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE));
+                messageReceiver, new IntentFilter(AppConfig.PROCESSED_WEBVIEW_POOLS_MESSAGE));
 
         processConfig();
     }
@@ -145,7 +135,7 @@ public class WebViewPool {
             if (entry != null) {
                 JSONArray urls = entry.optJSONArray("urls");
                 if (urls != null) {
-                    HashSet<String> urlSet = new HashSet<String>();
+                    HashSet<String> urlSet = new HashSet<>();
                     for (int j = 0; j < urls.length(); j++) {
                         if (urls.isNull(j)) continue;
                         String urlString = null;
@@ -216,10 +206,12 @@ public class WebViewPool {
 
                     // size it before loading url
                     WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-                    Display display = wm.getDefaultDisplay();
-                    Point size = new Point();
-                    display.getSize(size);
-                    webview.layout(0, 0, size.x, size.y);
+                    if (wm != null) {
+                        Display display = wm.getDefaultDisplay();
+                        Point size = new Point();
+                        display.getSize(size);
+                        webview.layout(0, 0, size.x, size.y);
+                    }
 
                     new PoolWebViewClient(webViewPoolCallback, webview);
 
@@ -256,7 +248,7 @@ public class WebViewPool {
         this.lastUrlRequest = url;
         HashSet<String> urlSet = urlSetForUrl(url);
         if (urlSet.size() > 0) {
-            HashSet<String> newUrls = (HashSet<String>)urlSet.clone();
+            HashSet<String> newUrls = new HashSet<> (urlSet);
             if (this.currentLoadingUrl != null) {
                 newUrls.remove(this.currentLoadingUrl);
             }
@@ -266,14 +258,14 @@ public class WebViewPool {
         }
 
         GoNativeWebviewInterface webview = this.urlToWebview.get(url);
-        if (webview == null) return new Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy>(null, null);
+        if (webview == null) return new Pair<>(null, null);
 
         WebViewPoolDisownPolicy policy = this.urlToDisownPolicy.get(url);
-        return new Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy>(webview, policy);
+        return new Pair<>(webview, policy);
     }
 
     private HashSet<String> urlSetForUrl(String url){
-        HashSet<String> result = new HashSet<String>();
+        HashSet<String> result = new HashSet<>();
         for (Set<String> set : this.urlSets) {
             if (set.contains(url)) {
                 result.addAll(set);

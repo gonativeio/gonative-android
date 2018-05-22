@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,19 +32,19 @@ public class ProfilePicker implements AdapterView.OnItemSelectedListener {
 
     private ArrayAdapter<String> adapter;
     private Spinner spinner;
-    private ProfileJsBridge profileJsBridge = null;
+    private ProfileJsBridge profileJsBridge;
 
     public ProfilePicker(MainActivity mainActivity, Spinner spinner) {
         this.mainActivity = mainActivity;
         this.spinner = spinner;
-        this.names = new ArrayList<String>();
-        this.links = new ArrayList<String>();
+        this.names = new ArrayList<>();
+        this.links = new ArrayList<>();
         this.spinner.setAdapter(getAdapter());
         this.spinner.setOnItemSelectedListener(this);
         this.profileJsBridge = new ProfileJsBridge();
     }
 
-    public void parseJson(String s){
+    private void parseJson(String s){
         try {
             json = new JSONArray(s);
             this.names.clear();
@@ -79,18 +80,19 @@ public class ProfilePicker implements AdapterView.OnItemSelectedListener {
         }
     }
 
-    public ArrayAdapter<String> getAdapter(){
+    private ArrayAdapter<String> getAdapter(){
         if (adapter == null) {
             adapter = new ArrayAdapter<String>(mainActivity, R.layout.profile_picker_dropdown, names) {
+                @NonNull
                 @Override
-                public View getView(int position, View convertView, ViewGroup parent) {
+                public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                     TextView view = (TextView) super.getView(position, convertView, parent);
                     view.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
                     return view;
                 }
 
                 @Override
-                public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
                     TextView view = (TextView) super.getDropDownView(position, convertView, parent);
                     view.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
                     return view;

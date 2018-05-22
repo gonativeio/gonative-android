@@ -21,10 +21,6 @@ import io.gonative.android.library.AppConfig;
  * Copyright 2014 GoNative.io LLC
  */
 public class SegmentedController implements AdapterView.OnItemSelectedListener {
-    private static final String TAG = SegmentedController.class.getName();
-
-    private BroadcastReceiver messageReceiver;
-
     private MainActivity mainActivity;
     private ArrayList<String> labels;
     private ArrayList<String> urls;
@@ -33,17 +29,17 @@ public class SegmentedController implements AdapterView.OnItemSelectedListener {
     private ArrayAdapter<String> adapter;
     private Spinner spinner;
 
-    public SegmentedController(MainActivity mainActivity, Spinner spinner) {
+    SegmentedController(MainActivity mainActivity, Spinner spinner) {
         this.mainActivity = mainActivity;
         this.spinner = spinner;
 
-        this.labels = new ArrayList<String>();
-        this.urls = new ArrayList<String>();
+        this.labels = new ArrayList<>();
+        this.urls = new ArrayList<>();
 
         this.spinner.setAdapter(getAdapter());
         this.spinner.setOnItemSelectedListener(this);
 
-        this.messageReceiver = new BroadcastReceiver() {
+        BroadcastReceiver messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent == null || intent.getAction() == null) return;
@@ -54,7 +50,7 @@ public class SegmentedController implements AdapterView.OnItemSelectedListener {
             }
         };
         LocalBroadcastManager.getInstance(this.mainActivity).registerReceiver(
-                this.messageReceiver, new IntentFilter(AppConfig.PROCESSED_SEGMENTED_CONTROL));
+                messageReceiver, new IntentFilter(AppConfig.PROCESSED_SEGMENTED_CONTROL));
 
         updateSegmentedControl();
     }
@@ -103,7 +99,7 @@ public class SegmentedController implements AdapterView.OnItemSelectedListener {
             return this.adapter;
         }
 
-        ArrayAdapter<String> adapter =  new ArrayAdapter<String>(mainActivity,
+        ArrayAdapter<String> adapter =  new ArrayAdapter<>(mainActivity,
                 android.R.layout.simple_spinner_item, labels);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         this.adapter = adapter;

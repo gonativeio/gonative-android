@@ -1,10 +1,7 @@
 package io.gonative.android;
 
-import android.*;
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Message;
@@ -107,7 +104,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
     @Override
     public void onCloseWindow(WebView window) {
-        if (!mainActivity.isRoot()) mainActivity.finish();
+        if (mainActivity.isNotRoot()) mainActivity.finish();
     }
 
     @Override

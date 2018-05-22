@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Map;
 
 import io.gonative.android.library.AppConfig;
@@ -26,25 +27,14 @@ public class HtmlIntercept {
     private static final String TAG = HtmlIntercept.class.getName();
 
     private Context context;
-    // optional reference to UrlNavigation in case we need to check shouldOverrideUrlLoading for redirects
-    private UrlNavigation urlNavigation;
     private String interceptUrl;
 
     // track whether we have intercepted a page at all. We will always try to intercept the first time,
     // because interceptUrl may not have been set if restoring from a bundle.
     private boolean hasIntercepted = false;
 
-    public HtmlIntercept(Context context) {
+    HtmlIntercept(Context context) {
         this.context = context;
-    }
-
-    public HtmlIntercept(Context context, UrlNavigation urlNavigation) {
-        this.context = context;
-        this.urlNavigation = urlNavigation;
-    }
-
-    public String getInterceptUrl() {
-        return interceptUrl;
     }
 
     public void setInterceptUrl(String interceptUrl) {
@@ -134,8 +124,6 @@ public class HtmlIntercept {
                 } catch (IOException e) {
                     is = new BufferedInputStream(connection.getErrorStream());
                 }
-
-                if (is == null) return null;
             }
 
             int initialLength = connection.getContentLength();
@@ -153,7 +141,7 @@ public class HtmlIntercept {
             }
 
             // modify the string!
-            String newString = null;
+            String newString;
             int insertPoint = origString.indexOf("</head>");
             if (insertPoint >= 0) {
                 StringBuilder builder = new StringBuilder(initialLength);
@@ -170,7 +158,7 @@ public class HtmlIntercept {
                 }
                 if (!Double.isNaN(appConfig.forceViewportWidth)) {
                     if (appConfig.zoomableForceViewport) {
-                        builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,maximum-scale=1.0\" />",
+                        builder.append(String.format(Locale.US, "<meta name=\"viewport\" content=\"width=%f,maximum-scale=1.0\" />",
                                 appConfig.forceViewportWidth));
                     }
                     else {
@@ -181,7 +169,7 @@ public class HtmlIntercept {
                         double webViewWidth = view.getWidth() / context.getResources().getDisplayMetrics().density;
                         double viewportWidth = appConfig.forceViewportWidth;
                         double scale = webViewWidth / viewportWidth;
-                        builder.append(String.format("<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
+                        builder.append(String.format(Locale.US, "<meta name=\"viewport\" content=\"width=%f,initial-scale=%f,minimum-scale=%f,maximum-scale=%f\" />",
                                 viewportWidth, scale, scale, scale));
                     }
                 }
@@ -213,11 +201,11 @@ public class HtmlIntercept {
             URL parsed1 = new URL(url1);
             URL parsed2 = new URL(url2);
 
-            if (!stringEquals(parsed1.getProtocol(), parsed2.getProtocol())) return false;
+            if (stringsNotEqual(parsed1.getProtocol(), parsed2.getProtocol())) return false;
 
-            if (!stringEquals(parsed1.getAuthority(), parsed2.getAuthority())) return false;
+            if (stringsNotEqual(parsed1.getAuthority(), parsed2.getAuthority())) return false;
 
-            if (!stringEquals(parsed1.getQuery(), parsed2.getQuery())) return false;
+            if (stringsNotEqual(parsed1.getQuery(), parsed2.getQuery())) return false;
 
             String path1 = parsed1.getPath();
             String path2 = parsed2.getPath();
@@ -230,18 +218,15 @@ public class HtmlIntercept {
             if (lengthDiff == 1) {
                 return path2.equals(path1 + "/");
             }
-            if (lengthDiff == -1) {
-                return path1.equals(path2 + "/");
-            }
 
-            // should never get here
-            return false;
+            // lengthDiff == -1
+            return path1.equals(path2 + "/");
         } catch (MalformedURLException e) {
             return false;
         }
     }
 
-    private static boolean stringEquals(String s1, String s2) {
-        return s1 == null ? s2 == null : s1.equals(s2);
+    private static boolean stringsNotEqual(String s1, String s2) {
+        return !(s1 == null ? s2 == null : s1.equals(s2));
     }
 }

@@ -18,6 +18,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -30,7 +31,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
-import android.telephony.CellInfo;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -41,7 +41,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -71,7 +70,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -82,22 +80,23 @@ import io.gonative.android.library.AppConfig;
 
 public class MainActivity extends AppCompatActivity implements Observer, SwipeRefreshLayout.OnRefreshListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
-    public static final String webviewDatabaseSubdir = "webviewDatabase";
+    private static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
     public static final String EXTRA_WEBVIEW_WINDOW_OPEN = "io.gonative.android.MainActivity.Extra.WEBVIEW_WINDOW_OPEN";
 	public static final int REQUEST_SELECT_FILE = 100;
-    public static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
-    public static final int REQUEST_PERMISSION_GEOLOCATION = 102;
-    public static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 103;
-    public static final int REQUEST_PERMISSION_GENERIC = 199;
+    private static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
+    private static final int REQUEST_PERMISSION_GEOLOCATION = 102;
+    private static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 103;
+    private static final int REQUEST_PERMISSION_GENERIC = 199;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     private static final float ACTIONBAR_ELEVATION = 12.0f;
 
     private GoNativeWebviewInterface mWebview;
+    private View webviewOverlay;
     boolean isPoolWebview = false;
-    private Stack<String> backHistory = new Stack<String>();
+    private Stack<String> backHistory = new Stack<>();
 
 	private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
@@ -116,7 +115,6 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private ImageView navigationTitleImage;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
-    private SegmentedController segmentedController = null;
     private TabManager tabManager;
     private ActionManager actionManager;
     private boolean isRoot;
@@ -140,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     };
     private FileDownloader fileDownloader = new FileDownloader(this);
     private boolean startedLoading = false; // document readystate checker
+    private LoginManager loginManager;
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
     protected String postLoadJavascript;
@@ -155,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
         AppConfig appConfig = AppConfig.getInstance(this);
+        GoNativeApplication application = (GoNativeApplication)getApplication();
 
         setScreenOrientationPreference();
 
@@ -183,9 +183,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
             // html5 app cache (manifest)
             File cachePath = new File(getCacheDir(), webviewCacheSubdir);
-            cachePath.mkdirs();
+            if (!cachePath.mkdirs()) {
+                Log.v(TAG, "cachePath " + cachePath.toString() + " exists");
+            }
             File databasePath = new File(getCacheDir(), webviewDatabaseSubdir);
-            databasePath.mkdirs();
+            if (databasePath.mkdirs()) {
+                Log.v(TAG, "databasePath " + databasePath.toString() + " exists");
+
+            }
 
             // url inspector
             UrlInspector.getInstance().init(this);
@@ -195,11 +200,13 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             configUpdater.registerEvent();
 
             // registration service
-            this.registrationManager = ((GoNativeApplication)getApplication()).getRegistrationManager();
+            this.registrationManager = application.getRegistrationManager();
         }
 
+        this.loginManager = application.getLoginManager();
+
         // webview pools
-        WebViewPool.getInstance().init(this);
+        application.getWebViewPool().init(this);
 
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
@@ -209,10 +216,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             setContentView(R.layout.activity_gonative_nonav);
 
 
-        mProgress = (ProgressBar) findViewById(R.id.progress);
-        this.fullScreenLayout = (RelativeLayout)findViewById(R.id.fullscreen);
+        mProgress = findViewById(R.id.progress);
+        this.fullScreenLayout = findViewById(R.id.fullscreen);
 
-        swipeRefresh = (MySwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
         swipeRefresh.setEnabled(appConfig.pullToRefresh);
         swipeRefresh.setOnRefreshListener(this);
         swipeRefresh.setCanChildScrollUpCallback(new MySwipeRefreshLayout.CanChildScrollUpCallback() {
@@ -225,16 +232,17 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             swipeRefresh.setColorSchemeColors(appConfig.pullToRefreshColor);
         }
 
-        this.mWebview = (GoNativeWebviewInterface) findViewById(R.id.webview);
+        this.webviewOverlay = findViewById(R.id.webviewOverlay);
+        this.mWebview = findViewById(R.id.webview);
         setupWebview(this.mWebview);
 
         // profile picker
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
-            Spinner profileSpinner = (Spinner) findViewById(R.id.profile_picker);
+            Spinner profileSpinner = findViewById(R.id.profile_picker);
             profilePicker = new ProfilePicker(this, profileSpinner);
 
-            Spinner segmentedSpinner = (Spinner) findViewById(R.id.segmented_control);
-            segmentedController = new SegmentedController(this, segmentedSpinner);
+            Spinner segmentedSpinner = findViewById(R.id.segmented_control);
+            new SegmentedController(this, segmentedSpinner);
         }
 
 		// to save webview cookies to permanent storage
@@ -250,8 +258,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         this.previousWebviewStates = new Stack<>();
 
         // tab navigation
-        ViewPager pager = (ViewPager) findViewById(R.id.view_pager);
-        this.slidingTabStrip = (PagerSlidingTabStrip) findViewById(R.id.tabs);
+        ViewPager pager = findViewById(R.id.view_pager);
+        this.slidingTabStrip = findViewById(R.id.tabs);
         this.tabManager = new TabManager(this, pager);
         pager.setAdapter(this.tabManager);
         this.slidingTabStrip.setViewPager(pager);
@@ -282,9 +290,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             url = targetUrl;
         }
 
-        if (intent.getAction() == Intent.ACTION_VIEW) {
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
             Uri uri = intent.getData();
-            if (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https")) {
+            if (uri != null && (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https"))) {
                 Uri.Builder builder = uri.buildUpon();
                 if (uri.getScheme().endsWith(".https")) {
                     builder.scheme("https");
@@ -358,9 +366,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         if (isRoot && appConfig.showNavigationMenu) {
             // do the list stuff
-            mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+            mDrawerLayout = findViewById(R.id.drawer_layout);
             mDrawerView = findViewById(R.id.left_drawer);
-            mDrawerList = (ExpandableListView) findViewById(R.id.drawer_list);
+            mDrawerList = findViewById(R.id.drawer_list);
 
             // set shadow
             mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
@@ -377,14 +385,13 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                     invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
                 }
             };
-            mDrawerLayout.setDrawerListener(mDrawerToggle);
+            mDrawerLayout.addDrawerListener(mDrawerToggle);
 
             setupMenu();
 
             // update the menu
             if (appConfig.loginDetectionUrl != null) {
-                LoginManager.getInstance().init(this);
-                LoginManager.getInstance().addObserver(this);
+                this.loginManager.addObserver(this);
             }
         }
 
@@ -405,7 +412,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equals(AppConfig.PROCESSED_NAVIGATION_TITLES)) {
+                if (AppConfig.PROCESSED_NAVIGATION_TITLES.equals(intent.getAction())) {
                     String url = mWebview.getUrl();
                     if (url == null) return;
 
@@ -426,10 +433,6 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         // unregister connectivity
         if (this.connectivityReceiver != null) {
             unregisterReceiver(this.connectivityReceiver);
-        }
-
-        if (AppConfig.getInstance(this).facebookEnabled) {
-            AppEventsLogger.deactivateApp(this);
         }
     }
 
@@ -453,10 +456,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                 new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
         // check login status
-        LoginManager.getInstance().checkLogin();
+        this.loginManager.checkLogin();
 
         if (AppConfig.getInstance(this).facebookEnabled) {
-            AppEventsLogger.activateApp(this);
+            AppEventsLogger.activateApp(getApplication());
         }
     }
 
@@ -485,6 +488,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             }
             if (!this.isPoolWebview) this.mWebview.destroy();
         }
+
+        this.loginManager.deleteObserver(this);
     }
 
     private void retryFailedPage() {
@@ -499,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (this.backHistory.isEmpty()) return;
 
         // skip if no network connectivity
-        if (!this.isConnected()) return;
+        if (this.isDisconnected()) return;
 
         // finally, retry loading the page
         this.loadUrl(this.backHistory.pop());
@@ -508,6 +513,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     protected void onSaveInstanceState (Bundle outState) {
         outState.putString("url", mWebview.getUrl());
         outState.putInt("urlLevel", urlLevel);
+        super.onSaveInstanceState(outState);
     }
 
     public void addToHistory(String url) {
@@ -525,11 +531,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         showWebview(0.3);
     }
 
-    public boolean canGoBack() {
+    private boolean canGoBack() {
         return this.mWebview.canGoBack();
     }
 
-    public void goBack() {
+    private void goBack() {
         if (LeanWebView.isCrosswalk()) {
             // not safe to do for non-crosswalk, as we may never get a page finished callback
             // for single-page apps
@@ -548,7 +554,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             try {
                 java.net.URI optionalUri = new java.net.URI(optionalUrl);
                 if (optionalUri.isAbsolute()) {
-                    shareUrl = optionalUrl.toString();
+                    shareUrl = optionalUrl;
                 } else {
                     java.net.URI currentUri = new java.net.URI(currentUrl);
                     shareUrl = currentUri.resolve(optionalUri).toString();
@@ -566,7 +572,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         startActivity(Intent.createChooser(share, getString(R.string.action_share)));
     }
 
-    public void logout() {
+    private void logout() {
         this.mWebview.stopLoading();
 
         // log out by clearing all cookies and going to home page
@@ -575,17 +581,12 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         CookieSyncManager.getInstance().sync();
 
         updateMenu(false);
-        LoginManager.getInstance().checkLogin();
+        this.loginManager.checkLogin();
         this.mWebview.loadUrl(AppConfig.getInstance(this).initialUrl);
     }
 
     public void loadUrl(String url) {
         loadUrl(url, false);
-    }
-
-    public void loadUrlUsingJavascript(String url) {
-        String js = "window.location.href=" + LeanUtils.jsWrapString(url) + ";";
-        runJavascript(js);
     }
 
     public void loadUrl(String url, boolean isFromTab) {
@@ -628,9 +629,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         this.mWebview.runJavascript(javascript);
     }
 	
-	public boolean isConnected(){
+	public boolean isDisconnected(){
 		NetworkInfo ni = cm.getActiveNetworkInfo();
-		return ni != null && ni.isConnected();
+        return ni == null || !ni.isConnected();
 	}
 	
 	// configures webview settings
@@ -640,7 +641,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     private void showSplashScreen(double maxTime, double forceTime) {
         splashDialog = new Dialog(this, R.style.SplashScreen);
-        splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
+        if (splashDialog.getWindow() != null) {
+            splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
+        }
         splashDialog.setContentView(R.layout.splash_screen);
         splashDialog.setCancelable(false);
         splashDialog.show();
@@ -678,13 +681,13 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         mProgress.setVisibility(View.VISIBLE);
 
         if (this.isFirstHideWebview) {
-            this.mWebview.setAlpha(0.0f);
+            this.webviewOverlay.setAlpha(1.0f);
         } else {
-            this.mWebview.setAlpha(this.hideWebviewAlpha);
+            this.webviewOverlay.setAlpha(1 - this.hideWebviewAlpha);
         }
     }
 
-    public void showWebview(double delay) {
+    private void showWebview(double delay) {
         hideSplashScreen(false);
 
         if (delay > 0) {
@@ -707,7 +710,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         webviewIsHidden = false;
         startedLoading = false;
         stopCheckingReadyStatus();
-        this.mWebview.setAlpha(1.0f);
+        this.webviewOverlay.setAlpha(0.0f);
         this.mProgress.setVisibility(View.INVISIBLE);
     }
 
@@ -718,7 +721,6 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         startedLoading = false;
         stopCheckingReadyStatus();
 
-        final GoNativeWebviewInterface wv = this.mWebview;
         if (!webviewIsHidden) {
             // don't animate if already visible
             mProgress.setVisibility(View.INVISIBLE);
@@ -727,7 +729,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         webviewIsHidden = false;
 
-        wv.animate().alpha(1.0f)
+        webviewOverlay.animate().alpha(0.0f)
                 .setDuration(300)
                 .setStartDelay(150);
 
@@ -772,10 +774,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     }
 
 	public void updateMenu(){
-        LoginManager.getInstance().checkLogin();
+        this.loginManager.checkLogin();
 	}
 
-    public void updateMenu(boolean isLoggedIn){
+    private void updateMenu(boolean isLoggedIn){
         if (menuAdapter == null)
             setupMenu();
 
@@ -789,14 +791,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
-	public boolean isDrawerOpen(){
-        if (mDrawerLayout != null)
-    		return mDrawerLayout.isDrawerOpen(mDrawerView);
-        else
-            return false;
-	}
+	private boolean isDrawerOpen() {
+        return mDrawerLayout != null && mDrawerLayout.isDrawerOpen(mDrawerView);
+    }
 
-    public void setDrawerEnabled(boolean enabled) {
+    private void setDrawerEnabled(boolean enabled) {
         if (!isRoot) return;
 
         AppConfig appConfig = AppConfig.getInstance(this);
@@ -813,12 +812,13 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 	
-	protected void setupMenu(){
+	private void setupMenu(){
         menuAdapter = new JsonMenuAdapter(this);
         try {
             menuAdapter.update("default");
             mDrawerList.setAdapter(menuAdapter);
         } catch (Exception e) {
+            Log.e(TAG, "Error setting up menu", e);
         }
 
         mDrawerList.setOnGroupClickListener(menuAdapter);
@@ -849,8 +849,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (data != null && data.getBooleanExtra("exit", false))
             finish();
 
+        String url = null;
+        boolean success = false;
+        if (data != null) {
+            url = data.getStringExtra("url");
+            success = data.getBooleanExtra("success", false);
+        }
+
         if (requestCode == REQUEST_WEBFORM && resultCode == RESULT_OK) {
-            String url = data.getStringExtra("url");
             if (url != null)
                 loadUrl(url);
             else {
@@ -860,12 +866,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             }
 
             if (AppConfig.getInstance(this).showNavigationMenu) {
-                updateMenu(data.getBooleanExtra("success", false));
+                updateMenu(success);
             }
         }
 
         if (requestCode == REQUEST_WEB_ACTIVITY && resultCode == RESULT_OK) {
-            String url = data.getStringExtra("url");
             if (url != null) {
                 int urlLevel = data.getIntExtra("urlLevel", -1);
                 if (urlLevel == -1 || parentUrlLevel == -1 || urlLevel > parentUrlLevel) {
@@ -1082,8 +1087,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
             final SearchView searchView = (SearchView) searchItem.getActionView();
             if (searchView != null) {
-                SearchView.SearchAutoComplete searchAutoComplete =
-                        (SearchView.SearchAutoComplete)searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
+                SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
                 if (searchAutoComplete != null) {
                     searchAutoComplete.setTextColor(appConfig.actionbarForegroundColor);
                     int hintColor = appConfig.actionbarForegroundColor;
@@ -1092,7 +1096,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                     searchAutoComplete.setHintTextColor(hintColor);
                 }
 
-                ImageView closeButtonImage = (ImageView)searchView.findViewById(android.support.v7.appcompat.R.id.search_close_btn);
+                ImageView closeButtonImage = searchView.findViewById(android.support.v7.appcompat.R.id.search_close_btn);
                 if (closeButtonImage != null) {
                     closeButtonImage.setColorFilter(appConfig.actionbarForegroundColor);
                 }
@@ -1209,13 +1213,6 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
-    public void launchWebForm(String formName, String title) {
-        Intent intent = new Intent(getBaseContext(), WebFormActivity.class);
-        intent.putExtra(WebFormActivity.EXTRA_FORMNAME, formName);
-        intent.putExtra(WebFormActivity.EXTRA_TITLE, title);
-        startActivityForResult(intent, REQUEST_WEBFORM);
-    }
-
     // onPageFinished
     public void checkNavigationForPage(String url) {
         // don't change anything on navigation if the url that just finished was a file download
@@ -1313,8 +1310,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         mDrawerLayout.closeDrawers();
     }
 
-    public boolean isRoot() {
-        return isRoot;
+    public boolean isNotRoot() {
+        return !isRoot;
     }
 
     public int getParentUrlLevel() {
@@ -1354,15 +1351,15 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         statusChecker.run();
     }
 
-    public void stopCheckingReadyStatus() {
+    private void stopCheckingReadyStatus() {
         handler.removeCallbacks(statusChecker);
     }
 
-    public void checkReadyStatus() {
+    private void checkReadyStatus() {
         this.mWebview.runJavascript("if (gonative_status_checker && typeof gonative_status_checker.onReadyState === 'function') gonative_status_checker.onReadyState(document.readyState);");
     }
 
-    public void checkReadyStatusResult(String status) {
+    private void checkReadyStatusResult(String status) {
         // if interactiveDelay is specified, then look for readyState=interactive, and show webview
         // with a delay. If not specified, wait for readyState=complete.
         double interactiveDelay = AppConfig.getInstance(this).interactiveDelay;
@@ -1435,59 +1432,67 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQUEST_PERMISSION_READ_EXTERNAL_STORAGE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (this.directUploadImageUri == null) {
-                    cancelFileUpload();
-                    return;
-                }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_PERMISSION_READ_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (this.directUploadImageUri == null) {
+                        cancelFileUpload();
+                        return;
+                    }
 
-                if (mUploadMessage != null) {
-                    mUploadMessage.onReceiveValue(this.directUploadImageUri);
-                    mUploadMessage = null;
-                }
-                if (uploadMessageLP != null) {
-                    uploadMessageLP.onReceiveValue(new Uri[]{this.directUploadImageUri});
-                    uploadMessageLP = null;
-                }
+                    if (mUploadMessage != null) {
+                        mUploadMessage.onReceiveValue(this.directUploadImageUri);
+                        mUploadMessage = null;
+                    }
+                    if (uploadMessageLP != null) {
+                        uploadMessageLP.onReceiveValue(new Uri[]{this.directUploadImageUri});
+                        uploadMessageLP = null;
+                    }
 
-                this.directUploadImageUri = null;
-            } else {
-                cancelFileUpload();
-            }
-        }
-        else if (requestCode == REQUEST_PERMISSION_GEOLOCATION) {
-            if (this.geolocationPermissionCallback != null) {
-                if (grantResults.length >= 2 &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED &&
-                        grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    this.geolocationPermissionCallback.onResult(true);
+                    this.directUploadImageUri = null;
                 } else {
-                    this.geolocationPermissionCallback.onResult(false);
+                    cancelFileUpload();
                 }
-                this.geolocationPermissionCallback = null;
-            }
-        } else if (requestCode == REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                this.fileDownloader.gotExternalStoragePermissions(true);
-            }
-        }
-        else if (requestCode == REQUEST_PERMISSION_GENERIC) {
-            Iterator<PermissionsCallbackPair> it = pendingPermiissionRequests.iterator();
-            while(it.hasNext()) {
-                PermissionsCallbackPair pair = it.next();
-                if (pair.permissions.length != permissions.length) continue;
-                for (int i = 0; i < pair.permissions.length && i < permissions.length; i++) {
-                    if (!pair.permissions[i].equals(permissions[i])) continue;
+                break;
+            case REQUEST_PERMISSION_GEOLOCATION:
+                if (this.geolocationPermissionCallback != null) {
+                    if (grantResults.length >= 2 &&
+                            grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                            grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                        this.geolocationPermissionCallback.onResult(true);
+                    } else {
+                        this.geolocationPermissionCallback.onResult(false);
+                    }
+                    this.geolocationPermissionCallback = null;
                 }
+                break;
+            case REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    this.fileDownloader.gotExternalStoragePermissions(true);
+                }
+                break;
+            case REQUEST_PERMISSION_GENERIC:
+                Iterator<PermissionsCallbackPair> it = pendingPermiissionRequests.iterator();
+                while (it.hasNext()) {
+                    PermissionsCallbackPair pair = it.next();
+                    if (pair.permissions.length != permissions.length) continue;
+                    boolean skip = false;
+                    for (int i = 0; i < pair.permissions.length && i < permissions.length; i++) {
+                        if (!pair.permissions[i].equals(permissions[i])) {
+                            skip = true;
+                            break;
+                        }
+                    }
+                    if (skip) continue;
 
-                // matches PermissionsCallbackPair
-                if (pair.callback != null) {
-                    pair.callback.onPermissionResult(permissions, grantResults);
+                    // matches PermissionsCallbackPair
+                    if (pair.callback != null) {
+                        pair.callback.onPermissionResult(permissions, grantResults);
+                    }
+                    it.remove();
                 }
-                it.remove();
-            }
+                break;
         }
     }
 
@@ -1569,8 +1574,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     public void getPermission(String[] permissions, PermissionCallback callback) {
         boolean needToRequest = false;
-        for (int i = 0; i < permissions.length; i++) {
-            String permission = permissions[i];
+        for (String permission : permissions) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 needToRequest = true;
                 break;
@@ -1598,12 +1602,16 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private void setScreenOrientationPreference() {
         AppConfig appConfig = AppConfig.getInstance(this);
 
-        if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.UNSPECIFIED) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        } else if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.PORTRAIT) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        } else if (appConfig.forceScreenOrientation == AppConfig.ScreenOrientations.LANDSCAPE) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        switch (appConfig.forceScreenOrientation) {
+            case UNSPECIFIED:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                break;
+            case PORTRAIT:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                break;
+            case LANDSCAPE:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                break;
         }
     }
 
@@ -1612,14 +1620,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     }
 
     public interface PermissionCallback {
-        public void onPermissionResult(String[] permissions, int[] grantResults);
+        void onPermissionResult(String[] permissions, int[] grantResults);
     }
 
     private class PermissionsCallbackPair {
-        public String[] permissions;
-        public PermissionCallback callback;
+        String[] permissions;
+        PermissionCallback callback;
 
-        public PermissionsCallbackPair(String[] permissions, PermissionCallback callback) {
+        PermissionsCallbackPair(String[] permissions, PermissionCallback callback) {
             this.permissions = permissions;
             this.callback = callback;
         }
@@ -1642,7 +1650,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         this.slidingTabStrip.deselect();
     }
 
-    public void listenForSignalStrength() {
+    private void listenForSignalStrength() {
         if (this.phoneStateListener != null) return;
 
         this.phoneStateListener = new PhoneStateListener() {
@@ -1658,7 +1666,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         try {
             TelephonyManager telephonyManager = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
-            telephonyManager.listen(this.phoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+            if (telephonyManager == null) {
+                Log.e(TAG, "Error getting system telephony manager");
+            } else {
+                telephonyManager.listen(this.phoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error listening for signal strength", e);
         }
@@ -1742,6 +1754,6 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     }
 
     public interface GeolocationPermissionCallback {
-        public void onResult(boolean granted);
+        void onResult(boolean granted);
     }
 }

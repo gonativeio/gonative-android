@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -29,7 +30,6 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 import com.onesignal.OSPermissionSubscriptionState;
-import com.onesignal.OSSubscriptionState;
 import com.onesignal.OneSignal;
 
 import org.json.JSONArray;
@@ -38,12 +38,12 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.File;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -54,9 +54,6 @@ public class UrlNavigation {
     public static final String STARTED_LOADING_MESSAGE = "io.gonative.android.webview.started";
     public static final String FINISHED_LOADING_MESSAGE = "io.gonative.android.webview.finished";
     public static final String CLEAR_POOLS_MESSAGE = "io.gonative.android.webview.clearPools";
-
-    // for camera capture
-    public static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
 
     private static final String TAG = UrlNavigation.class.getName();
 
@@ -71,9 +68,9 @@ public class UrlNavigation {
     private boolean mVisitedLoginOrSignup = false;
     private boolean finishOnExternalUrl = false;
 
-	public UrlNavigation(MainActivity activity) {
+    UrlNavigation(MainActivity activity) {
 		this.mainActivity = activity;
-        this.htmlIntercept = new HtmlIntercept(activity, this);
+        this.htmlIntercept = new HtmlIntercept(activity);
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
@@ -130,7 +127,8 @@ public class UrlNavigation {
     }
 
     // noAction to skip stuff like opening url in external browser, higher nav levels, etc.
-    public boolean shouldOverrideUrlLoadingNoIntercept(final GoNativeWebviewInterface view, final String url, final boolean noAction) {
+    private boolean shouldOverrideUrlLoadingNoIntercept(final GoNativeWebviewInterface view, final String url,
+                                                        @SuppressWarnings("SameParameterValue") final boolean noAction) {
 //		Log.d(TAG, "shouldOverrideUrl: " + url);
 
         // return if url is null (can happen if clicking refresh when there is no page loaded)
@@ -140,9 +138,7 @@ public class UrlNavigation {
         // return if loading from local assets
         if (url.startsWith("file:///android_asset/")) return false;
 
-        // checkLoginSignup might be false when returning from login screen with loginIsFirstPage
-        boolean checkLoginSignup = ((LeanWebView)view).checkLoginSignup();
-        ((LeanWebView)view).setCheckLoginSignup(true);
+        view.setCheckLoginSignup(true);
 
         Uri uri = Uri.parse(url);
 
@@ -161,7 +157,7 @@ public class UrlNavigation {
                     if (command == null) continue;
 
                     if (command.equals("pop")) {
-                        if (!mainActivity.isRoot()) mainActivity.finish();
+                        if (mainActivity.isNotRoot()) mainActivity.finish();
                     } else if (command.equals("clearPools")) {
                         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(
                                 new Intent(UrlNavigation.CLEAR_POOLS_MESSAGE));
@@ -191,10 +187,8 @@ public class UrlNavigation {
             if (customDataString != null) {
                 try {
                     JSONObject customData = new JSONObject(customDataString);
-                    if (customData != null) {
-                        registrationManager.setCustomData(customData);
-                        registrationManager.sendToAllEndpoints();
-                    }
+                    registrationManager.setCustomData(customData);
+                    registrationManager.sendToAllEndpoints();
                 } catch (JSONException e) {
                     Log.d(TAG, "Gonative registration error: customData is not JSON object");
                 }
@@ -360,7 +354,7 @@ public class UrlNavigation {
                     String color = uri.getQueryParameter("color");
                     Integer parsedColor = LeanUtils.parseColor(color);
                     if (parsedColor != null && Build.VERSION.SDK_INT >= 21) {
-                        this.mainActivity.getWindow().setStatusBarColor(parsedColor.intValue());
+                        this.mainActivity.getWindow().setStatusBarColor(parsedColor);
                     }
 
                     String overlay = uri.getQueryParameter("overlay");
@@ -399,23 +393,6 @@ public class UrlNavigation {
                 });
                 return true;
             }
-        }
-
-        if(checkLoginSignup &&
-                appConfig.loginUrl != null &&
-                LeanUtils.urlsMatchOnPath(url, appConfig.loginUrl)){
-            if (noAction) return true;
-
-            mainActivity.launchWebForm("login", "Log In");
-            return true;
-        }
-        else if(checkLoginSignup &&
-                appConfig.signupUrl != null &&
-                LeanUtils.urlsMatchOnPath(url, appConfig.signupUrl)) {
-            if (noAction) return true;
-
-            mainActivity.launchWebForm("signup", "Sign Up");
-            return true;
         }
 
         if (!isInternalUri(uri)){
@@ -496,7 +473,8 @@ public class UrlNavigation {
         }
 
         // check to see if the webview exists in pool.
-        Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy> pair = WebViewPool.getInstance().webviewForUrl(url);
+        WebViewPool webViewPool = ((GoNativeApplication)mainActivity.getApplication()).getWebViewPool();
+        Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy> pair = webViewPool.webviewForUrl(url);
         final GoNativeWebviewInterface poolWebview = pair.first;
         WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
 
@@ -510,7 +488,7 @@ public class UrlNavigation {
                     mainActivity.checkNavigationForPage(url);
                 }
             });
-            WebViewPool.getInstance().disownWebview(poolWebview);
+            webViewPool.disownWebview(poolWebview);
             LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.FINISHED_LOADING_MESSAGE));
             return true;
         }
@@ -540,14 +518,15 @@ public class UrlNavigation {
 
         if (this.mainActivity.isPoolWebview) {
             // if we are here, either the policy is reload and we are reloading the page, or policy is never but we are going to a different page. So take ownership of the webview.
-            WebViewPool.getInstance().disownWebview(view);
+            webViewPool.disownWebview(view);
             this.mainActivity.isPoolWebview = false;
         }
 
         return false;
     }
 
-	public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface view, String url, boolean isReload) {
+	public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface view, String url,
+                                            @SuppressWarnings("unused") boolean isReload) {
         if (url == null) return false;
 
         boolean shouldOverride = shouldOverrideUrlLoadingNoIntercept(view, url, false);
@@ -595,6 +574,7 @@ public class UrlNavigation {
         }
     }
 
+    @SuppressWarnings("unused")
     public void showWebViewImmediately() {
         mainActivity.runOnUiThread(new Runnable() {
             @Override
@@ -604,7 +584,8 @@ public class UrlNavigation {
         });
     }
 
-	public void onPageFinished(GoNativeWebviewInterface view, String url) {
+	@SuppressLint("ApplySharedPref")
+    public void onPageFinished(GoNativeWebviewInterface view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
 
         this.currentWebviewUrl = url;
@@ -669,7 +650,7 @@ public class UrlNavigation {
 
         // send installation info
         if (doNativeBridge) {
-            Map installationInfo = Installation.getInfo(mainActivity);
+            Map<String, Object> installationInfo = Installation.getInfo(mainActivity);
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
             if (!sharedPreferences.getBoolean("hasLaunched", false)) {
                 sharedPreferences.edit().putBoolean("hasLaunched", true).commit();
@@ -711,22 +692,20 @@ public class UrlNavigation {
                 jsonObject.put("oneSignalSubscribed", subscribed);
                 jsonObject.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
                 String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
-                if (js != null) {
-                    mainActivity.runJavascript(js);
-                }
+                mainActivity.runJavascript(js);
             } catch (Exception e) {
                 Log.e(TAG, "Error with onesignal javscript callback", e);
             }
         }
 	}
 
-    public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+    public void doUpdateVisitedHistory(@SuppressWarnings("unused") WebView view, String url, boolean isReload) {
         if (!isReload && !url.equals("file:///android_asset/offline.html")) {
             mainActivity.addToHistory(url);
         }
     }
 	
-	public void onReceivedError(GoNativeWebviewInterface view, int errorCode){
+	public void onReceivedError(GoNativeWebviewInterface view, @SuppressWarnings("unused") int errorCode){
         mainActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -736,7 +715,7 @@ public class UrlNavigation {
 
 		// show offline page if not connected to internet
         AppConfig appConfig = AppConfig.getInstance(this.mainActivity);
-		if (appConfig.showOfflinePage && !mainActivity.isConnected()){
+		if (appConfig.showOfflinePage && mainActivity.isDisconnected()){
             view.loadUrlDirect("file:///android_asset/offline.html");
 		}
 	}
@@ -762,6 +741,7 @@ public class UrlNavigation {
         Toast.makeText(mainActivity, errorMessage, Toast.LENGTH_LONG).show();
     }
 
+    @SuppressWarnings("unused")
     public String getCurrentWebviewUrl() {
         return currentWebviewUrl;
     }
@@ -775,6 +755,7 @@ public class UrlNavigation {
         return htmlIntercept.interceptHtml(view, url, this.currentWebviewUrl);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean chooseFileUpload(String[] mimetypespec) {
         return chooseFileUpload(mimetypespec, false);
     }
@@ -789,11 +770,11 @@ public class UrlNavigation {
         return true;
     }
 
-    public boolean chooseFileUploadAfterPermission(String[] mimetypespec, boolean multiple) {
+    @SuppressWarnings("UnusedReturnValue")
+    private boolean chooseFileUploadAfterPermission(String[] mimetypespec, boolean multiple) {
         mainActivity.setDirectUploadImageUri(null);
 
-        boolean isMultipleTypes = false;
-        Set<String> mimeTypes = new HashSet<String>();
+        Set<String> mimeTypes = new HashSet<>();
         for (String spec : mimetypespec) {
             String[] splitSpec = spec.split("[,;\\s]");
             for (String s : splitSpec) {
@@ -828,7 +809,7 @@ public class UrlNavigation {
 
         PackageManager packageManger = mainActivity.getPackageManager();
         if (useCamera) {
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
             String imageFileName = "IMG_" + timeStamp + ".jpg";
             File storageDir = Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES);
@@ -909,6 +890,7 @@ public class UrlNavigation {
         return createNewWindow();
     }
 
+    @SuppressWarnings("unused")
     public boolean createNewWindow(ValueCallback callback) {
         ((GoNativeApplication) mainActivity.getApplication()).setWebviewValueCallback(callback);
         return createNewWindow();

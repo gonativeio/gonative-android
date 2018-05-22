@@ -9,33 +9,33 @@ import android.view.ViewPropertyAnimator;
  */
 public interface GoNativeWebviewInterface {
     // webview stuff
-    public void loadUrl(String url);
-    public void loadUrlDirect(String url);
-    public void loadDataWithBaseURL (String baseUrl, String data, String mimeType, String encoding, String historyUrl);
-    public String getUrl();
-    public void reload();
-    public boolean canGoBack();
-    public void goBack();
-    public void onPause();
-    public void onResume();
-    public void stopLoading();
-    public ViewParent getParent();
-    public void destroy();
-    public int getProgress();
-    public String getTitle();
-    public boolean exitFullScreen();
-    public void clearCache(boolean includeDiskFiles);
+    void loadUrl(String url);
+    void loadUrlDirect(String url);
+    void loadDataWithBaseURL (String baseUrl, String data, String mimeType, String encoding, String historyUrl);
+    String getUrl();
+    void reload();
+    boolean canGoBack();
+    void goBack();
+    void onPause();
+    void onResume();
+    void stopLoading();
+    ViewParent getParent();
+    void destroy();
+    int getProgress();
+    String getTitle();
+    boolean exitFullScreen();
+    void clearCache(boolean includeDiskFiles);
 
     // view stuff
-    public void setAlpha(float alpha);
-    public ViewPropertyAnimator animate();
-    public int getWidth();
-    public int getScrollY();
+    void setAlpha(float alpha);
+    ViewPropertyAnimator animate();
+    int getWidth();
+    int getScrollY();
 
-    public void runJavascript(String js);
-    public boolean checkLoginSignup();
-    public void setCheckLoginSignup(boolean checkLoginSignup);
+    void runJavascript(String js);
+    boolean checkLoginSignup();
+    void setCheckLoginSignup(boolean checkLoginSignup);
 
-    public void saveStateToBundle(Bundle outBundle);
-    public void restoreStateFromBundle(Bundle inBundle);
+    void saveStateToBundle(Bundle outBundle);
+    void restoreStateFromBundle(Bundle inBundle);
 }

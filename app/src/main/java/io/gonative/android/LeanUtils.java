@@ -1,19 +1,14 @@
 package io.gonative.android;
 
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -59,14 +54,7 @@ public class LeanUtils {
         }
     }
 
-
-    public static boolean isValidEmail(String email) {
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile("\\S+@\\S+\\.\\S+");
-        java.util.regex.Matcher m = p.matcher(email);
-        return m.matches();
-    }
-
-    public static String urlEncode(String s) {
+    private static String urlEncode(String s) {
         try {
             // urlencoder replaces spaces with pluses. Need to revert it.
             String encoded = URLEncoder.encode(s, "UTF-8");
@@ -78,23 +66,9 @@ public class LeanUtils {
     }
 
     public static String jsWrapString(String s) {
-        return new StringBuilder("decodeURIComponent(\"")
-                .append(urlEncode(s))
-                .append("\")")
-                .toString();
-    }
-
-    // only used by WebFormActivity. For real webviews, not our subclasses.
-    public static void runJavascriptOnWebView(WebView webview, String js) {
-        // before Kitkat, the only way to run javascript was to load a url that starts with "javascript:".
-        // Starting in Kitkat, the "javascript:" method still works, but it expects the rest of the string
-        // to be URL encoded, unlike previous versions. Rather than URL encode for Kitkat and above,
-        // use the new evaluateJavascript method.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                webview.loadUrl("javascript:" + js);
-        } else {
-            webview.evaluateJavascript(js, null);
-        }
+        return "decodeURIComponent(\"" +
+                urlEncode(s) +
+                "\")";
     }
 
     public static String capitalizeWords(String s) {
@@ -133,12 +107,8 @@ public class LeanUtils {
         }
     }
 
-    public static String colorString(int color) {
-        return String.format("#%06X", (0xFFFFFF & color));
-    }
-
     public static List<Pattern> createRegexArrayFromStrings(Object json) {
-        List<Pattern> result = new LinkedList<Pattern>();
+        List<Pattern> result = new LinkedList<>();
 
         if (json instanceof JSONArray) {
             JSONArray array = (JSONArray)json;
@@ -200,25 +170,22 @@ public class LeanUtils {
     public static String createJsForCallback(String functionName, JSONObject data) {
         String jsonString = data.toString();
 
-        StringBuilder js = new StringBuilder();
-        js.append("function gonative_do_callback(functionName, jsonString) { \n");
-        js.append("    if (typeof window[functionName] !== 'function') return; \n");
-        js.append(" \n");
-        js.append("    try { \n");
-        js.append("        var data = JSON.parse(jsonString); \n");
-        js.append("        var callbackFunction = window[functionName]; \n");
-        js.append("        callbackFunction(data); \n");
-        js.append("    } catch (ignored) { \n");
-        js.append(" \n");
-        js.append("    } \n");
-        js.append("} \n");
-        js.append("gonative_do_callback('");
-        js.append(functionName);
-        js.append("', ");
-        js.append(jsWrapString(jsonString));
-        js.append(");");
-
-        return js.toString();
+        return "function gonative_do_callback(functionName, jsonString) { \n" +
+                "    if (typeof window[functionName] !== 'function') return; \n" +
+                " \n" +
+                "    try { \n" +
+                "        var data = JSON.parse(jsonString); \n" +
+                "        var callbackFunction = window[functionName]; \n" +
+                "        callbackFunction(data); \n" +
+                "    } catch (ignored) { \n" +
+                " \n" +
+                "    } \n" +
+                "} \n" +
+                "gonative_do_callback('" +
+                functionName +
+                "', " +
+                jsWrapString(jsonString) +
+                ");";
     }
 
     public static boolean checkNativeBridgeUrls(String url, Context context) {

@@ -5,7 +5,6 @@ import android.os.Message;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
 
-import com.facebook.FacebookSdk;
 import com.joanzapata.iconify.Iconify;
 import com.joanzapata.iconify.fonts.FontAwesomeModule;
 import com.onesignal.OSSubscriptionObserver;
@@ -24,7 +23,9 @@ import io.gonative.android.library.AppConfig;
  * Copyright 2014 GoNative.io LLC
  */
 public class GoNativeApplication extends Application {
+    private LoginManager loginManager;
     private RegistrationManager registrationManager;
+    private WebViewPool webViewPool;
     private Message webviewMessage;
     private ValueCallback webviewValueCallback;
     private boolean oneSignalRegistered = false;
@@ -47,9 +48,7 @@ public class GoNativeApplication extends Application {
             OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
         }
 
-        if (appConfig.facebookEnabled) {
-            FacebookSdk.sdkInitialize(getApplicationContext());
-        }
+        this.loginManager = new LoginManager(this);
 
         if (appConfig.registrationEndpoints != null) {
             this.registrationManager = new RegistrationManager(this);
@@ -96,11 +95,21 @@ public class GoNativeApplication extends Application {
         // some global webview setup
         WebViewSetup.setupWebviewGlobals(this);
 
+        webViewPool = new WebViewPool();
+
         Iconify.with(new FontAwesomeModule());
+    }
+
+    public LoginManager getLoginManager() {
+        return loginManager;
     }
 
     public RegistrationManager getRegistrationManager() {
         return registrationManager;
+    }
+
+    public WebViewPool getWebViewPool() {
+        return webViewPool;
     }
 
     public Message getWebviewMessage() {
@@ -111,6 +120,8 @@ public class GoNativeApplication extends Application {
         this.webviewMessage = webviewMessage;
     }
 
+    // Needed for Crosswalk
+    @SuppressWarnings("unused")
     public ValueCallback getWebviewValueCallback() {
         return webviewValueCallback;
     }
