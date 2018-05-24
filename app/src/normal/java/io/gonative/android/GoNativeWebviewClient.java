@@ -63,7 +63,7 @@ public class GoNativeWebviewClient extends WebViewClient{
 
     @Override
     public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
-        urlNavigation.doUpdateVisitedHistory(view, url, isReload);
+        urlNavigation.doUpdateVisitedHistory((GoNativeWebviewInterface)view, url, isReload);
     }
 
     @Override

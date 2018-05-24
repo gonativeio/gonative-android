@@ -26,7 +26,6 @@ import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
 import android.widget.Toast;
 
 import com.onesignal.OSPermissionSubscriptionState;
@@ -699,7 +698,7 @@ public class UrlNavigation {
         }
 	}
 
-    public void doUpdateVisitedHistory(@SuppressWarnings("unused") WebView view, String url, boolean isReload) {
+    public void doUpdateVisitedHistory(@SuppressWarnings("unused") GoNativeWebviewInterface view, String url, boolean isReload) {
         if (!isReload && !url.equals("file:///android_asset/offline.html")) {
             mainActivity.addToHistory(url);
         }

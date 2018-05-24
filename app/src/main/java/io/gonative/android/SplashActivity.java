@@ -9,6 +9,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 
+import java.util.HashSet;
+
 import io.gonative.android.library.AppConfig;
 
 public class SplashActivity extends AppCompatActivity {
@@ -21,24 +23,29 @@ public class SplashActivity extends AppCompatActivity {
         setTheme(R.style.SplashScreen);
         super.onCreate(savedInstanceState);
 
+        HashSet<String> permissionsToRequest = new HashSet<>();
+
         // Get permissions for webRTC.
         // We *could* get permissions for regular webview when the web page requests, but there is
         // bug where the entire app will crash if we ask for permissions at that point
         AppConfig config = AppConfig.getInstance(this);
         if (config.enableWebRTC) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.MODIFY_AUDIO_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
-                startMainActivity(false);
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.RECORD_AUDIO,
-                        Manifest.permission.MODIFY_AUDIO_SETTINGS
-                }, REQUEST_PERMISSIONS_WEBRTC);
-            }
-        } else {
+            permissionsToRequest.add(Manifest.permission.CAMERA);
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
+            permissionsToRequest.add(Manifest.permission.MODIFY_AUDIO_SETTINGS);
+        }
+
+        if (LeanWebView.isCrosswalk()) {
+            permissionsToRequest.add(Manifest.permission.READ_CONTACTS);
+            permissionsToRequest.add(Manifest.permission.WRITE_CONTACTS);
+        }
+
+        if (permissionsToRequest.isEmpty()) {
             startMainActivity(false);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    permissionsToRequest.toArray(new String[]{}),
+                    REQUEST_PERMISSIONS_WEBRTC);
         }
     }
 
