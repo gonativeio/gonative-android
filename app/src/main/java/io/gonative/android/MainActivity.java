@@ -34,6 +34,7 @@ import android.support.v7.widget.SearchView;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
+import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -719,6 +720,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         stopCheckingReadyStatus();
         this.webviewOverlay.setAlpha(0.0f);
         this.mProgress.setVisibility(View.INVISIBLE);
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+            injectCSSviaJavascript();
+        }
     }
 
     public void showWebview() {
@@ -734,6 +739,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             return;
         }
 
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+            injectCSSviaJavascript();
+        }
+
         webviewIsHidden = false;
 
         webviewOverlay.animate().alpha(0.0f)
@@ -742,6 +751,26 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         mProgress.animate().alpha(0.0f)
                 .setDuration(60);
+    }
+
+    private void injectCSSviaJavascript() {
+        AppConfig appConfig = AppConfig.getInstance(this);
+        if (appConfig.customCSS == null || appConfig.customCSS.isEmpty()) return;
+
+        try {
+            String encoded = Base64.encodeToString(appConfig.customCSS.getBytes("utf-8"), Base64.NO_WRAP);
+            String js = "(function() {" +
+                    "var parent = document.getElementsByTagName('head').item(0);" +
+                    "var style = document.createElement('style');" +
+                    "style.type = 'text/css';" +
+                    // Tell the browser to BASE64-decode the string into your script !!!
+                    "style.innerHTML = window.atob('" + encoded + "');" +
+                    "parent.appendChild(style)" +
+                    "})()";
+            runJavascript(js);
+        } catch (Exception e) {
+            Log.e(TAG, "Error injecting customCSS via javascript", e);
+        }
     }
 
     public void showLogoInActionBar(boolean show) {

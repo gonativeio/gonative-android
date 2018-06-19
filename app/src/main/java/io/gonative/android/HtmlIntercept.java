@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.content.Context;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.WebResourceResponse;
@@ -42,6 +43,10 @@ public class HtmlIntercept {
     }
 
     public WebResourceResponse interceptHtml(GoNativeWebviewInterface view, String url, String referer) {
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+            return null;
+        }
+
         AppConfig appConfig = AppConfig.getInstance(context);
         if (!appConfig.interceptHtml && (appConfig.customHeaders == null || appConfig.customHeaders.isEmpty())) return null;
 
