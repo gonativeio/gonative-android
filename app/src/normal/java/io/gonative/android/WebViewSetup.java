@@ -97,6 +97,10 @@ public class WebViewSetup {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
 
+        // font size bug fix, see https://stackoverflow.com/questions/41179357/android-webview-rem-units-scale-way-to-large-for-boxes
+        webSettings.setMinimumFontSize(1);
+        webSettings.setMinimumLogicalFontSize(1);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
             CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true);

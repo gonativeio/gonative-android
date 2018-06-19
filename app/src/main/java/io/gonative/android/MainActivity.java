@@ -141,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
+    private BroadcastReceiver navigationTitlesChangedReceiver;
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
@@ -409,7 +410,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
 
         // respond to navigation titles processed
-        LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+        this.navigationTitlesChangedReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (AppConfig.PROCESSED_NAVIGATION_TITLES.equals(intent.getAction())) {
@@ -422,7 +423,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                     setTitle(title);
                 }
             }
-        }, new IntentFilter(AppConfig.PROCESSED_NAVIGATION_TITLES));
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationTitlesChangedReceiver,
+            new IntentFilter(AppConfig.PROCESSED_NAVIGATION_TITLES));
     }
 
     protected void onPause() {
@@ -490,6 +493,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
 
         this.loginManager.deleteObserver(this);
+
+        if (this.navigationTitlesChangedReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(this.navigationTitlesChangedReceiver);
+        }
     }
 
     private void retryFailedPage() {
