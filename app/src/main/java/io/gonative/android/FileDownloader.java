@@ -11,6 +11,7 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
+import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
 import android.webkit.URLUtil;
@@ -79,6 +80,14 @@ public class FileDownloader implements DownloadListener {
                     Uri uri = Uri.parse(url);
                     DownloadManager.Request request = new DownloadManager.Request(uri);
                     request.addRequestHeader("User-Agent", userAgent);
+
+                    // set cookies
+                    CookieManager cookieManager = android.webkit.CookieManager.getInstance();
+                    String cookie = cookieManager.getCookie(url);
+                    if (cookie != null) {
+                        request.addRequestHeader("Cookie", cookie);
+                    }
+
                     request.allowScanningByMediaScanner();
                     String guessedName = URLUtil.guessFileName(url, contentDisposition, mimetype);
                     request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
