@@ -147,7 +147,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
     private GeolocationPermissionCallback geolocationPermissionCallback;
-    private ArrayList<PermissionsCallbackPair> pendingPermiissionRequests = new ArrayList<>();
+    private ArrayList<PermissionsCallbackPair> pendingPermissionRequests = new ArrayList<>();
+    private ArrayList<Intent> pendingStartActivityAfterPermissions = new ArrayList<>();
     private String connectivityCallback;
     private String connectivityOnceCallback;
     private PhoneStateListener phoneStateListener;
@@ -1509,7 +1510,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                 }
                 break;
             case REQUEST_PERMISSION_GENERIC:
-                Iterator<PermissionsCallbackPair> it = pendingPermiissionRequests.iterator();
+                Iterator<PermissionsCallbackPair> it = pendingPermissionRequests.iterator();
                 while (it.hasNext()) {
                     PermissionsCallbackPair pair = it.next();
                     if (pair.permissions.length != permissions.length) continue;
@@ -1527,6 +1528,15 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                         pair.callback.onPermissionResult(permissions, grantResults);
                     }
                     it.remove();
+                }
+
+                if (pendingPermissionRequests.size() == 0 && pendingStartActivityAfterPermissions.size() > 0) {
+                    Iterator<Intent> i = pendingStartActivityAfterPermissions.iterator();
+                    while (i.hasNext()) {
+                        Intent intent = i.next();
+                        startActivity(intent);
+                        i.remove();
+                    }
                 }
                 break;
         }
@@ -1619,7 +1629,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         if (needToRequest) {
             if (callback != null) {
-                pendingPermiissionRequests.add(new PermissionsCallbackPair(permissions, callback));
+                pendingPermissionRequests.add(new PermissionsCallbackPair(permissions, callback));
             }
 
             ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION_GENERIC);
@@ -1632,6 +1642,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                 }
                 callback.onPermissionResult(permissions, results);
             }
+        }
+    }
+
+    public void startActivityAfterPermissions(Intent intent) {
+        if (pendingPermissionRequests.size() == 0) {
+            startActivity(intent);
+        } else {
+            pendingStartActivityAfterPermissions.add(intent);
         }
     }
 
