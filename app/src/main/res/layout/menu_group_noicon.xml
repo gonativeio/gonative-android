@@ -14,13 +14,17 @@
         android:paddingRight="10dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:textColor="?android:textColorPrimary"
-        android:layout_centerVertical="true"/>
+        android:layout_centerVertical="true"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp" />
     <ImageView
         android:id="@+id/menu_group_indicator"
         android:layout_width="@dimen/sidebar_expand_indicator_size"
         android:layout_height="@dimen/sidebar_expand_indicator_size"
         android:paddingRight="10dp"
         android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"/>
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:paddingEnd="10dp" />
 
 </RelativeLayout>

@@ -14,6 +14,8 @@
         android:paddingRight="5dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:textColor="?android:textColorPrimary"
-        android:layout_centerVertical="true"/>
+        android:layout_centerVertical="true"
+        android:paddingEnd="5dp"
+        android:paddingStart="25dp" />
 
 </RelativeLayout>
