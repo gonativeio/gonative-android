@@ -58,6 +58,7 @@ public class SplashActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         // Make MainActivity think it was started from launcher
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         if (noSplash) {
             intent.putExtra("noSplash", true);
         }
