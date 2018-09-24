@@ -439,6 +439,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (this.connectivityReceiver != null) {
             unregisterReceiver(this.connectivityReceiver);
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            CookieManager.getInstance().flush();
+        }
+
     }
 
     @Override
