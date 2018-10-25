@@ -7,7 +7,7 @@
 
     <ImageView
         android:id="@+id/menu_item_icon"
-        android:layout_width="@dimen/sidebar_icon_size"
+        android:layout_width="@dimen/sidebar_icon_width"
         android:layout_height="@dimen/sidebar_icon_size"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
