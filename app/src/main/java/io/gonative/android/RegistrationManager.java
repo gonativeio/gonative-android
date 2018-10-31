@@ -26,12 +26,6 @@ import java.util.regex.Pattern;
 public class RegistrationManager {
     private final static String TAG = RegistrationManager.class.getName();
 
-    private enum RegistrationDataType {
-        Installation,
-        OneSignal,
-        CustomData
-    }
-
     private Context context;
     private String oneSignalUserId;
     private String oneSignalRegistrationId;
@@ -40,17 +34,14 @@ public class RegistrationManager {
     private String lastUrl;
 
     private List<RegistrationEndpoint> registrationEndpoints;
-    private EnumSet<RegistrationDataType> allDataTypes;
 
     RegistrationManager(Context context) {
         this.context = context;
         this.registrationEndpoints = new LinkedList<>();
-        this.allDataTypes = EnumSet.noneOf(RegistrationDataType.class);
     }
 
     public void processConfig(JSONArray endpoints) {
         registrationEndpoints.clear();
-        allDataTypes.clear();
 
         if (endpoints == null) return;
 
@@ -64,28 +55,10 @@ public class RegistrationManager {
                 continue;
             }
 
-            EnumSet<RegistrationDataType> dataTypes = null;
-            if (endpoint.optJSONArray("dataType") != null) {
-                dataTypes = EnumSet.noneOf(RegistrationDataType.class);
-                JSONArray dataTypesArray = endpoint.optJSONArray("dataType");
-                for (int j = 0; j < dataTypesArray.length(); j++) {
-                    String s = dataTypesArray.optString(j);
-                    dataTypes.addAll(getDataTypesFromString(s));
-                }
-            } else if (LeanUtils.optString(endpoint, "dataType") != null) {
-                dataTypes = getDataTypesFromString(LeanUtils.optString(endpoint, "dataType"));
-            }
-
-            if (dataTypes == null || dataTypes.isEmpty()) {
-                Log.w(TAG, "No data types specified for registration endpoint " + url);
-                continue;
-            }
-
             List<Pattern> urlRegexes = LeanUtils.createRegexArrayFromStrings(endpoint.opt("urlRegex"));
 
-            RegistrationEndpoint registrationEndpoint = new RegistrationEndpoint(url, urlRegexes, dataTypes);
+            RegistrationEndpoint registrationEndpoint = new RegistrationEndpoint(url, urlRegexes);
             registrationEndpoints.add(registrationEndpoint);
-            allDataTypes.addAll(dataTypes);
         }
     }
 
@@ -103,12 +76,12 @@ public class RegistrationManager {
         this.oneSignalUserId = oneSignalUserId;
         this.oneSignalRegistrationId = oneSignalregistrationId;
         this.oneSignalSubscribed = oneSignalSubscribed;
-        registrationDataChanged(RegistrationDataType.OneSignal);
+        registrationDataChanged();
     }
 
     public void setCustomData(JSONObject customData) {
         this.customData = customData;
-        registrationDataChanged(RegistrationDataType.CustomData);
+        registrationDataChanged();
     }
 
     public void sendToAllEndpoints() {
@@ -117,29 +90,8 @@ public class RegistrationManager {
         }
     }
 
-    private EnumSet<RegistrationDataType> getDataTypesFromString(String s) {
-        EnumSet<RegistrationDataType> dataTypes = EnumSet.noneOf(RegistrationDataType.class);
-
-        if (s == null) {
-            return dataTypes;
-        } else if (s.equalsIgnoreCase("installation")) {
-            dataTypes.add(RegistrationDataType.Installation);
-            dataTypes.add(RegistrationDataType.CustomData);
-        } else if (s.equalsIgnoreCase("onesignal")) {
-            dataTypes.add(RegistrationDataType.OneSignal);
-            dataTypes.add(RegistrationDataType.Installation);
-            dataTypes.add(RegistrationDataType.CustomData);
-        }
-
-        return dataTypes;
-    }
-
-    private void registrationDataChanged(RegistrationDataType type) {
-        if (!allDataTypes.contains(type)) return;
-
+    private void registrationDataChanged() {
         for (RegistrationEndpoint endpoint : registrationEndpoints) {
-            if (!endpoint.dataTypes.contains(type)) continue;
-
             if (this.lastUrl != null &&
                     LeanUtils.stringMatchesAnyRegex(this.lastUrl, endpoint.urlRegexes)) {
                 endpoint.sendRegistrationInfo();
@@ -151,12 +103,10 @@ public class RegistrationManager {
     private class RegistrationEndpoint {
         private String postUrl;
         private List<Pattern> urlRegexes;
-        private EnumSet<RegistrationDataType> dataTypes;
 
-        RegistrationEndpoint(String postUrl, List<Pattern> urlRegexes, EnumSet<RegistrationDataType> dataTypes) {
+        RegistrationEndpoint(String postUrl, List<Pattern> urlRegexes) {
             this.postUrl = postUrl;
             this.urlRegexes = urlRegexes;
-            this.dataTypes = dataTypes;
         }
 
         void sendRegistrationInfo() {
@@ -177,11 +127,9 @@ public class RegistrationManager {
         protected Void doInBackground(Void... voids) {
             Map<String, Object> toSend = new HashMap<>();
 
-            if (registrationEndpoint.dataTypes.contains(RegistrationDataType.Installation)) {
-                toSend.putAll(Installation.getInfo(registrationManager.context));
-            }
+            toSend.putAll(Installation.getInfo(registrationManager.context));
 
-            if (registrationEndpoint.dataTypes.contains(RegistrationDataType.OneSignal) && registrationManager.oneSignalUserId != null) {
+            if (registrationManager.oneSignalUserId != null) {
                 toSend.put("oneSignalUserId", registrationManager.oneSignalUserId);
                 if (registrationManager.oneSignalRegistrationId != null) {
                     toSend.put("oneSignalRegistrationId", registrationManager.oneSignalRegistrationId);
@@ -190,7 +138,7 @@ public class RegistrationManager {
                 toSend.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
             }
 
-            if (registrationEndpoint.dataTypes.contains(RegistrationDataType.CustomData) && registrationManager.customData != null) {
+            if (registrationManager.customData != null) {
                 Iterator<String> keys = registrationManager.customData.keys();
                 while(keys.hasNext()) {
                     String key = keys.next();
