@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
+import android.webkit.URLUtil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -202,5 +204,25 @@ public class LeanUtils {
             }
         }
         return matches;
+    }
+
+    // Parse ourselves if content-disposition starts with "inline;", else just calls URLUtil.guessFileName
+    public static String guessFileName(String url, String contentDisposition, String mimeType) {
+
+        if (contentDisposition != null &&
+                contentDisposition.toLowerCase().startsWith("inline;")) {
+
+            try {
+                Matcher m = Pattern.compile("inline;\\s*filename\\s*=\\s*(\"?)([^\"]*)\\1\\s*$",
+                        Pattern.CASE_INSENSITIVE).matcher(contentDisposition);
+                if (m.find()) {
+                    return m.group(2);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error parsing content-disposition inline", e);
+            }
+        }
+
+        return URLUtil.guessFileName(url, contentDisposition, mimeType);
     }
 }

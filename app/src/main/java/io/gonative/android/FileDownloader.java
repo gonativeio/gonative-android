@@ -89,7 +89,7 @@ public class FileDownloader implements DownloadListener {
                     }
 
                     request.allowScanningByMediaScanner();
-                    String guessedName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                    String guessedName = LeanUtils.guessFileName(url, contentDisposition, mimetype);
                     request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
                     request.setMimeType(mimetype);
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
@@ -214,7 +214,7 @@ public class FileDownloader implements DownloadListener {
                     }
 
                     // guess file name and extension
-                    String guessedName = URLUtil.guessFileName(url.toString(),
+                    String guessedName = LeanUtils.guessFileName(url.toString(),
                             connection.getHeaderField("Content-Disposition"),
                             param.mimetype);
                     int pos = guessedName.lastIndexOf('.');
