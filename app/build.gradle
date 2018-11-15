@@ -36,38 +36,16 @@ android {
         }
     }
 
-
-    flavorDimensions "crosswalk", "abi"
+    flavorDimensions "webview"
 
     productFlavors {
         normal {
-            dimension "crosswalk"
+            dimension "webview"
         }
-        xwalk {
-            dimension "crosswalk"
-        }
-
-        generic {
-            dimension "abi"
-        }
-        x86 {
-            dimension "abi"
-            ndk {
-                abiFilters "x86", ""
-            }
-        }
-        arm {
-            dimension "abi"
-            ndk {
-                abiFilters "armeabi-v7a", ""
-            }
-        }
-
     }
 }
 
 dependencies {
-    xwalkImplementation 'org.xwalk:xwalk_core_library:14.43.343.24'
     implementation 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
     implementation 'com.facebook.android:facebook-android-sdk:4.33.0'
     implementation 'com.android.support:cardview-v7:27.1.1'
@@ -78,17 +56,4 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:12.0.1'
     implementation fileTree(dir: 'libs', include: '*.jar')
     implementation fileTree(dir: 'libs', include: '*.aar')
-}
-
-configurations.all {
-    resolutionStrategy {
-        // Crosswalk will otherwise use version 28, breaking the build
-        force 'com.android.support:support-v4:27.1.1'
-    }
-}
-
-repositories {
-    maven {
-        url 'https://download.01.org/crosswalk/releases/crosswalk/android/maven2'
-    }
 }
