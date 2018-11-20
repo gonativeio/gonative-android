@@ -109,6 +109,15 @@ public class FileDownloader implements DownloadListener {
 
         DownloadFileParams param = new DownloadFileParams(url, userAgent, mimetype, contentLength);
         new DownloadFileTask(this).execute(param);
+
+        if (context != null) {
+            context.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    context.showWebview();
+                }
+            });
+        }
     }
 
     private void enqueueBackgroundDownload(String url, DownloadManager.Request request) {
