@@ -12,6 +12,7 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -28,6 +29,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
 import android.widget.Toast;
 
+import com.facebook.appevents.AppEventsLogger;
 import com.onesignal.OSPermissionSubscriptionState;
 import com.onesignal.OneSignal;
 
@@ -37,8 +39,10 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -248,6 +252,56 @@ public class UrlNavigation {
                     String tabsJson = uri.getQueryParameter("tabs");
                     if (tabsJson != null && !tabsJson.isEmpty()) {
                         tabManager.setTabsWithJson(tabsJson);
+                    }
+                }
+
+                return true;
+            }
+
+            if ("facebook".equals(uri.getHost())) {
+                if (!appConfig.facebookEnabled) return true;
+
+                boolean isPurchase = "/events/sendPurchase".equals(uri.getPath());
+                if (isPurchase || "/events/send".equals(uri.getPath())) {
+                    String dataString = uri.getQueryParameter("data");
+                    if (dataString == null || dataString.isEmpty()) return true;
+
+                    try {
+                        JSONObject data = new JSONObject(dataString);
+
+                        Bundle params = null;
+                        JSONObject parameters = data.optJSONObject("parameters");
+                        if (parameters != null) {
+                            params = LeanUtils.jsonObjectToBundle(parameters);
+                        }
+
+                        if (!isPurchase) {
+                            String eventName = LeanUtils.optString(data, "event");
+                            if (eventName == null) return true;
+
+                            double valueToSum = data.optDouble("valueToSum");
+
+                            AppEventsLogger logger = AppEventsLogger.newLogger(mainActivity);
+                            if (Double.isNaN(valueToSum)) {
+                                logger.logEvent(eventName, params);
+                            } else {
+                                logger.logEvent(eventName, valueToSum, params);
+                            }
+                        } else {
+                            // isPurchase
+                            double purchaseAmount = data.optDouble("purchaseAmount");
+                            if (Double.isNaN(purchaseAmount)) return true;
+                            String currencyString = LeanUtils.optString(data, "currency");
+                            if (currencyString == null) return true;
+                            Currency currency = Currency.getInstance(currencyString);
+
+                            AppEventsLogger logger = AppEventsLogger.newLogger(mainActivity);
+                            logger.logPurchase(BigDecimal.valueOf(purchaseAmount), currency, params);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing json for facebook event", e);
+                    } catch (IllegalArgumentException e) {
+                        Log.e(TAG, "Error creating facebook app event", e);
                     }
                 }
 

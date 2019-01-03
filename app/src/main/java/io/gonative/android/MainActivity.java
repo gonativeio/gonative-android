@@ -56,7 +56,6 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
-import com.facebook.appevents.AppEventsLogger;
 import com.facebook.applinks.AppLinkData;
 import com.onesignal.OneSignal;
 
@@ -467,10 +466,6 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         // check login status
         this.loginManager.checkLogin();
-
-        if (AppConfig.getInstance(this).facebookEnabled) {
-            AppEventsLogger.activateApp(getApplication());
-        }
     }
 
     @Override

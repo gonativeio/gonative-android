@@ -5,6 +5,7 @@ import android.os.Message;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
 
+import com.facebook.FacebookSdk;
 import com.joanzapata.iconify.Iconify;
 import com.joanzapata.iconify.fonts.FontAwesomeModule;
 import com.onesignal.OSSubscriptionObserver;
@@ -46,6 +47,10 @@ public class GoNativeApplication extends Application {
             OneSignal.init(this, "REMOTE", appConfig.oneSignalAppId,
                     new OneSignalNotificationHandler(this));
             OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
+        }
+
+        if (appConfig.facebookEnabled) {
+            FacebookSdk.setApplicationId(appConfig.facebookAppId);
         }
 
         this.loginManager = new LoginManager(this);

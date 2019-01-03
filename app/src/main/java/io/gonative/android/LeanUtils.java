@@ -4,10 +4,12 @@ package io.gonative.android;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import android.webkit.URLUtil;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -15,6 +17,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -224,5 +227,32 @@ public class LeanUtils {
         }
 
         return URLUtil.guessFileName(url, contentDisposition, mimeType);
+    }
+
+    public static Bundle jsonObjectToBundle(JSONObject json) {
+        if (json == null) return null;
+
+        Bundle bundle = new Bundle();
+        Iterator<String> keys = json.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+
+            try {
+                Object value = json.get(key);
+                if (value instanceof String) {
+                    bundle.putString(key, (String)value);
+                } else if (value instanceof Double) {
+                    bundle.putDouble(key, (Double)value);
+                } else if (value instanceof Boolean) {
+                    bundle.putBoolean(key, (Boolean)value);
+                } else if (value instanceof Integer) {
+                    bundle.putInt(key, (Integer)value);
+                }
+            } catch (JSONException e) {
+                continue;
+            }
+        }
+
+        return bundle;
     }
 }
