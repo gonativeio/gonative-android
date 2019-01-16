@@ -203,6 +203,12 @@ public class UrlNavigation {
         }
 
         if ("gonative".equals(uri.getScheme())) {
+            if ("config".equals(uri.getHost())) {
+                ConfigPreferences configPreferences = new ConfigPreferences(this.mainActivity);
+                configPreferences.handleUrl(uri);
+                return true;
+            }
+
             if ("sidebar".equals(uri.getHost())) {
                 if ("/setItems".equals(uri.getPath())) {
                     String itemsString = uri.getQueryParameter("items");

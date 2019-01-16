@@ -308,6 +308,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
 
         if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
+        if (url == null && isRoot) url = new ConfigPreferences(this).getInitialUrl();
         if (url == null && isRoot) url = appConfig.initialUrl;
         // url from intent (hub and spoke nav)
         if (url == null) url = intent.getStringExtra("url");
