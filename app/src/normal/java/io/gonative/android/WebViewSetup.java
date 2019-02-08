@@ -47,13 +47,6 @@ public class WebViewSetup {
             wv.addJavascriptInterface(profilePicker.getProfileJsBridge(), "gonative_profile_picker");
         }
 
-        AppConfig appConfig = AppConfig.getInstance(activity);
-
-        wv.removeJavascriptInterface("gonative_dynamic_update");
-        if (appConfig.updateConfigJS != null) {
-            wv.addJavascriptInterface(appConfig.getJsBridge(), "gonative_dynamic_update");
-        }
-
         wv.removeJavascriptInterface("gonative_status_checker");
         wv.addJavascriptInterface(activity.getStatusCheckerBridge(), "gonative_status_checker");
 

@@ -64,7 +64,6 @@ public class UrlNavigation {
 
 	private MainActivity mainActivity;
     private String profilePickerExec;
-    private String dynamicUpdateExec;
     private String currentWebviewUrl;
     private HtmlIntercept htmlIntercept;
 
@@ -81,13 +80,6 @@ public class UrlNavigation {
         if (appConfig.profilePickerJS != null) {
             this.profilePickerExec = "gonative_profile_picker.parseJson(eval("
                     + LeanUtils.jsWrapString(appConfig.profilePickerJS)
-                    + "))";
-        }
-
-        // dynamic config updates
-        if (appConfig.updateConfigJS != null) {
-            this.dynamicUpdateExec = "gonative_dynamic_update.parseJson(eval("
-                    + LeanUtils.jsWrapString(appConfig.updateConfigJS)
                     + "))";
         }
 
@@ -206,6 +198,54 @@ public class UrlNavigation {
             if ("config".equals(uri.getHost())) {
                 ConfigPreferences configPreferences = new ConfigPreferences(this.mainActivity);
                 configPreferences.handleUrl(uri);
+                return true;
+            }
+
+            if ("navigationTitles".equals(uri.getHost())) {
+                if ("/set".equals(uri.getPath())) {
+                    String dataString = uri.getQueryParameter("data");
+                    String persistString = uri.getQueryParameter("persist");
+                    boolean persist = "1".equals(persistString) || "true".equals(persistString);
+
+                    if (dataString != null && !dataString.isEmpty()) {
+                        try {
+                            JSONObject data = new JSONObject(dataString);
+                            appConfig.setNavigationTitles(data, persist);
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing navigationTitles", e);
+                        }
+
+                    } else {
+                        appConfig.setNavigationTitles(null, persist);
+                    }
+                } else if ("/setCurrent".equals(uri.getPath())) {
+                    String title = uri.getQueryParameter("title");
+                    if (title != null) {
+                        mainActivity.setTitle(title);
+                    } else {
+                        mainActivity.setTitle(R.string.app_name);
+                    }
+                }
+                return true;
+            }
+
+            if ("navigationLevels".equals(uri.getHost())) {
+                if ("/set".equals(uri.getPath())) {
+                    String dataString = uri.getQueryParameter("data");
+                    String persistString = uri.getQueryParameter("persist");
+                    boolean persist = "1".equals(persistString) || "true".equals(persistString);
+
+                    if (dataString != null && !dataString.isEmpty()) {
+                        try {
+                            JSONObject data = new JSONObject(dataString);
+                            appConfig.setNavigationLevels(data, persist);
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing navigationLevels", e);
+                        }
+                    } else {
+                        appConfig.setNavigationLevels(null, persist);
+                    }
+                }
                 return true;
             }
 
@@ -679,9 +719,9 @@ public class UrlNavigation {
                     LeanUtils.urlsMatchOnPath(url, appConfig.signupUrl);
         }
 
-        // dynamic config updater
-        if (this.dynamicUpdateExec != null) {
-            view.runJavascript(this.dynamicUpdateExec);
+        // post-load javascript
+        if (appConfig.postLoadJavascript != null) {
+		    view.runJavascript(appConfig.postLoadJavascript);
         }
 
         // profile picker

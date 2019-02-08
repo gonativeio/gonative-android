@@ -2,6 +2,7 @@ package io.gonative.android;
 
 import android.app.Application;
 import android.os.Message;
+import android.util.Log;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
 
@@ -32,6 +33,7 @@ public class GoNativeApplication extends Application {
     private boolean oneSignalRegistered = false;
     private int numOneSignalChecks = 0;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final static String TAG = GoNativeApplication.class.getSimpleName();
 
     @Override
     public void onCreate() {
@@ -40,6 +42,7 @@ public class GoNativeApplication extends Application {
         AppConfig appConfig = AppConfig.getInstance(this);
         if (appConfig.configError != null) {
             Toast.makeText(this, "Invalid appConfig json", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "AppConfig error", appConfig.configError);
         }
 
         if (appConfig.oneSignalEnabled) {

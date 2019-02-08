@@ -142,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
     private BroadcastReceiver navigationTitlesChangedReceiver;
+    private BroadcastReceiver navigationLevelsChangedReceiver;
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
@@ -155,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
-        AppConfig appConfig = AppConfig.getInstance(this);
+        final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
 
         setScreenOrientationPreference();
@@ -418,16 +419,31 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
                 if (AppConfig.PROCESSED_NAVIGATION_TITLES.equals(intent.getAction())) {
                     String url = mWebview.getUrl();
                     if (url == null) return;
-
-                    String title = titleForUrl(mWebview.getUrl());
-                    if (title == null) return;
-
-                    setTitle(title);
+                    String title = titleForUrl(url);
+                    if (title != null) {
+                        setTitle(title);
+                    } else {
+                        setTitle(R.string.app_name);
+                    }
                 }
             }
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationTitlesChangedReceiver,
             new IntentFilter(AppConfig.PROCESSED_NAVIGATION_TITLES));
+
+        this.navigationLevelsChangedReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (AppConfig.PROCESSED_NAVIGATION_LEVELS.equals(intent.getAction())) {
+                    String url = mWebview.getUrl();
+                    if (url == null) return;
+                    int level = urlLevelForUrl(url);
+                    setUrlLevel(level);
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationLevelsChangedReceiver,
+                new IntentFilter(AppConfig.PROCESSED_NAVIGATION_LEVELS));
     }
 
     protected void onPause() {
@@ -499,6 +515,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         if (this.navigationTitlesChangedReceiver != null) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(this.navigationTitlesChangedReceiver);
+        }
+        if (this.navigationLevelsChangedReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(this.navigationLevelsChangedReceiver);
         }
     }
 
