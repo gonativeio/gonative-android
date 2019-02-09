@@ -385,16 +385,39 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        //Make sure tabContainer is bigger than the HorizontalScrollView to be able to scroll
-        tabsContainer.setMinimumWidth(getWidth());
-        //Clipping padding to false to see the tabs while we pass them swiping
-        setClipToPadding(false);
-        if (tabsContainer.getChildCount() > 0) {
-            tabsContainer
-                    .getChildAt(0)
-                    .getViewTreeObserver()
-                    .addOnGlobalLayoutListener(firstTabGlobalLayoutListener);
+        if (isPaddingMiddle && tabsContainer.getChildCount() > 0) {
+            View view = tabsContainer.getChildAt(0);
+            int halfWidthFirstTab = view.getMeasuredWidth() / 2;
+            paddingLeft = paddingRight = getWidth() / 2 - halfWidthFirstTab;
         }
+
+        if (isPaddingMiddle || paddingLeft > 0 || paddingRight > 0) {
+            int width;
+            if (isPaddingMiddle) {
+                width = getWidth();
+            } else {
+                // Account for manually set padding for offsetting tab start and end positions.
+                width = getWidth() - paddingLeft - paddingRight;
+            }
+
+            //Make sure tabContainer is bigger than the HorizontalScrollView to be able to scroll
+            tabsContainer.setMinimumWidth(width);
+            //Clipping padding to false to see the tabs while we pass them swiping
+            setClipToPadding(false);
+        }
+
+        setPadding(paddingLeft, getPaddingTop(), paddingRight, getPaddingBottom());
+        if (scrollOffset == 0) {
+            scrollOffset = getWidth() / 2 - paddingLeft;
+        }
+
+        if (pager != null) {
+            currentPosition = pager.getCurrentItem();
+        }
+
+        currentPositionOffset = 0f;
+        scrollToChild(currentPosition, 0);
+        updateSelection(currentPosition);
         super.onLayout(changed, l, t, r, b);
     }
 
