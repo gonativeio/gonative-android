@@ -1830,4 +1830,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     public interface GeolocationPermissionCallback {
         void onResult(boolean granted);
     }
+
+    // set brightness to a negative number to restore default
+    public void setBrightness(float brightness) {
+        WindowManager.LayoutParams layout = getWindow().getAttributes();
+        layout.screenBrightness = brightness;
+        getWindow().setAttributes(layout);
+    }
 }

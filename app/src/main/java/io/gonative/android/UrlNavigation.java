@@ -69,6 +69,7 @@ public class UrlNavigation {
 
     private boolean mVisitedLoginOrSignup = false;
     private boolean finishOnExternalUrl = false;
+    private boolean restoreBrightnessOnNavigation = false;
 
     UrlNavigation(MainActivity activity) {
 		this.mainActivity = activity;
@@ -198,6 +199,39 @@ public class UrlNavigation {
             if ("config".equals(uri.getHost())) {
                 ConfigPreferences configPreferences = new ConfigPreferences(this.mainActivity);
                 configPreferences.handleUrl(uri);
+                return true;
+            }
+
+            if ("screen".equals(uri.getHost())) {
+                if ("/setBrightness".equals(uri.getPath())) {
+                    String brightnessString = uri.getQueryParameter("brightness");
+                    if (brightnessString == null) {
+                        Log.e(TAG, "Brightness not specified in " + uri.toString());
+                        return true;
+                    }
+
+                    if (brightnessString.equals("default")) {
+                        mainActivity.setBrightness(-1);
+                        restoreBrightnessOnNavigation = false;
+                        return true;
+                    }
+
+                    try {
+                        float newBrightness = Float.parseFloat(brightnessString);
+                        if (newBrightness < 0 || newBrightness > 1.0) {
+                            Log.e(TAG, "Invalid brightness value in " + uri.toString());
+                            return true;
+                        }
+                        mainActivity.setBrightness(newBrightness);
+                        String restoreString = uri.getQueryParameter("restoreOnNavigation");
+                        if ("true".equals(restoreString) || "1".equals(restoreString)) {
+                            this.restoreBrightnessOnNavigation = true;
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing brightness", e);
+
+                    }
+                }
                 return true;
             }
 
@@ -510,6 +544,11 @@ public class UrlNavigation {
 
         // Starting here, we are going to load the request, but possibly in a
         // different activity depending on the structured nav level
+
+        if (restoreBrightnessOnNavigation) {
+            mainActivity.setBrightness(-1);
+            restoreBrightnessOnNavigation = false;
+        }
 
         int currentLevel = mainActivity.getUrlLevel();
         int newLevel = mainActivity.urlLevelForUrl(url);
