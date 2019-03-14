@@ -78,7 +78,7 @@ import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
 
-public class MainActivity extends AppCompatActivity implements Observer, SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends AppCompatActivity implements Observer, SwipeRefreshLayout.OnRefreshListener, LeanWebView.OnSwipeListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     private static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -238,6 +238,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         this.webviewOverlay = findViewById(R.id.webviewOverlay);
         this.mWebview = findViewById(R.id.webview);
         setupWebview(this.mWebview);
+        if (appConfig.swipeGestures) {
+            this.mWebview.setOnSwipeListener(this);
+        }
 
         // profile picker
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
@@ -558,6 +561,19 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         // We may never get onPageStarted or onPageFinished, hence the webview would be forever
         // hidden when navigating back in single-page apps. We do, however, get an updatedHistory callback.
         showWebview(0.3);
+    }
+
+    @Override
+    public void onSwipeLeft() {
+        if (!AppConfig.getInstance(this).swipeGestures) return;
+        if (canGoBack()) {
+            goBack();
+        }
+    }
+
+    @Override
+    public void onSwipeRight() {
+
     }
 
     private boolean canGoBack() {
@@ -1117,6 +1133,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
             if (!this.isPoolWebview) {
                 ((GoNativeWebviewInterface)prev).destroy();
+            }
+
+            ((GoNativeWebviewInterface)prev).setOnSwipeListener(null);
+            if ((AppConfig.getInstance(this).swipeGestures)) {
+                newWebview.setOnSwipeListener(this);
             }
         }
 

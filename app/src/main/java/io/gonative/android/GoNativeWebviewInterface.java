@@ -38,4 +38,7 @@ public interface GoNativeWebviewInterface {
 
     void saveStateToBundle(Bundle outBundle);
     void restoreStateFromBundle(Bundle inBundle);
+
+    LeanWebView.OnSwipeListener getOnSwipeListener();
+    void setOnSwipeListener(LeanWebView.OnSwipeListener listener);
 }

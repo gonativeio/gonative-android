@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
 import android.webkit.WebHistoryItem;
@@ -17,17 +19,51 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     private WebViewClient mClient = null;
     private WebChromeClient mChromeClient = null;
     private boolean checkLoginSignup = true;
+    private GestureDetector gd;
+    private OnSwipeListener onSwipeListener;
 
     public LeanWebView(Context context) {
         super(context);
+        gd = new GestureDetector(context, sogl);
     }
 
     public LeanWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        gd = new GestureDetector(context, sogl);
     }
 
     public LeanWebView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        gd = new GestureDetector(context, sogl);
+    }
+
+    GestureDetector.SimpleOnGestureListener sogl = new GestureDetector.SimpleOnGestureListener() {
+        @Override
+        public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
+            if (onSwipeListener == null) return true;
+
+            float absVelocityX = Math.abs(velocityX);
+            float absVelocityY = Math.abs(velocityY);
+            if (absVelocityX < 500 || absVelocityX < absVelocityY) return true;
+
+            if (velocityX < 0) {
+                onSwipeListener.onSwipeLeft();
+            } else {
+                onSwipeListener.onSwipeRight();
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return true;
+        }
+    };
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        gd.onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     @Override
@@ -125,5 +161,18 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     @Override
     public void restoreStateFromBundle(Bundle inBundle) {
         restoreState(inBundle);
+    }
+
+    public interface OnSwipeListener {
+        void onSwipeLeft();
+        void onSwipeRight();
+    }
+
+    public OnSwipeListener getOnSwipeListener() {
+        return onSwipeListener;
+    }
+
+    public void setOnSwipeListener(OnSwipeListener onSwipeListener) {
+        this.onSwipeListener = onSwipeListener;
     }
 }
