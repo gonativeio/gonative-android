@@ -565,15 +565,14 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     @Override
     public void onSwipeLeft() {
-        if (!AppConfig.getInstance(this).swipeGestures) return;
-        if (canGoBack()) {
-            goBack();
-        }
     }
 
     @Override
     public void onSwipeRight() {
-
+        if (!AppConfig.getInstance(this).swipeGestures) return;
+        if (canGoBack()) {
+            goBack();
+        }
     }
 
     private boolean canGoBack() {
