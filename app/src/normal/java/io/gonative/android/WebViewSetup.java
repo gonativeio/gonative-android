@@ -110,6 +110,9 @@ public class WebViewSetup {
         webSettings.setUserAgentString(appConfig.userAgent);
         webSettings.setSupportMultipleWindows(appConfig.enableWindowOpen);
         webSettings.setGeolocationEnabled(appConfig.usesGeolocation);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            webSettings.setMediaPlaybackRequiresUserGesture(false);
+        }
     }
 
     public static void setupWebviewGlobals(Context context) {
