@@ -30,7 +30,7 @@ public class OneSignalNotificationHandler implements OneSignal.NotificationOpene
         OSNotification notification = openedResult.notification;
 
         String launchUrl = notification.payload.launchURL;
-        if (launchUrl != null) {
+        if (launchUrl != null && !launchUrl.isEmpty()) {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(launchUrl));
             context.startActivity(intent);
             return;
