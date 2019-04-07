@@ -2,6 +2,7 @@ package io.gonative.android;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 
 import com.onesignal.OSNotification;
 import com.onesignal.OSNotificationOpenResult;
@@ -27,6 +28,14 @@ public class OneSignalNotificationHandler implements OneSignal.NotificationOpene
     @Override
     public void notificationOpened(OSNotificationOpenResult openedResult) {
         OSNotification notification = openedResult.notification;
+
+        String launchUrl = notification.payload.launchURL;
+        if (launchUrl != null) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(launchUrl));
+            context.startActivity(intent);
+            return;
+        }
+
         JSONObject additionalData = notification.payload.additionalData;
 
         String targetUrl = LeanUtils.optString(additionalData, "targetUrl");
