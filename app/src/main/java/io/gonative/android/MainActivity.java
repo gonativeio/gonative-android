@@ -1495,6 +1495,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         } else {
             visibility &= ~fullscreenFlags;
             if (actionBar != null && AppConfig.getInstance(this).showActionBar) actionBar.show();
+
+            // Fix for webview keyboard not showing, see https://github.com/mozilla-tw/FirefoxLite/issues/842
+            this.mWebview.clearFocus();
         }
 
         decorView.setSystemUiVisibility(visibility);

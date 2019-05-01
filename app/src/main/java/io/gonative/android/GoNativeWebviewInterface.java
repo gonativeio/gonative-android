@@ -31,6 +31,7 @@ public interface GoNativeWebviewInterface {
     ViewPropertyAnimator animate();
     int getWidth();
     int getScrollY();
+    void clearFocus();
 
     void runJavascript(String js);
     boolean checkLoginSignup();
