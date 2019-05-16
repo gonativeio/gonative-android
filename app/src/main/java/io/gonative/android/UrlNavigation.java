@@ -196,6 +196,26 @@ public class UrlNavigation {
         }
 
         if ("gonative".equals(uri.getScheme())) {
+            if ("nativebridge".equals(uri.getHost())) {
+                if ("/multi".equals(uri.getPath())) {
+                    String data = uri.getQueryParameter("data");
+                    if (data == null) return true;
+                    try {
+                        JSONObject json = new JSONObject(data);
+                        JSONArray urls = json.getJSONArray("urls");
+                        for (int i = 0; i < urls.length(); i++) {
+                            String s = urls.getString(i);
+                            Uri u = Uri.parse(s);
+                            if (!"gonative".equals(u.getScheme())) continue;
+                            shouldOverrideUrlLoadingNoIntercept(view, s, noAction);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error calling gonative://nativebridge/multi", e);
+                    }
+                }
+                return true;
+            }
+
             if ("config".equals(uri.getHost())) {
                 ConfigPreferences configPreferences = new ConfigPreferences(this.mainActivity);
                 configPreferences.handleUrl(uri);
