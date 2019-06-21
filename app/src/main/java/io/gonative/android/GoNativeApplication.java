@@ -1,7 +1,9 @@
 package io.gonative.android;
 
 import android.app.Application;
+import android.content.Intent;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
@@ -25,6 +27,8 @@ import io.gonative.android.library.AppConfig;
  * Copyright 2014 GoNative.io LLC
  */
 public class GoNativeApplication extends Application {
+    public static final String ONESIGNAL_STATUS_CHANGED_MESSAGE = "io.gonative.android.onesignal.statuschanged";
+
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
     private WebViewPool webViewPool;
@@ -61,43 +65,54 @@ public class GoNativeApplication extends Application {
         if (appConfig.registrationEndpoints != null) {
             this.registrationManager = new RegistrationManager(this);
             registrationManager.processConfig(appConfig.registrationEndpoints);
+        }
 
-            if (appConfig.oneSignalEnabled) {
-                OneSignal.addSubscriptionObserver(new OSSubscriptionObserver() {
-                    @Override
-                    public void onOSSubscriptionChanged(OSSubscriptionStateChanges stateChanges) {
-                        OSSubscriptionState to = stateChanges.getTo();
+
+        if (appConfig.oneSignalEnabled) {
+            OneSignal.addSubscriptionObserver(new OSSubscriptionObserver() {
+                @Override
+                public void onOSSubscriptionChanged(OSSubscriptionStateChanges stateChanges) {
+                    OSSubscriptionState to = stateChanges.getTo();
+                    if (registrationManager != null) {
                         registrationManager.setOneSignalUserId(to.getUserId(), to.getPushToken(), to.getSubscribed());
-
-                        if (to.getSubscribed()) {
-                            oneSignalRegistered = true;
-                        }
                     }
-                });
 
-                // sometimes the subscription observer doesn't get fired, so check a few times on a timer
-                final Runnable checkOneSignal = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (oneSignalRegistered) {
-                            scheduler.shutdown();
-                            return;
-                        }
+                    if (to.getSubscribed()) {
+                        oneSignalRegistered = true;
+                    }
 
-                        OSSubscriptionState state = OneSignal.getPermissionSubscriptionState().getSubscriptionStatus();
+                    LocalBroadcastManager.getInstance(GoNativeApplication.this)
+                            .sendBroadcast(new Intent(ONESIGNAL_STATUS_CHANGED_MESSAGE));
+                }
+            });
+
+            // sometimes the subscription observer doesn't get fired, so check a few times on a timer
+            final Runnable checkOneSignal = new Runnable() {
+                @Override
+                public void run() {
+                    // the subscription observer fired, so stop checking
+                    if (oneSignalRegistered) {
+                        scheduler.shutdown();
+                        return;
+                    }
+
+                    OSSubscriptionState state = OneSignal.getPermissionSubscriptionState().getSubscriptionStatus();
+                    if (registrationManager != null) {
                         registrationManager.setOneSignalUserId(state.getUserId(), state.getPushToken(), state.getSubscribed());
-
-                        if (state.getSubscribed()) {
-                            scheduler.shutdown();
-                            oneSignalRegistered = true;
-
-                        } else if (numOneSignalChecks++ > 10) {
-                            scheduler.shutdown();
-                        }
                     }
-                };
-                scheduler.scheduleAtFixedRate(checkOneSignal, 2, 2, TimeUnit.SECONDS);
-            }
+
+                    if (state.getSubscribed()) {
+                        scheduler.shutdown();
+                        oneSignalRegistered = true;
+
+                        LocalBroadcastManager.getInstance(GoNativeApplication.this)
+                                .sendBroadcast(new Intent(ONESIGNAL_STATUS_CHANGED_MESSAGE));
+                    } else if (numOneSignalChecks++ > 10) {
+                        scheduler.shutdown();
+                    }
+                }
+            };
+            scheduler.scheduleAtFixedRate(checkOneSignal, 2, 2, TimeUnit.SECONDS);
         }
 
         // some global webview setup

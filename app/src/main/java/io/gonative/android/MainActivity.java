@@ -57,6 +57,7 @@ import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.applinks.AppLinkData;
+import com.onesignal.OSPermissionSubscriptionState;
 import com.onesignal.OneSignal;
 
 import org.json.JSONException;
@@ -70,6 +71,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -141,6 +143,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
+    private BroadcastReceiver oneSignalStatusChangedReceiver;
     private BroadcastReceiver navigationTitlesChangedReceiver;
     private BroadcastReceiver navigationLevelsChangedReceiver;
     protected String postLoadJavascript;
@@ -415,6 +418,17 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
         }
 
+        this.oneSignalStatusChangedReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (GoNativeApplication.ONESIGNAL_STATUS_CHANGED_MESSAGE.equals(intent.getAction())) {
+                    sendOneSignalInfo();
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(this.oneSignalStatusChangedReceiver,
+                new IntentFilter(GoNativeApplication.ONESIGNAL_STATUS_CHANGED_MESSAGE));
+
         // respond to navigation titles processed
         this.navigationTitlesChangedReceiver = new BroadcastReceiver() {
             @Override
@@ -516,6 +530,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         this.loginManager.deleteObserver(this);
 
+        if (this.oneSignalStatusChangedReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(this.oneSignalStatusChangedReceiver);
+        }
         if (this.navigationTitlesChangedReceiver != null) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(this.navigationTitlesChangedReceiver);
         }
@@ -1290,6 +1307,48 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
+    private void sendOneSignalInfo() {
+        boolean doNativeBridge = true;
+        String currentUrl = this.mWebview.getUrl();
+        if (currentUrl != null) {
+            doNativeBridge = LeanUtils.checkNativeBridgeUrls(currentUrl, this);
+        }
+
+        // onesignal javsacript callback
+        if (AppConfig.getInstance(this).oneSignalEnabled && doNativeBridge) {
+            try {
+                String userId = null;
+                String pushToken = null;
+                boolean subscribed = false;
+
+                OSPermissionSubscriptionState state = OneSignal.getPermissionSubscriptionState();
+                if (state != null && state.getSubscriptionStatus() != null) {
+                    userId = state.getSubscriptionStatus().getUserId();
+                    pushToken = state.getSubscriptionStatus().getPushToken();
+                    subscribed = state.getSubscriptionStatus().getSubscribed();
+                }
+
+                Map installationInfo = Installation.getInfo(this);
+
+                JSONObject jsonObject = new JSONObject(installationInfo);
+                if (userId != null) {
+                    jsonObject.put("oneSignalUserId", userId);
+                }
+                if (pushToken != null) {
+                    // registration id is old GCM name, but keep it for compatibility
+                    jsonObject.put("oneSignalregistrationId", pushToken);
+                    jsonObject.put("oneSignalPushToken", pushToken);
+                }
+                jsonObject.put("oneSignalSubscribed", subscribed);
+                jsonObject.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
+                String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
+                runJavascript(js);
+            } catch (Exception e) {
+                Log.e(TAG, "Error with onesignal javscript callback", e);
+            }
+        }
+    }
+
     // onPageFinished
     public void checkNavigationForPage(String url) {
         // don't change anything on navigation if the url that just finished was a file download
@@ -1306,6 +1365,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (this.registrationManager != null) {
             this.registrationManager.checkUrl(url);
         }
+
+        sendOneSignalInfo();
     }
 
     // onPageStarted

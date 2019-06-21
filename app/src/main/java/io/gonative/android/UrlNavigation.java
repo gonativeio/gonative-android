@@ -30,7 +30,6 @@ import android.webkit.WebResourceResponse;
 import android.widget.Toast;
 
 import com.facebook.appevents.AppEventsLogger;
-import com.onesignal.OSPermissionSubscriptionState;
 import com.onesignal.OneSignal;
 
 import org.json.JSONArray;
@@ -88,7 +87,6 @@ public class UrlNavigation {
             finishOnExternalUrl = true;
         }
 	}
-	
 	
 	private boolean isInternalUri(Uri uri) {
         String scheme = uri.getScheme();
@@ -820,40 +818,6 @@ public class UrlNavigation {
             JSONObject jsonObject = new JSONObject(installationInfo);
             String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
             mainActivity.runJavascript(js);
-        }
-
-        // onesignal javsacript callback
-        if (appConfig.oneSignalEnabled && doNativeBridge) {
-            try {
-                String userId = null;
-                String pushToken = null;
-                boolean subscribed = false;
-
-                OSPermissionSubscriptionState state = OneSignal.getPermissionSubscriptionState();
-                if (state != null && state.getSubscriptionStatus() != null) {
-                    userId = state.getSubscriptionStatus().getUserId();
-                    pushToken = state.getSubscriptionStatus().getPushToken();
-                    subscribed = state.getSubscriptionStatus().getSubscribed();
-                }
-
-                Map installationInfo = Installation.getInfo(mainActivity);
-
-                JSONObject jsonObject = new JSONObject(installationInfo);
-                if (userId != null) {
-                    jsonObject.put("oneSignalUserId", userId);
-                }
-                if (pushToken != null) {
-                    // registration id is old GCM name, but keep it for compatibility
-                    jsonObject.put("oneSignalregistrationId", pushToken);
-                    jsonObject.put("oneSignalPushToken", pushToken);
-                }
-                jsonObject.put("oneSignalSubscribed", subscribed);
-                jsonObject.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
-                String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
-                mainActivity.runJavascript(js);
-            } catch (Exception e) {
-                Log.e(TAG, "Error with onesignal javscript callback", e);
-            }
         }
 	}
 
