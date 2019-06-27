@@ -21,17 +21,29 @@ android {
             keyAlias "release"
             keyPassword "password"
         }
+        upload {
+            storeFile file("../../upload.keystore")
+            storePassword "password"
+            keyAlias "upload"
+            keyPassword "password"
+        }
     }
 
     buildTypes {
         debug {
 	        applicationIdSuffix ".debug"
         }
-        release {
+        releaseApk {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             zipAlignEnabled true
             signingConfig signingConfigs.release
+        }
+        releaseAppbundle {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            zipAlignEnabled true
+            signingConfig signingConfigs.upload
         }
     }
 
