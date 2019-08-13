@@ -19,6 +19,7 @@ import android.os.Message;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.util.Pair;
@@ -209,6 +210,21 @@ public class UrlNavigation {
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Error calling gonative://nativebridge/multi", e);
+                    }
+                }
+                return true;
+            }
+
+            // settings
+            if ("open".equals(uri.getHost())) {
+                if ("/app-settings".equals(uri.getPath())) {
+                    try {
+                        Intent settingsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri appUri = Uri.fromParts("package", mainActivity.getPackageName(), null);
+                        settingsIntent.setData(appUri);
+                        mainActivity.startActivity(settingsIntent);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error opening app settings", e);
                     }
                 }
                 return true;

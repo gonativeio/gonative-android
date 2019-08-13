@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Message;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.GeolocationPermissions;
@@ -30,10 +31,12 @@ class GoNativeWebChromeClient extends WebChromeClient {
     private View customView;
     private CustomViewCallback callback;
     private boolean isFullScreen = false;
+    private long deniedGeolocationUptime;
 
     public GoNativeWebChromeClient(MainActivity mainActivity, UrlNavigation urlNavigation) {
         this.mainActivity = mainActivity;
         this.urlNavigation = urlNavigation;
+        this.deniedGeolocationUptime = 0;
     }
 
     @Override
@@ -50,11 +53,24 @@ class GoNativeWebChromeClient extends WebChromeClient {
             return;
         }
 
+        // There is a bug in Android webview where this function will be continuously called in
+        // a loop if we run callback.invoke asynchronously with granted=false, degrading webview
+        // and javascript performance. If we have recently been denied geolocation by the user,
+        // run callback.invoke(granted=false) synchronously and do not prompt user
+        long elapsed = SystemClock.uptimeMillis() - deniedGeolocationUptime;
+        if (elapsed < 1000 /* 1 second */) {
+            callback.invoke(origin, false, false);
+            return;
+        }
+
         mainActivity.getRuntimeGeolocationPermission(new MainActivity.GeolocationPermissionCallback() {
             @Override
             public void onResult(boolean granted) {
                 // only retain if granted
                 callback.invoke(origin, granted, granted);
+                if (!granted) {
+                    deniedGeolocationUptime = SystemClock.uptimeMillis();
+                }
             }
         });
     }
