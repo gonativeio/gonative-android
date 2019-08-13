@@ -56,7 +56,10 @@ class GoNativeWebChromeClient extends WebChromeClient {
         // There is a bug in Android webview where this function will be continuously called in
         // a loop if we run callback.invoke asynchronously with granted=false, degrading webview
         // and javascript performance. If we have recently been denied geolocation by the user,
-        // run callback.invoke(granted=false) synchronously and do not prompt user
+        // run callback.invoke(granted=false) synchronously and do not prompt user.
+        //
+        // Note: this infinite loop situation also happens if we run callback.invoke(origin, true, false),
+        // regardless if we do it synchronously or async.
         long elapsed = SystemClock.uptimeMillis() - deniedGeolocationUptime;
         if (elapsed < 1000 /* 1 second */) {
             callback.invoke(origin, false, false);

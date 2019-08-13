@@ -5,10 +5,12 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
@@ -21,6 +23,7 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -226,6 +229,24 @@ public class UrlNavigation {
                     } catch (Exception e) {
                         Log.e(TAG, "Error opening app settings", e);
                     }
+                }
+                return true;
+            }
+
+            if ("geoLocation".equals(uri.getHost())) {
+                if ("/promptAndroidLocationServices".equals(uri.getPath())) {
+                    if (isLocationServiceEnabled()) return true;
+
+                    new AlertDialog.Builder(mainActivity)
+                            .setMessage(R.string.location_services_not_enabled)
+                            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    mainActivity.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                                }
+                            })
+                            .setNegativeButton(R.string.no_thanks, null)
+                            .show();
                 }
                 return true;
             }
@@ -1041,5 +1062,18 @@ public class UrlNavigation {
         mainActivity.startActivity(intent);
 
         return true;
+    }
+
+    public boolean isLocationServiceEnabled()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManager lm = mainActivity.getSystemService(LocationManager.class);
+            return lm.isLocationEnabled();
+        } else {
+            // This is Deprecated in API 28
+            int mode = Settings.Secure.getInt(mainActivity.getContentResolver(), Settings.Secure.LOCATION_MODE,
+                    Settings.Secure.LOCATION_MODE_OFF);
+            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
+        }
     }
 }

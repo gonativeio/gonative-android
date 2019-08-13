@@ -17,6 +17,9 @@
 	<string name="ssl_error_generic">Error establishing SSL Connection</string>
 	<string name="ssl_error_expired">SSL certificate has expired</string>
 	<string name="ssl_error_cert">Invalid SSL certificate</string>
+    <string name="location_services_not_enabled">To continue, turn on device location, which uses Google\'s location service</string>
+    <string name="ok">OK</string>
+    <string name="no_thanks">No Thanks</string>
 	<string name="request_permission_explanation_geolocation">Please allow location permission</string>
 	<string name="request_permission_explanation_storage">Please allow storage permission for file download</string>
 	<string name="starting_download">Starting download</string>
