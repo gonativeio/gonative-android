@@ -292,27 +292,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         Intent intent = getIntent();
         // load url
-        String url = null;
-        // first check intent in case it was created from push notification
-        String targetUrl = intent.getStringExtra(INTENT_TARGET_URL);
-        if (targetUrl != null && !targetUrl.isEmpty()){
-            url = targetUrl;
-        }
-
-        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-            Uri uri = intent.getData();
-            if (uri != null && (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https"))) {
-                Uri.Builder builder = uri.buildUpon();
-                if (uri.getScheme().endsWith(".https")) {
-                    builder.scheme("https");
-                } else if (uri.getScheme().endsWith(".http")) {
-                    builder.scheme("http");
-                }
-                url = builder.build().toString();
-            } else {
-                url = intent.getDataString();
-            }
-        }
+        String url = getUrlFromIntent(intent);
 
         if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
         if (url == null && isRoot) url = new ConfigPreferences(this).getInitialUrl();
@@ -461,6 +441,32 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationLevelsChangedReceiver,
                 new IntentFilter(AppConfig.PROCESSED_NAVIGATION_LEVELS));
+    }
+
+    private String getUrlFromIntent(Intent intent) {
+        if (intent == null) return null;
+        // first check intent in case it was created from push notification
+        String targetUrl = intent.getStringExtra(INTENT_TARGET_URL);
+        if (targetUrl != null && !targetUrl.isEmpty()){
+            return targetUrl;
+        }
+
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri uri = intent.getData();
+            if (uri != null && (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https"))) {
+                Uri.Builder builder = uri.buildUpon();
+                if (uri.getScheme().endsWith(".https")) {
+                    builder.scheme("https");
+                } else if (uri.getScheme().endsWith(".http")) {
+                    builder.scheme("http");
+                }
+                return builder.build().toString();
+            } else {
+                return intent.getDataString();
+            }
+        }
+
+        return null;
     }
 
     protected void onPause() {
@@ -1076,9 +1082,9 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     @Override
     protected void onNewIntent(Intent intent) {
-        String targetUrl = intent.getStringExtra(INTENT_TARGET_URL);
-        if (targetUrl != null && !targetUrl.isEmpty()){
-            loadUrl(targetUrl);
+        String url = getUrlFromIntent(intent);
+        if (url != null && !url.isEmpty()){
+            loadUrl(url);
         }
     }
 
