@@ -1765,6 +1765,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     private void setScreenOrientationPreference() {
         AppConfig appConfig = AppConfig.getInstance(this);
+        if (appConfig.forceScreenOrientation == null) return;
 
         switch (appConfig.forceScreenOrientation) {
             case UNSPECIFIED:
