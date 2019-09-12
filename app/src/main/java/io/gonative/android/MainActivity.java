@@ -1086,6 +1086,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (url != null && !url.isEmpty()){
             loadUrl(url);
         }
+        Log.w(TAG, "Received intent without url");
     }
 
     @Override

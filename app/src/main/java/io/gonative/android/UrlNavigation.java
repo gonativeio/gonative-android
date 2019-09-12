@@ -1059,7 +1059,8 @@ public class UrlNavigation {
         Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
         intent.putExtra("isRoot", false);
         intent.putExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, true);
-        mainActivity.startActivity(intent);
+        // need to use startActivityForResult instead of startActivity because of singleTop launch mode
+        mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
 
         return true;
     }
