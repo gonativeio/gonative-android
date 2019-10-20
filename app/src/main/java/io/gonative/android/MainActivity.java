@@ -700,7 +700,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 		NetworkInfo ni = cm.getActiveNetworkInfo();
         return ni == null || !ni.isConnected();
 	}
-	
+
+	public void clearWebviewCache() {
+        mWebview.clearCache(true);
+    }
 	// configures webview settings
 	private void setupWebview(GoNativeWebviewInterface wv){
         WebViewSetup.setupWebviewForActivity(wv, this);
@@ -1314,7 +1317,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     }
 
-    private void sendOneSignalInfo() {
+    public void sendOneSignalInfo() {
         boolean doNativeBridge = true;
         String currentUrl = this.mWebview.getUrl();
         if (currentUrl != null) {

@@ -31,6 +31,7 @@ import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
+import android.webkit.WebView;
 import android.widget.Toast;
 
 import com.facebook.appevents.AppEventsLogger;
@@ -231,6 +232,22 @@ public class UrlNavigation {
                     }
                 }
                 return true;
+            }
+
+            if ("webview".equals(uri.getHost())) {
+                if ("/clearCache".equals(uri.getPath())) {
+                    Log.d(TAG, "Clearing webview cache");
+                    mainActivity.clearWebviewCache();
+                }
+                return true;
+            }
+
+            if ("run".equals(uri.getHost())) {
+                if ("/gonative_device_info".equals(uri.getPath())) {
+                    runGonativeDeviceInfo();
+                } else if ("/gonative_onesignal_info".equals(uri.getPath())) {
+                    mainActivity.sendOneSignalInfo();
+                }
             }
 
             if ("geoLocation".equals(uri.getHost())) {
@@ -843,20 +860,24 @@ public class UrlNavigation {
 
         // send installation info
         if (doNativeBridge) {
-            Map<String, Object> installationInfo = Installation.getInfo(mainActivity);
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
-            if (!sharedPreferences.getBoolean("hasLaunched", false)) {
-                sharedPreferences.edit().putBoolean("hasLaunched", true).commit();
-                installationInfo.put("isFirstLaunch", true);
-            } else {
-                installationInfo.put("isFirstLaunch", false);
-            }
-
-            JSONObject jsonObject = new JSONObject(installationInfo);
-            String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
-            mainActivity.runJavascript(js);
+            runGonativeDeviceInfo();
         }
 	}
+
+	private void runGonativeDeviceInfo() {
+        Map<String, Object> installationInfo = Installation.getInfo(mainActivity);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
+        if (!sharedPreferences.getBoolean("hasLaunched", false)) {
+            sharedPreferences.edit().putBoolean("hasLaunched", true).commit();
+            installationInfo.put("isFirstLaunch", true);
+        } else {
+            installationInfo.put("isFirstLaunch", false);
+        }
+
+        JSONObject jsonObject = new JSONObject(installationInfo);
+        String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
+        mainActivity.runJavascript(js);
+    }
 
     public void doUpdateVisitedHistory(@SuppressWarnings("unused") GoNativeWebviewInterface view, String url, boolean isReload) {
         if (!isReload && !url.equals("file:///android_asset/offline.html")) {
