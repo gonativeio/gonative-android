@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private View webviewOverlay;
     boolean isPoolWebview = false;
     private Stack<String> backHistory = new Stack<>();
+    private String initialUrl;
 
 	private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
@@ -301,21 +302,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         if (url == null) url = intent.getStringExtra("url");
 
         if (url != null) {
-            // Crosswalk does not give us callbacks when location is requested.
-            // Ask for it up front, then load the page.
-            if (LeanWebView.isCrosswalk() && appConfig.usesGeolocation) {
-                final String urlLoadAfterLocation = url;
-
-                this.getRuntimeGeolocationPermission(new GeolocationPermissionCallback() {
-                    @Override
-                    public void onResult(boolean granted) {
-                        // ignore result
-                        mWebview.loadUrl(urlLoadAfterLocation);
-                    }
-                });
-            } else {
-                this.mWebview.loadUrl(url);
-            }
+            this.initialUrl = url;
+            this.mWebview.loadUrl(url);
         } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
             // no worries, loadUrl will be called when this new web view is passed back to the message
         } else {
@@ -755,6 +743,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         } else {
             this.webviewOverlay.setAlpha(1 - this.hideWebviewAlpha);
         }
+
+        showWebview(10);
     }
 
     private void showWebview(double delay) {
@@ -1308,7 +1298,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
     private void refreshPage() {
         String url = this.mWebview.getUrl();
         if (url != null && url.startsWith("file:///android_asset/offline")){
-            this.mWebview.goBack();
+            if (this.mWebview.canGoBack()) {
+                this.mWebview.goBack();
+            } else if (this.initialUrl != null) {
+                this.mWebview.loadUrl(this.initialUrl);
+            }
             updateMenu();
         }
         else {

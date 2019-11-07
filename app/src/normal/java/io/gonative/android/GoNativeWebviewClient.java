@@ -68,13 +68,14 @@ public class GoNativeWebviewClient extends WebViewClient{
 
     @Override
     public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, errorCode);
+        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, errorCode, failingUrl);
     }
 
     @TargetApi(Build.VERSION_CODES.M)
     @Override
     public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, error.getErrorCode());
+        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, error.getErrorCode(),
+                request.getUrl().toString());
     }
 
     @Override

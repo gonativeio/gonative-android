@@ -31,7 +31,7 @@ import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import com.facebook.appevents.AppEventsLogger;
@@ -57,6 +57,13 @@ import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
 
+enum WebviewLoadState {
+    STATE_UNKNOWN,
+    STATE_START_LOAD, // we have decided to load the url in this webview in shouldOverrideUrlLoading
+    STATE_PAGE_STARTED, // onPageStarted has been called
+    STATE_DONE // onPageFinished has been called
+}
+
 public class UrlNavigation {
     public static final String STARTED_LOADING_MESSAGE = "io.gonative.android.webview.started";
     public static final String FINISHED_LOADING_MESSAGE = "io.gonative.android.webview.finished";
@@ -70,7 +77,9 @@ public class UrlNavigation {
     private String profilePickerExec;
     private String currentWebviewUrl;
     private HtmlIntercept htmlIntercept;
+    private Handler startLoadTimeout = new Handler();
 
+    private WebviewLoadState state = WebviewLoadState.STATE_UNKNOWN;
     private boolean mVisitedLoginOrSignup = false;
     private boolean finishOnExternalUrl = false;
     private boolean restoreBrightnessOnNavigation = false;
@@ -735,7 +744,7 @@ public class UrlNavigation {
         return false;
     }
 
-	public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface view, String url,
+	public boolean shouldOverrideUrlLoading(final GoNativeWebviewInterface view, String url,
                                             @SuppressWarnings("unused") boolean isReload) {
         if (url == null) return false;
 
@@ -752,11 +761,24 @@ public class UrlNavigation {
         // intercept html
         this.htmlIntercept.setInterceptUrl(url);
         mainActivity.hideWebview();
+        state = WebviewLoadState.STATE_START_LOAD;
+        // 10 second delay to get to onPageStarted
+        startLoadTimeout.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                String url = view.getUrl();
+                if (url == null || !url.startsWith("file:///android_asset/offline")) {
+                    view.loadUrlDirect("file:///android_asset/offline.html");
+                }
+            }
+        }, 10 * 1000);
         return false;
     }
 
 	public void onPageStarted(String url) {
 //        Log.d(TAG, "onpagestarted " + url);
+        state = WebviewLoadState.STATE_PAGE_STARTED;
+        startLoadTimeout.removeCallbacksAndMessages(null);
         htmlIntercept.setInterceptUrl(url);
 
         UrlInspector.getInstance().inspectUrl(url);
@@ -797,7 +819,7 @@ public class UrlNavigation {
 	@SuppressLint("ApplySharedPref")
     public void onPageFinished(GoNativeWebviewInterface view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
-
+        state = WebviewLoadState.STATE_DONE;
         this.currentWebviewUrl = url;
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
@@ -885,7 +907,9 @@ public class UrlNavigation {
         }
     }
 	
-	public void onReceivedError(GoNativeWebviewInterface view, @SuppressWarnings("unused") int errorCode){
+	public void onReceivedError(GoNativeWebviewInterface view,
+                                @SuppressWarnings("unused") int errorCode,
+                                String failingUrl){
         mainActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -893,11 +917,19 @@ public class UrlNavigation {
             }
         });
 
-		// show offline page if not connected to internet
+        // show offline page if not connected to internet
         AppConfig appConfig = AppConfig.getInstance(this.mainActivity);
-		if (appConfig.showOfflinePage && mainActivity.isDisconnected()){
-            view.loadUrlDirect("file:///android_asset/offline.html");
-		}
+        if (appConfig.showOfflinePage &&
+                (state == WebviewLoadState.STATE_PAGE_STARTED || state == WebviewLoadState.STATE_START_LOAD)) {
+
+            if (mainActivity.isDisconnected() ||
+                    (errorCode == WebViewClient.ERROR_HOST_LOOKUP &&
+                            failingUrl != null &&
+                            view.getUrl() != null &&
+                            failingUrl.equals(view.getUrl()))) {
+                view.loadUrlDirect("file:///android_asset/offline.html");
+            }
+        }
 	}
 
     public void onReceivedSslError(SslError error) {
