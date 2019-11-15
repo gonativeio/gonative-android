@@ -71,6 +71,8 @@ public class UrlNavigation {
 
     private static final String TAG = UrlNavigation.class.getName();
 
+    private static final String ASSET_URL = "file:///android_asset/";
+    private static final String OFFLINE_PAGE_URL = "file:///android_asset/offline.html";
     public static final int DEFAULT_HTML_SIZE = 10 * 1024; // 10 kilobytes
 
 	private MainActivity mainActivity;
@@ -144,7 +146,7 @@ public class UrlNavigation {
             return false;
 
         // return if loading from local assets
-        if (url.startsWith("file:///android_asset/")) return false;
+        if (url.startsWith(ASSET_URL)) return false;
 
         view.setCheckLoginSignup(true);
 
@@ -767,8 +769,8 @@ public class UrlNavigation {
             @Override
             public void run() {
                 String url = view.getUrl();
-                if (url == null || !url.startsWith("file:///android_asset/offline")) {
-                    view.loadUrlDirect("file:///android_asset/offline.html");
+                if (url == null || !url.equals(OFFLINE_PAGE_URL)) {
+                    view.loadUrlDirect(OFFLINE_PAGE_URL);
                 }
             }
         }, 10 * 1000);
@@ -799,7 +801,7 @@ public class UrlNavigation {
 
 
         // enable swipe refresh controller if offline page
-        if ("file:///android_asset/offline.html".equals(url)) {
+        if (OFFLINE_PAGE_URL.equals(url)) {
             mainActivity.enableSwipeRefresh();
         } else {
             mainActivity.restoreSwipRefreshDefault();
@@ -902,20 +904,16 @@ public class UrlNavigation {
     }
 
     public void doUpdateVisitedHistory(@SuppressWarnings("unused") GoNativeWebviewInterface view, String url, boolean isReload) {
-        if (!isReload && !url.equals("file:///android_asset/offline.html")) {
+        if (!isReload && !url.equals(OFFLINE_PAGE_URL)) {
             mainActivity.addToHistory(url);
         }
     }
 	
-	public void onReceivedError(GoNativeWebviewInterface view,
+	public void onReceivedError(final GoNativeWebviewInterface view,
                                 @SuppressWarnings("unused") int errorCode,
                                 String failingUrl){
-        mainActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mainActivity.showWebview();
-            }
-        });
+
+        boolean showingOfflinePage = false;
 
         // show offline page if not connected to internet
         AppConfig appConfig = AppConfig.getInstance(this.mainActivity);
@@ -927,8 +925,33 @@ public class UrlNavigation {
                             failingUrl != null &&
                             view.getUrl() != null &&
                             failingUrl.equals(view.getUrl()))) {
-                view.loadUrlDirect("file:///android_asset/offline.html");
+
+                showingOfflinePage = true;
+
+                mainActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        view.stopLoading();
+                        view.loadUrlDirect(OFFLINE_PAGE_URL);
+
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                view.loadUrlDirect(OFFLINE_PAGE_URL);
+                            }
+                        }, 100);
+                    }
+                });
             }
+        }
+
+        if (!showingOfflinePage) {
+            mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.showWebview();
+                }
+            });
         }
 	}
 
