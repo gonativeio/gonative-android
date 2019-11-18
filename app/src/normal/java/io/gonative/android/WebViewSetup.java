@@ -50,6 +50,9 @@ public class WebViewSetup {
         wv.removeJavascriptInterface("gonative_status_checker");
         wv.addJavascriptInterface(activity.getStatusCheckerBridge(), "gonative_status_checker");
 
+        wv.removeJavascriptInterface("gonative_file_writer_sharer");
+        wv.addJavascriptInterface(activity.getFileWriterSharer().getJavascriptBridge(), "gonative_file_writer_sharer");
+
         if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
             // send to other webview
             Message resultMsg = ((GoNativeApplication)activity.getApplication()).getWebviewMessage();

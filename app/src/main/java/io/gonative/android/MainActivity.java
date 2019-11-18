@@ -140,6 +140,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     };
     private FileDownloader fileDownloader = new FileDownloader(this);
+    private FileWriterSharer fileWriterSharer = new FileWriterSharer(this);
     private boolean startedLoading = false; // document readystate checker
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
@@ -1474,6 +1475,10 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
     public FileDownloader getFileDownloader() {
         return fileDownloader;
+    }
+
+    public FileWriterSharer getFileWriterSharer() {
+        return fileWriterSharer;
     }
 
     public StatusCheckerBridge getStatusCheckerBridge() {

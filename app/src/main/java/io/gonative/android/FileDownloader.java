@@ -38,7 +38,7 @@ public class FileDownloader implements DownloadListener {
     }
 
     private static final String TAG = DownloadListener.class.getName();
-    private static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
+    static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private MainActivity context;
     private ProgressDialog progressDialog;
     private String lastDownloadedUrl;
@@ -66,6 +66,11 @@ public class FileDownloader implements DownloadListener {
                     context.showWebview();
                 }
             });
+        }
+
+        if (url.startsWith("blob:") && context != null) {
+            context.getFileWriterSharer().downloadBlobUrl(url);
+            return;
         }
 
         lastDownloadedUrl = url;
