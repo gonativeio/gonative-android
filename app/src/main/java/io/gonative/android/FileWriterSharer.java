@@ -1,10 +1,17 @@
 package io.gonative.android;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Handler;
+import android.os.Build;
+import android.os.Environment;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Base64;
 import android.util.Log;
@@ -16,23 +23,22 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import io.gonative.android.library.AppConfig;
 
 public class FileWriterSharer {
     private static final String TAG = FileWriterSharer.class.getSimpleName();
     private static final long MAX_SIZE = 1024 * 1024 * 1024; // 1 gigabyte
     private static final String BASE64TAG = ";base64,";
+    private static final String DOWNLOAD_CHANNEL_ID = "download_notifications";
 
     private static class FileInfo{
         public String id;
@@ -43,7 +49,8 @@ public class FileWriterSharer {
         public File savedFile;
         public OutputStream fileOutputStream;
         public long bytesWritten;
-
+        public boolean savedToDownloads;
+        public int notificationId;
     }
 
     private class JavascriptBridge {
@@ -81,6 +88,16 @@ public class FileWriterSharer {
         this.javascriptBridge = new JavascriptBridge();
         this.context = context;
         this.idToFileInfo = new HashMap<>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = context.getString(R.string.download_channel_name);
+            String description = context.getString(R.string.download_channel_description);
+            int importance = NotificationManager.IMPORTANCE_LOW;
+            NotificationChannel channel = new NotificationChannel(DOWNLOAD_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     public JavascriptBridge getJavascriptBridge() {
@@ -134,21 +151,93 @@ public class FileWriterSharer {
             return;
         }
 
-        File cacheDir = context.getCacheDir();
-        File downloadsDir = new File(cacheDir, "downloads");
-        File containerDir = new File(downloadsDir, UUID.randomUUID().toString());
-        containerDir.mkdirs();
-
-        File savedFile = new File(containerDir, fileName);
-        OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savedFile));
-
-        FileInfo info = new FileInfo();
+        final FileInfo info = new FileInfo();
         info.id = identifier;
         info.name = fileName;
         info.size = fileSize;
         info.mimetype = type;
-        info.containerDir = containerDir;
-        info.savedFile = savedFile;
+
+        if (!AppConfig.getInstance(context).downloadToPublicStorage) {
+            onFileStartAfterPermission(info, false);
+            final String js = "gonativeGotStoragePermissions()";
+            context.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    context.runJavascript(js);
+                }
+            });
+            return;
+        }
+
+        // request permissions
+        context.getPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, new MainActivity.PermissionCallback() {
+            @Override
+            public void onPermissionResult(String[] permissions, int[] grantResults) {
+                try {
+                    onFileStartAfterPermission(info, grantResults[0] == PackageManager.PERMISSION_GRANTED);
+                    final String js = "gonativeGotStoragePermissions()";
+                    context.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            context.runJavascript(js);
+                        }
+                    });
+                } catch (IOException e) {
+                    Log.e(TAG, "IO Error", e);
+                }
+            }
+        });
+    }
+
+    private void onFileStartAfterPermission(FileInfo info, boolean granted) throws IOException {
+        if (AppConfig.getInstance(context).downloadToPublicStorage && granted) {
+            // make sure we do not overwrite existing files
+            int idx = info.name.lastIndexOf(".");
+            String requestedName = null;
+            String requestedExtension = null;
+
+            if (idx == -1) {
+                requestedName = info.name;
+                requestedExtension = "";
+            }
+            else {
+                requestedName = info.name.substring(0, idx);
+                requestedExtension = info.name.substring(idx);
+            }
+
+            File downloadsDir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (downloadsDir != null) {
+                int appendNum = 0;
+                File outputFile = new File(downloadsDir, requestedName + requestedExtension);
+                while (outputFile.exists()) {
+                    appendNum++;
+                    outputFile = new File(downloadsDir, requestedName + " (" + appendNum +
+                            ")" + requestedExtension);
+                }
+
+                info.savedFile = outputFile;
+            }
+
+            info.savedToDownloads = true;
+        }
+
+        if (info.savedFile == null) {
+            File cacheDir = context.getCacheDir();
+            File downloadsDir = new File(cacheDir, "downloads");
+            File containerDir = new File(downloadsDir, UUID.randomUUID().toString());
+            containerDir.mkdirs();
+            info.containerDir = containerDir;
+            File savedFile = new File(containerDir, info.name);
+            info.savedFile = savedFile;
+            info.savedToDownloads = false;
+        }
+
+        // show notification
+        info.notificationId = UUID.randomUUID().hashCode();
+        showProgressNotification(info);
+
+        OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(info.savedFile));
+
         info.fileOutputStream = outputStream;
         info.bytesWritten = 0;
 
@@ -194,6 +283,8 @@ public class FileWriterSharer {
 
         fileInfo.fileOutputStream.write(chunk);
         fileInfo.bytesWritten += chunk.length;
+
+        showProgressNotification(fileInfo);
     }
 
     private void onFileEnd(JSONObject message) throws IOException {
@@ -211,20 +302,31 @@ public class FileWriterSharer {
 
         fileInfo.fileOutputStream.close();
 
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        notificationManager.cancel(TAG, fileInfo.notificationId);
+
+        if (fileInfo.savedToDownloads) {
+            // create notification
+            Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+            String description = context.getString(R.string.download_complete) + " • " +
+                    android.text.format.Formatter.formatShortFileSize(context, fileInfo.size);
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DOWNLOAD_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setContentTitle(fileInfo.savedFile.getName())
+                    .setContentText(description)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true);
+            notificationManager.notify(TAG, fileInfo.notificationId, builder.build());
+
+            return;
+        }
+
         context.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Uri content;
-                try {
-                    content = FileProvider.getUriForFile(context, FileDownloader.AUTHORITY, fileInfo.savedFile);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "Unable to get content url from FileProvider", e);
-                    return;
-                }
-
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(content, fileInfo.mimetype);
-                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
                 try {
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
@@ -235,6 +337,21 @@ public class FileWriterSharer {
         });
     }
 
+    private Intent getIntentToOpenFile(File file, String mimetype) {
+        Uri content;
+        try {
+            content = FileProvider.getUriForFile(context, FileDownloader.AUTHORITY, file);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Unable to get content url from FileProvider", e);
+            return null;
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(content, mimetype);
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        return intent;
+    }
+
     private void onNextFileInfo(JSONObject message) {
         String name = LeanUtils.optString(message, "name");
         if (name == null || name.isEmpty()) {
@@ -242,5 +359,16 @@ public class FileWriterSharer {
             return;
         }
         this.nextFileName = name;
+    }
+
+    private void showProgressNotification(FileInfo info) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DOWNLOAD_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(info.savedFile.getName())
+                .setContentText(context.getString(R.string.download_in_progress))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setProgress((int)info.size / 1000, (int)info.bytesWritten / 1000, false);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        notificationManager.notify(TAG, info.notificationId, builder.build());
     }
 }

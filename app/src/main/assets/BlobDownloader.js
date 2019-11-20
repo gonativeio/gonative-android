@@ -62,6 +62,14 @@ function gonativeDownloadBlobUrl(url) {
 	    }
 	    
 	    sendHeader();
-	    sendChunk();
+	    gonative_run_after_storage_permissions.push(sendChunk);
 	}
+}
+
+gonative_run_after_storage_permissions = [];
+function gonativeGotStoragePermissions() {
+    while (gonative_run_after_storage_permissions.length > 0) {
+        var run = gonative_run_after_storage_permissions.shift();
+        run();
+    }
 }

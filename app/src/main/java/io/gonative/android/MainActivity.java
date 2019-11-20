@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
     };
     private FileDownloader fileDownloader = new FileDownloader(this);
-    private FileWriterSharer fileWriterSharer = new FileWriterSharer(this);
+    private FileWriterSharer fileWriterSharer;
     private boolean startedLoading = false; // document readystate checker
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
@@ -212,6 +212,8 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         }
 
         this.loginManager = application.getLoginManager();
+
+        this.fileWriterSharer = new FileWriterSharer(this);
 
         // webview pools
         application.getWebViewPool().init(this);
