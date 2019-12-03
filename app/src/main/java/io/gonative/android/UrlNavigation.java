@@ -382,9 +382,11 @@ public class UrlNavigation {
             }
 
             if ("share".equals(uri.getHost())) {
+                String urlString = uri.getQueryParameter("url");
                 if ("/sharePage".equals(uri.getPath())) {
-                    String urlString = uri.getQueryParameter("url");
                     this.mainActivity.sharePage(urlString);
+                } else if ("/downloadFile".equals(uri.getPath()) && urlString != null) {
+                    this.mainActivity.getFileDownloader().onDownloadStart(urlString, null, null, null, -1);
                 }
 
                 return true;

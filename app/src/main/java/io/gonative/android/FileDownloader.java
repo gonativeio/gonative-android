@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
@@ -71,6 +72,10 @@ public class FileDownloader implements DownloadListener {
         if (url.startsWith("blob:") && context != null) {
             context.getFileWriterSharer().downloadBlobUrl(url);
             return;
+        }
+
+        if (userAgent == null) {
+            userAgent = AppConfig.getInstance(context).userAgent;
         }
 
         lastDownloadedUrl = url;
@@ -173,9 +178,11 @@ public class FileDownloader implements DownloadListener {
     private static class DownloadFileTask extends AsyncTask<DownloadFileParams, Integer, DownloadFileResult> {
         private WeakReference<FileDownloader> fileDownloaderReference;
         private Exception exception;
+        private long contentLength;
 
         DownloadFileTask(FileDownloader fileDownloader) {
             this.fileDownloaderReference = new WeakReference<>(fileDownloader);
+            contentLength = -1;
         }
 
         @Override
@@ -186,7 +193,7 @@ public class FileDownloader implements DownloadListener {
             fileDownloader.progressDialog = new ProgressDialog(fileDownloader.context);
             fileDownloader.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
             fileDownloader.progressDialog.setTitle(R.string.download);
-            fileDownloader.progressDialog.setIndeterminate(false);
+            fileDownloader.progressDialog.setIndeterminate(true);
             fileDownloader.progressDialog.setMax(10000);
             fileDownloader.progressDialog.setProgressNumberFormat(null);
             fileDownloader.progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -213,7 +220,10 @@ public class FileDownloader implements DownloadListener {
                 return null;
             }
 
-            if (param.contentLength > 0) publishProgress(0);
+            if (param.contentLength > 0) {
+                contentLength = param.contentLength;
+                publishProgress(0);
+            }
 
             try {
                 connection = (HttpURLConnection) url.openConnection();
@@ -225,6 +235,17 @@ public class FileDownloader implements DownloadListener {
                     File downloadDir = new File(fileDownloader.context.getCacheDir(), "downloads");
                     if (!downloadDir.mkdirs()) {
                         Log.v(TAG, "Download directory " + downloadDir.toString() + " exists");
+                    }
+
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        if (connection.getContentLengthLong() > 0) {
+                            contentLength = connection.getContentLengthLong();
+                        }
+                    } else {
+                        if (connection.getContentLength() > 0) {
+                            contentLength = connection.getContentLength();
+                        }
                     }
 
                     // guess file name and extension
@@ -263,8 +284,8 @@ public class FileDownloader implements DownloadListener {
                         os.write(buffer, 0, len1);
                         totalLen += len1;
 
-                        if (param.contentLength > 0){
-                            publishProgress((int) (totalLen * 10000 / param.contentLength));
+                        if (contentLength > 0){
+                            publishProgress((int) (totalLen * 10000 / contentLength));
                         }
 
                         if (isCancelled()) break;
@@ -286,8 +307,13 @@ public class FileDownloader implements DownloadListener {
 
         @Override
         protected void onProgressUpdate(Integer... values) {
+            if (contentLength < 0) {
+                return;
+            }
+
             FileDownloader fileDownloader = fileDownloaderReference.get();
             if (fileDownloader != null) {
+                fileDownloader.progressDialog.setIndeterminate(false);
                 fileDownloader.progressDialog.setProgress(values[0]);
             }
         }
