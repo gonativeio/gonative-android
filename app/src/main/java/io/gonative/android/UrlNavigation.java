@@ -85,6 +85,7 @@ public class UrlNavigation {
     private boolean mVisitedLoginOrSignup = false;
     private boolean finishOnExternalUrl = false;
     private boolean restoreBrightnessOnNavigation = false;
+    private double connectionOfflineTime;
 
     UrlNavigation(MainActivity activity) {
 		this.mainActivity = activity;
@@ -102,6 +103,8 @@ public class UrlNavigation {
         if (mainActivity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
             finishOnExternalUrl = true;
         }
+
+        connectionOfflineTime = appConfig.androidConnectionOfflineTime;
 	}
 	
 	private boolean isInternalUri(Uri uri) {
@@ -766,17 +769,21 @@ public class UrlNavigation {
         this.htmlIntercept.setInterceptUrl(url);
         mainActivity.hideWebview();
         state = WebviewLoadState.STATE_START_LOAD;
-        // 10 second delay to get to onPageStarted
-        startLoadTimeout.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                AppConfig appConfig = AppConfig.getInstance(mainActivity);
-                String url = view.getUrl();
-                if (appConfig.showOfflinePage && url == null || !url.equals(OFFLINE_PAGE_URL)) {
-                    view.loadUrlDirect(OFFLINE_PAGE_URL);
+        // 10 second (default) delay to get to onPageStarted
+        if (!Double.isNaN(connectionOfflineTime) && !Double.isInfinite(connectionOfflineTime) &&
+                connectionOfflineTime > 0) {
+            startLoadTimeout.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    AppConfig appConfig = AppConfig.getInstance(mainActivity);
+                    String url = view.getUrl();
+                    if (appConfig.showOfflinePage && url == null || !url.equals(OFFLINE_PAGE_URL)) {
+                        view.loadUrlDirect(OFFLINE_PAGE_URL);
+                    }
                 }
-            }
-        }, 10 * 1000);
+            }, (long)(connectionOfflineTime * 1000));
+        }
+
         return false;
     }
 
