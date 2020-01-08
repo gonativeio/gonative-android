@@ -770,8 +770,9 @@ public class UrlNavigation {
         startLoadTimeout.postDelayed(new Runnable() {
             @Override
             public void run() {
+                AppConfig appConfig = AppConfig.getInstance(mainActivity);
                 String url = view.getUrl();
-                if (url == null || !url.equals(OFFLINE_PAGE_URL)) {
+                if (appConfig.showOfflinePage && url == null || !url.equals(OFFLINE_PAGE_URL)) {
                     view.loadUrlDirect(OFFLINE_PAGE_URL);
                 }
             }
@@ -1154,5 +1155,10 @@ public class UrlNavigation {
                     Settings.Secure.LOCATION_MODE_OFF);
             return  (mode != Settings.Secure.LOCATION_MODE_OFF);
         }
+    }
+
+    protected void onDownloadStart() {
+        startLoadTimeout.removeCallbacksAndMessages(null);
+        state = WebviewLoadState.STATE_DONE;
     }
 }

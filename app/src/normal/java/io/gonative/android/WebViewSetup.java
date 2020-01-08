@@ -39,6 +39,7 @@ public class WebViewSetup {
         FileDownloader fileDownloader = activity.getFileDownloader();
         if (fileDownloader != null) {
             wv.setDownloadListener(fileDownloader);
+            fileDownloader.setUrlNavigation(urlNavigation);
         }
 
         ProfilePicker profilePicker = activity.getProfilePicker();

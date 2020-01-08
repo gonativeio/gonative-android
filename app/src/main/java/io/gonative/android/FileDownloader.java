@@ -41,6 +41,7 @@ public class FileDownloader implements DownloadListener {
     private static final String TAG = DownloadListener.class.getName();
     static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private MainActivity context;
+    private UrlNavigation urlNavigation;
     private ProgressDialog progressDialog;
     private String lastDownloadedUrl;
     private DownloadLocation defaultDownloadLocation;
@@ -60,6 +61,10 @@ public class FileDownloader implements DownloadListener {
 
     @Override
     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+        if (urlNavigation != null) {
+            urlNavigation.onDownloadStart();
+        }
+
         if (context != null) {
             context.runOnUiThread(new Runnable() {
                 @Override
@@ -362,5 +367,9 @@ public class FileDownloader implements DownloadListener {
 
     public String getLastDownloadedUrl() {
         return lastDownloadedUrl;
+    }
+
+    public void setUrlNavigation(UrlNavigation urlNavigation) {
+        this.urlNavigation = urlNavigation;
     }
 }
