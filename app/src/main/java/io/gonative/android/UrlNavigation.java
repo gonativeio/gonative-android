@@ -31,6 +31,7 @@ import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
+import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
@@ -897,6 +898,10 @@ public class UrlNavigation {
             runGonativeDeviceInfo();
         }
 	}
+
+    public void onFormResubmission(GoNativeWebviewInterface view, Message dontResend, Message resend) {
+        resend.sendToTarget();
+    }
 
 	private void runGonativeDeviceInfo() {
         Map<String, Object> installationInfo = Installation.getInfo(mainActivity);

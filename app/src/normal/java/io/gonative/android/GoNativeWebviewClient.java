@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Build;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.SslErrorHandler;
@@ -59,6 +60,12 @@ public class GoNativeWebviewClient extends WebViewClient{
         super.onPageFinished(view, url);
 
         urlNavigation.onPageFinished((GoNativeWebviewInterface)view, url);
+    }
+
+    @Override
+    public void onFormResubmission(WebView view, Message dontResend, Message resend) {
+        super.onFormResubmission(view, dontResend, resend);
+        urlNavigation.onFormResubmission((GoNativeWebviewInterface)view, dontResend, resend);
     }
 
     @Override
