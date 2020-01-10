@@ -31,7 +31,6 @@ import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
@@ -926,7 +925,16 @@ public class UrlNavigation {
 	
 	public void onReceivedError(final GoNativeWebviewInterface view,
                                 @SuppressWarnings("unused") int errorCode,
-                                String failingUrl){
+                                String errorDescription, String failingUrl){
+        if (errorDescription != null && errorDescription.contains("net::ERR_CACHE_MISS")) {
+            mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    view.reload();
+                }
+            });
+            return;
+        }
 
         boolean showingOfflinePage = false;
 

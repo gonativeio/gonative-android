@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Message;
-import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
@@ -14,17 +13,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-import io.gonative.android.library.AppConfig;
 
 /**
  * Created by weiyin on 9/9/15.
@@ -64,7 +52,6 @@ public class GoNativeWebviewClient extends WebViewClient{
 
     @Override
     public void onFormResubmission(WebView view, Message dontResend, Message resend) {
-        super.onFormResubmission(view, dontResend, resend);
         urlNavigation.onFormResubmission((GoNativeWebviewInterface)view, dontResend, resend);
     }
 
@@ -75,14 +62,14 @@ public class GoNativeWebviewClient extends WebViewClient{
 
     @Override
     public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, errorCode, failingUrl);
+        urlNavigation.onReceivedError((GoNativeWebviewInterface) view, errorCode, description, failingUrl);
     }
 
     @TargetApi(Build.VERSION_CODES.M)
     @Override
     public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
         urlNavigation.onReceivedError((GoNativeWebviewInterface) view, error.getErrorCode(),
-                request.getUrl().toString());
+                error.getDescription().toString(), request.getUrl().toString());
     }
 
     @Override
