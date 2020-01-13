@@ -28,4 +28,5 @@
 	<string name="request_permission_explanation_storage">Please allow storage permission for file download</string>
 	<string name="starting_download">Starting download</string>
 	<string name="subscriptions_activity_title">Subscriptions</string>
+	<string name="cleared_cache">Cleared cache</string>
 </resources>

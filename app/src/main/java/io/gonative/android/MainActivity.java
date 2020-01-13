@@ -12,6 +12,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -59,6 +60,7 @@ import com.astuetz.PagerSlidingTabStrip;
 import com.facebook.applinks.AppLinkData;
 import com.onesignal.OSPermissionSubscriptionState;
 import com.onesignal.OneSignal;
+import com.squareup.seismic.ShakeDetector;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -80,7 +82,10 @@ import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
 
-public class MainActivity extends AppCompatActivity implements Observer, SwipeRefreshLayout.OnRefreshListener, LeanWebView.OnSwipeListener {
+public class MainActivity extends AppCompatActivity implements Observer,
+        SwipeRefreshLayout.OnRefreshListener,
+        LeanWebView.OnSwipeListener,
+        ShakeDetector.Listener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     private static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -139,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             handler.postDelayed(statusChecker, 100); // 0.1 sec
         }
     };
+    private ShakeDetector shakeDetector = new ShakeDetector(this);
     private FileDownloader fileDownloader = new FileDownloader(this);
     private FileWriterSharer fileWriterSharer;
     private boolean startedLoading = false; // document readystate checker
@@ -474,6 +480,7 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
             CookieManager.getInstance().flush();
         }
 
+        shakeDetector.stop();
     }
 
     @Override
@@ -497,6 +504,11 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
 
         // check login status
         this.loginManager.checkLogin();
+
+        if (AppConfig.getInstance(this).shakeToClearCache) {
+            SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+            shakeDetector.start(sensorManager);
+        }
     }
 
     @Override
@@ -575,6 +587,12 @@ public class MainActivity extends AppCompatActivity implements Observer, SwipeRe
         // We may never get onPageStarted or onPageFinished, hence the webview would be forever
         // hidden when navigating back in single-page apps. We do, however, get an updatedHistory callback.
         showWebview(0.3);
+    }
+
+    @Override
+    public void hearShake() {
+        clearWebviewCache();
+        Toast.makeText(this, R.string.cleared_cache, Toast.LENGTH_SHORT).show();
     }
 
     @Override
