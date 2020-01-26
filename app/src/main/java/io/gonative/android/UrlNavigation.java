@@ -72,7 +72,7 @@ public class UrlNavigation {
     private static final String TAG = UrlNavigation.class.getName();
 
     private static final String ASSET_URL = "file:///android_asset/";
-    private static final String OFFLINE_PAGE_URL = "file:///android_asset/offline.html";
+    public static final String OFFLINE_PAGE_URL = "file:///android_asset/offline.html";
     public static final int DEFAULT_HTML_SIZE = 10 * 1024; // 10 kilobytes
 
 	private MainActivity mainActivity;

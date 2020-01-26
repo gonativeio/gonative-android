@@ -100,7 +100,20 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     public void goBack() {
         try {
             WebBackForwardList history = copyBackForwardList();
-            WebHistoryItem item =  history.getItemAtIndex(history.getCurrentIndex() - 1);
+            // find first non-offline item
+            WebHistoryItem item = null;
+            int steps = 0;
+            for (int i = history.getCurrentIndex() - 1; i >= 0; i--) {
+                WebHistoryItem temp = history.getItemAtIndex(i);
+                if (!temp.getUrl().equals(UrlNavigation.OFFLINE_PAGE_URL)) {
+                    item = temp;
+                    steps = i - history.getCurrentIndex();
+                    break;
+                }
+            }
+
+            if (item == null) return;
+
             // this shouldn't be necessary, but sometimes we are not able to get an updated
             // intercept url from onPageStarted, so this call to shouldOverrideUrlLoading ensures
             // that our html interceptor knows about this url.
@@ -108,7 +121,7 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
                 return;
             }
 
-            super.goBack();
+            super.goBackOrForward(steps);
             return;
         } catch (Exception ignored) {
             super.goBack();
