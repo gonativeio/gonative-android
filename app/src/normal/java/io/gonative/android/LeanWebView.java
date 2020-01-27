@@ -100,12 +100,14 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     public void goBack() {
         try {
             WebBackForwardList history = copyBackForwardList();
-            // find first non-offline item
+            String currentUrl = getUrl();
+            // find first non-offline item that is not equal to current url
             WebHistoryItem item = null;
             int steps = 0;
             for (int i = history.getCurrentIndex() - 1; i >= 0; i--) {
                 WebHistoryItem temp = history.getItemAtIndex(i);
-                if (!temp.getUrl().equals(UrlNavigation.OFFLINE_PAGE_URL)) {
+                if (!temp.getUrl().equals(UrlNavigation.OFFLINE_PAGE_URL) &&
+                    !urlEqualsIgnoreSlash(temp.getUrl(), currentUrl)) {
                     item = temp;
                     steps = i - history.getCurrentIndex();
                     break;
@@ -127,6 +129,17 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
             super.goBack();
             return;
         }
+    }
+
+    private boolean urlEqualsIgnoreSlash(String url1, String url2) {
+        if (url1 == null || url2 == null) return false;
+        if (url1.endsWith("/")) {
+            url1 = url1.substring(0, url1.length() - 1);
+        }
+        if (url2.endsWith("/")) {
+            url2 = url2.substring(0, url2.length() - 1);
+        }
+        return url1.equals(url2);
     }
 
     // skip shouldOverrideUrlLoading, including its html override logic.
