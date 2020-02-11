@@ -556,7 +556,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         // skip if webview has a page loaded
         String currentUrl = this.mWebview.getUrl();
-        if (currentUrl != null && !currentUrl.equals("file:///android_asset/offline.html")) return;
+        if (currentUrl != null && !currentUrl.equals(UrlNavigation.OFFLINE_PAGE_URL)) return;
 
         // skip if there is nothing in history
         if (this.backHistory.isEmpty()) return;
@@ -769,8 +769,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     private void showWebview(double delay) {
-        hideSplashScreen(false);
-
         if (delay > 0) {
             handler.postDelayed(new Runnable() {
                 @Override
@@ -1318,7 +1316,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     private void refreshPage() {
         String url = this.mWebview.getUrl();
-        if (url != null && url.startsWith("file:///android_asset/offline")){
+        if (url != null && url.equals(UrlNavigation.OFFLINE_PAGE_URL)){
             if (this.mWebview.canGoBack()) {
                 this.mWebview.goBack();
             } else if (this.initialUrl != null) {
