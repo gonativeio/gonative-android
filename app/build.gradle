@@ -33,13 +33,13 @@ android {
         debug {
 	        applicationIdSuffix ".debug"
         }
-        releaseApk {
+        release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             zipAlignEnabled true
             signingConfig signingConfigs.release
         }
-        releaseAppbundle {
+        upload {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             zipAlignEnabled true
