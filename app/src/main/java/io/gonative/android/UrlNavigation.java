@@ -777,7 +777,7 @@ public class UrlNavigation {
                 public void run() {
                     AppConfig appConfig = AppConfig.getInstance(mainActivity);
                     String url = view.getUrl();
-                    if (appConfig.showOfflinePage && url == null || !url.equals(OFFLINE_PAGE_URL)) {
+                    if (appConfig.showOfflinePage && !OFFLINE_PAGE_URL.equals(url)) {
                         view.loadUrlDirect(OFFLINE_PAGE_URL);
                     }
                 }
