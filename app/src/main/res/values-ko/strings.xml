@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="device_shaken">기기 흔들림 감지</string>
+    <string-array name="device_shaken_options">
+        <item>캐시 삭제</item>
+        <item>취소</item>
+    </string-array>
+    <string name="cleared_cache">캐시 삭제중</string>
+</resources>

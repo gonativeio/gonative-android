@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
@@ -85,7 +86,8 @@ import io.gonative.android.library.AppConfig;
 public class MainActivity extends AppCompatActivity implements Observer,
         SwipeRefreshLayout.OnRefreshListener,
         LeanWebView.OnSwipeListener,
-        ShakeDetector.Listener {
+        ShakeDetector.Listener,
+        ShakeDialogFragment.ShakeDialogListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     private static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -507,6 +509,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (AppConfig.getInstance(this).shakeToClearCache) {
             SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+            shakeDetector.setSensitivity(ShakeDetector.SENSITIVITY_HARD);
             shakeDetector.start(sensorManager);
         }
     }
@@ -591,6 +594,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     public void hearShake() {
+        String FRAGMENT_TAG = "ShakeDialogFragment";
+        if (getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG) != null) {
+            return;
+        }
+
+        ShakeDialogFragment dialog = new ShakeDialogFragment();
+        dialog.show(getSupportFragmentManager(), FRAGMENT_TAG);
+    }
+
+    @Override
+    public void onClearCache(DialogFragment dialog) {
         clearWebviewCache();
         Toast.makeText(this, R.string.cleared_cache, Toast.LENGTH_SHORT).show();
     }
