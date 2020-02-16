@@ -5,7 +5,7 @@
 	<string name="action_search">Search</string>
 	<string name="action_refresh">Refresh</string>
     <string name="action_share">Share</string>
-	<string name="device_shaken">Device Shaken</string>
+	<string name="shake_to_clear_cache">Shake Device to Delete Cache</string>
 	<string-array name="device_shaken_options">
 		<item>Delete Cache</item>
 		<item>Cancel</item>

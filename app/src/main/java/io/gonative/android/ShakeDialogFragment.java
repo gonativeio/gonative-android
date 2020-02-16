@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
-import android.util.Log;
 
 public class ShakeDialogFragment extends DialogFragment {
     public interface ShakeDialogListener {
@@ -21,7 +20,7 @@ public class ShakeDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(R.string.device_shaken)
+        builder.setTitle(R.string.shake_to_clear_cache)
                 .setItems(R.array.device_shaken_options, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
