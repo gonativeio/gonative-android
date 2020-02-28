@@ -1118,6 +1118,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+		    if (AppConfig.getInstance(this).disableBackButton) {
+		        return true;
+            }
+
             if (this.mWebview.exitFullScreen()) {
                 return true;
             }
