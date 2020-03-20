@@ -227,7 +227,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
         dividerPaint.setStrokeWidth(dividerWidth);
 
         defaultTabLayoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-        expandedTabLayoutParams = new LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
+        expandedTabLayoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT, 1.0f);
 
         if (locale == null) {
             locale = getResources().getConfiguration().locale;
@@ -278,6 +278,10 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
                 }
 
                 currentPosition = pager.getCurrentItem();
+                if (currentPosition > tabsContainer.getChildCount() - 1) {
+                    currentPosition = 0;
+                    pager.setCurrentItem(0);
+                }
                 currentPositionOffset = 0f;
                 scrollToChild(currentPosition, 0);
                 updateSelection(currentPosition);
@@ -413,6 +417,10 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
         if (pager != null) {
             currentPosition = pager.getCurrentItem();
+            if (currentPosition > tabsContainer.getChildCount() - 1) {
+                currentPosition = 0;
+                pager.setCurrentItem(0);
+            }
         }
 
         currentPositionOffset = 0f;
