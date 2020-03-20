@@ -117,6 +117,9 @@ public class WebViewSetup {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             webSettings.setMediaPlaybackRequiresUserGesture(false);
         }
+        if (appConfig.webviewTextZoom > 0) {
+            webSettings.setTextZoom(appConfig.webviewTextZoom);
+        }
     }
 
     public static void setupWebviewGlobals(Context context) {
