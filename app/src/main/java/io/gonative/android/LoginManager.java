@@ -37,7 +37,6 @@ public class LoginManager extends Observable {
 
         String loginDetectionUrl = AppConfig.getInstance(context).loginDetectionUrl;
         if (loginDetectionUrl == null) {
-            Log.w(TAG, "Trying to detect login without a testURL");
             return;
         }
 
