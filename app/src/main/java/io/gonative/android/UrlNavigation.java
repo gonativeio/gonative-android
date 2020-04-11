@@ -769,7 +769,7 @@ public class UrlNavigation {
         this.htmlIntercept.setInterceptUrl(url);
         mainActivity.hideWebview();
         state = WebviewLoadState.STATE_START_LOAD;
-        // 10 second (default) delay to get to onPageStarted
+        // 10 second (default) delay to get to onPageStarted or doUpdateVisitedHistory
         if (!Double.isNaN(connectionOfflineTime) && !Double.isInfinite(connectionOfflineTime) &&
                 connectionOfflineTime > 0) {
             startLoadTimeout.postDelayed(new Runnable() {
@@ -918,6 +918,11 @@ public class UrlNavigation {
     }
 
     public void doUpdateVisitedHistory(@SuppressWarnings("unused") GoNativeWebviewInterface view, String url, boolean isReload) {
+        if (state == WebviewLoadState.STATE_START_LOAD) {
+            state = WebviewLoadState.STATE_PAGE_STARTED;
+            startLoadTimeout.removeCallbacksAndMessages(null);
+        }
+
         if (!isReload && !url.equals(OFFLINE_PAGE_URL)) {
             mainActivity.addToHistory(url);
         }
