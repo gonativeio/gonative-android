@@ -30,14 +30,24 @@ public class SplashActivity extends AppCompatActivity {
         // bug where the entire app will crash if we ask for permissions at that point
         AppConfig config = AppConfig.getInstance(this);
         if (config.enableWebRTC) {
-            permissionsToRequest.add(Manifest.permission.CAMERA);
-            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
-            permissionsToRequest.add(Manifest.permission.MODIFY_AUDIO_SETTINGS);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+                permissionsToRequest.add(Manifest.permission.CAMERA);
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED){
+                permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.MODIFY_AUDIO_SETTINGS) != PackageManager.PERMISSION_GRANTED){
+                permissionsToRequest.add(Manifest.permission.MODIFY_AUDIO_SETTINGS);
+            }
         }
 
         if (LeanWebView.isCrosswalk()) {
-            permissionsToRequest.add(Manifest.permission.READ_CONTACTS);
-            permissionsToRequest.add(Manifest.permission.WRITE_CONTACTS);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED){
+                permissionsToRequest.add(Manifest.permission.READ_CONTACTS);
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CONTACTS) != PackageManager.PERMISSION_GRANTED){
+                permissionsToRequest.add(Manifest.permission.WRITE_CONTACTS);
+            }
         }
 
         if (permissionsToRequest.isEmpty()) {
