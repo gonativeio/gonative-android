@@ -1610,7 +1610,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         // Full-screen is used for playing videos.
         // Allow sensor-based rotation when in full screen (even overriding user rotation preference)
-        if (fullscreen) {
+        // If orientation is forced landscape don't set sensor based orientation
+        if (fullscreen && AppConfig.getInstance(this).forceScreenOrientation != AppConfig.ScreenOrientations.LANDSCAPE) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         } else {
             setScreenOrientationPreference();
