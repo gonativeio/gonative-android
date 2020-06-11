@@ -57,15 +57,26 @@ android {
 }
 
 dependencies {
+    /**** dependencies used by all apps ****/
     implementation 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
     implementation 'com.facebook.android:facebook-android-sdk:4.39.0'
     implementation 'com.squareup:seismic:1.0.2'
+    /**** end all apps ****/
+
+    /**** add-on module dependencies ****/
+    /**** end modules ****/
+    
+    /**** Google Android and Play Services dependencies ****/
     implementation 'com.android.support:cardview-v7:28.0.0'
     implementation 'com.android.support:customtabs:28.0.0'
     implementation 'com.android.support:support-v4:28.0.0'
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.google.android.gms:play-services-gcm:12.0.1'
     implementation 'com.google.android.gms:play-services-location:12.0.1'
+    /**** end google ****/
+
+    /**** local dependencies ****/
     implementation fileTree(dir: 'libs', include: '*.jar')
     implementation fileTree(dir: 'libs', include: '*.aar')
+    /**** end local ****/
 }
