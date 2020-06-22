@@ -19,20 +19,19 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewCompat;
-import android.support.v4.view.ViewPager;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SearchView;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.DialogFragment;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.core.view.GravityCompat;
+import androidx.core.view.ViewCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -57,7 +56,7 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.astuetz.PagerSlidingTabStrip;
+import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.facebook.applinks.AppLinkData;
 import com.onesignal.OSPermissionSubscriptionState;
 import com.onesignal.OneSignal;
@@ -121,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
-    private PagerSlidingTabStrip slidingTabStrip;
+    private AHBottomNavigation bottomNavigationView;
     private ImageView navigationTitleImage;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
@@ -279,20 +278,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.previousWebviewStates = new Stack<>();
 
         // tab navigation
-        ViewPager pager = findViewById(R.id.view_pager);
-        this.slidingTabStrip = findViewById(R.id.tabs);
-        this.tabManager = new TabManager(this, pager);
-        pager.setAdapter(this.tabManager);
-        this.slidingTabStrip.setViewPager(pager);
-        this.slidingTabStrip.setTabClickListener(this.tabManager);
+        this.bottomNavigationView = findViewById(R.id.bottom_navigation);
+        this.tabManager = new TabManager(this, bottomNavigationView);
 
-        // custom colors
-        if (appConfig.tabBarBackgroundColor != null)
-            this.slidingTabStrip.setBackgroundColor(appConfig.tabBarBackgroundColor);
-        if (appConfig.tabBarTextColor != null)
-            this.slidingTabStrip.setTextColor(appConfig.tabBarTextColor);
-        if (appConfig.tabBarIndicatorColor != null)
-            this.slidingTabStrip.setIndicatorColor(appConfig.tabBarIndicatorColor);
         hideTabs();
 
         if (!appConfig.showActionBar && getSupportActionBar() != null) {
@@ -967,6 +955,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @TargetApi(21)
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (data != null && data.getBooleanExtra("exit", false))
             finish();
 
@@ -1059,16 +1048,16 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // from camera
             if (this.directUploadImageUri != null) {
                 // check if we have external storage permissions
-                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) !=
-                        PackageManager.PERMISSION_GRANTED) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) !=
+                    PackageManager.PERMISSION_GRANTED) {
                     if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                            android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
                         Toast.makeText(this, R.string.external_storage_explanation, Toast.LENGTH_LONG).show();
                     }
 
                     ActivityCompat.requestPermissions(this,
-                            new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
-                            REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
                     // wait for the onRequestPermissionsResult callback
                     return;
                 }
@@ -1108,8 +1097,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
         String url = getUrlFromIntent(intent);
-        if (url != null && !url.isEmpty()){
+        if (url != null && !url.isEmpty()) {
             loadUrl(url);
         }
         Log.w(TAG, "Received intent without url");
@@ -1218,7 +1208,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
             final SearchView searchView = (SearchView) searchItem.getActionView();
             if (searchView != null) {
-                SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
+                SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
                 if (searchAutoComplete != null) {
                     searchAutoComplete.setTextColor(appConfig.actionbarForegroundColor);
                     int hintColor = appConfig.actionbarForegroundColor;
@@ -1227,7 +1217,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     searchAutoComplete.setHintTextColor(hintColor);
                 }
 
-                ImageView closeButtonImage = searchView.findViewById(android.support.v7.appcompat.R.id.search_close_btn);
+                ImageView closeButtonImage = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
                 if (closeButtonImage != null) {
                     closeButtonImage.setColorFilter(appConfig.actionbarForegroundColor);
                 }
@@ -1562,20 +1552,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void showTabs() {
-        this.slidingTabStrip.setVisibility(View.VISIBLE);
-        ActionBar actionBar = this.getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setElevation(0);
-        }
-        ViewCompat.setElevation(this.slidingTabStrip, ACTIONBAR_ELEVATION);
+        this.bottomNavigationView.setVisibility(View.VISIBLE);
     }
 
     public void hideTabs() {
-        this.slidingTabStrip.setVisibility(View.GONE);
-        ActionBar actionBar = this.getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setElevation(ACTIONBAR_ELEVATION);
-        }
+        this.bottomNavigationView.setVisibility(View.GONE);
     }
 
     public void toggleFullscreen(boolean fullscreen) {
@@ -1852,7 +1833,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void deselectTabs() {
-        this.slidingTabStrip.deselect();
+        this.bottomNavigationView.refresh();
     }
 
     private void listenForSignalStrength() {

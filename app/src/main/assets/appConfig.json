@@ -34,13 +34,15 @@
       "tabMenus": [{
         "id": "1",
         "items": [{
-          "icon": "fa-inbox",
+          "icon": "fa-cloud",
           "label": "Tab 1",
           "url": "javascript:alert('You selected tab 1. These tabs are only shown on the about page')"
         }, {
+          "icon": "fa-globe",
           "label": "Tab 2",
           "url": "javascript:alert('You selected tab 2. These tabs are only shown on the about page')"
         }, {
+          "icon": "fa-users",
           "label": "Tab 3",
           "url": "javascript:alert('You selected tab 3. These tabs are only shown on the about page')"
         }]
@@ -108,6 +110,9 @@
     "androidSidebarForegroundColor": "#d0d0d0",
     "androidHideTitleInActionBar": false,
     "androidPullToRefreshColor": "#333333",
+    "androidTabBarBackgroundColor": "#fefefe",
+    "androidTabBarTextColor": "#747474",
+    "androidTabBarIndicatorColorx": "#2f79fe",
     "androidShowSplash": true,
     "androidShowSplashMaxTime": null,
     "androidShowSplashForceTime": null,

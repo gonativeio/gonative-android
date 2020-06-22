@@ -14,6 +14,11 @@ android {
                                 onesignal_google_project_number: ""]
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     signingConfigs {
         release {
             storeFile file("../../release.keystore")
@@ -58,8 +63,9 @@ android {
 
 dependencies {
     /**** dependencies used by all apps ****/
+    implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
     implementation 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
-    implementation 'com.facebook.android:facebook-android-sdk:4.39.0'
+    implementation 'com.facebook.android:facebook-android-sdk:5.0.0'
     implementation 'com.squareup:seismic:1.0.2'
     /**** end all apps ****/
 
@@ -67,10 +73,9 @@ dependencies {
     /**** end modules ****/
     
     /**** Google Android and Play Services dependencies ****/
-    implementation 'com.android.support:cardview-v7:28.0.0'
-    implementation 'com.android.support:customtabs:28.0.0'
-    implementation 'com.android.support:support-v4:28.0.0'
-    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.browser:browser:1.2.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.google.android.gms:play-services-gcm:12.0.1'
     implementation 'com.google.android.gms:play-services-location:12.0.1'
     /**** end google ****/

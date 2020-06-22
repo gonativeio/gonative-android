@@ -1,28 +1,14 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <com.astuetz.PagerSlidingTabStrip
-        android:id="@+id/tabs"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        app:pstsShouldExpand="true"
-        app:pstsForegroundColor="@color/tab_foreground_color"
-        app:pstsIndicatorHeight="4dp"
-        android:visibility="gone"/>
-    <android.support.v4.view.ViewPager android:id="@+id/view_pager"
-        android:layout_width="match_parent"
-        android:layout_height="1px"
-        android:alpha="0.0"/>
 
     <io.gonative.android.MySwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/tabs">
+        android:layout_above="@id/bottom_navigation"
+        >
 
         <RelativeLayout
             android:layout_width="fill_parent"
@@ -50,6 +36,13 @@
         android:scaleY="0.6"
         android:layout_centerInParent="true"
         android:visibility="invisible"/>
+
+    <com.aurelhubert.ahbottomnavigation.AHBottomNavigation
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone"/>
 
     <RelativeLayout
         android:id="@+id/fullscreen"

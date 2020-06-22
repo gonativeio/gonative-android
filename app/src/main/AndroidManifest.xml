@@ -55,7 +55,7 @@
 
         <!-- For file sharing without having to use external permissions. -->
         <provider
-            android:name="android.support.v4.content.FileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:grantUriPermissions="true"
             android:exported="false">

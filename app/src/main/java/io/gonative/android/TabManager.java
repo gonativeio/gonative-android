@@ -4,14 +4,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.view.View;
-import android.view.ViewGroup;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.util.Log;
 
-import com.astuetz.PagerSlidingTabStrip;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
+import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
+import com.joanzapata.iconify.IconDrawable;
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,23 +31,38 @@ import io.gonative.android.library.AppConfig;
  * Created by Weiyin He on 9/22/14.
  * Copyright 2014 GoNative.io LLC
  */
-public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnTabClickListener {
+public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
+    private static final String TAG = TabManager.class.getName();
     private MainActivity mainActivity;
-    private ViewPager viewPager;
+    private AHBottomNavigation bottomNavigationView;
     private String currentMenuId;
     private String currentUrl;
     private JSONArray tabs;
     private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
     private boolean useJavascript; // do not use tabs from config
+    AppConfig appConfig;
+
 
     @SuppressWarnings("unused")
     private TabManager(){
         // disable instantiation without mainActivity
     }
 
-    TabManager(MainActivity mainActivity, ViewPager viewPager) {
+    TabManager(MainActivity mainActivity, AHBottomNavigation bottomNavigationView) {
         this.mainActivity = mainActivity;
-        this.viewPager = viewPager;
+        this.bottomNavigationView = bottomNavigationView;
+        this.bottomNavigationView.setOnTabSelectedListener(this);
+        this.appConfig = AppConfig.getInstance(this.mainActivity);
+
+        this.bottomNavigationView.setTitleState(AHBottomNavigation.TitleState.ALWAYS_SHOW);
+        if (appConfig.tabBarBackgroundColor != null){
+            this.bottomNavigationView.setDefaultBackgroundColor(appConfig.tabBarBackgroundColor);
+        }
+        if (appConfig.tabBarIndicatorColor != null) {
+            this.bottomNavigationView.setAccentColor(appConfig.tabBarIndicatorColor);
+        } else {
+            this.bottomNavigationView.setAccentColor(Color.parseColor("#2f79fe"));
+        }
 
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -72,8 +89,6 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
             autoSelectTab(url);
             return;
         }
-
-        AppConfig appConfig = AppConfig.getInstance(this.mainActivity);
 
         ArrayList<Pattern> regexes = appConfig.tabMenuRegexes;
         ArrayList<String> ids = appConfig.tabMenuIDs;
@@ -114,13 +129,30 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
 
     private void setTabs(JSONArray tabs) {
         this.tabs = tabs;
-        notifyDataSetChanged();
 
-        // auto-select tab number
         int selectedNumber = -1;
+        bottomNavigationView.removeAllItems();
         for (int i = 0; i < tabs.length(); i++) {
             JSONObject item = tabs.optJSONObject(i);
             if (item == null) continue;
+
+            String label = item.optString("label");
+            String icon = item.optString("icon");
+
+            Drawable iconDrawable = null;
+            if (icon != null) {
+                icon = icon.replaceAll("-", "_");
+                try {
+                    iconDrawable = new IconDrawable(this.mainActivity, FontAwesomeIcons.valueOf(icon))
+                        .actionBarSize().color(appConfig.actionbarForegroundColor);
+                } catch (IllegalArgumentException e) {
+                    // icon was not found in IconValue enum
+                    Log.e(TAG, e.getMessage(), e);
+                }
+            }
+
+            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, iconDrawable);
+            bottomNavigationView.addItem(navigationItem);
 
             if (item.optBoolean("selected")) {
                 selectedNumber = i;
@@ -184,7 +216,7 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
 
             for(Pattern regex : patternList) {
                 if (regex.matcher(url).matches()) {
-                    viewPager.setCurrentItem(i);
+                    bottomNavigationView.setCurrentItem(i);
                     return;
                 }
             }
@@ -208,8 +240,8 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
                     if (entryJs == null) entryJs = "";
 
                     if (url.equals(entryUrl) && javascript.equals(entryJs)) {
-                        if (this.viewPager != null) {
-                            this.viewPager.setCurrentItem(i);
+                        if (this.bottomNavigationView != null) {
+                            this.bottomNavigationView.setCurrentItem(i);
                             return true;
                         }
                     }
@@ -245,57 +277,15 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
     }
 
     public void selectTabNumber(int tabNumber) {
-        if (tabNumber < 0 || tabNumber >= getCount()) {
+        if (tabNumber < 0 || tabNumber >= bottomNavigationView.getItemsCount()) {
             return;
         }
 
-        this.viewPager.setCurrentItem(tabNumber);
-    }
-
-
-    @Override
-    public int getCount() {
-        if (this.tabs != null) {
-            return this.tabs.length();
-        } else {
-            return 0;
-        }
-    }
-
-    // the following three methods are there for our dummy viewpager.
-    @Override
-    public boolean isViewFromObject(@NonNull View view, @NonNull Object o) {
-        return view == o;
-    }
-
-    @NonNull
-    @Override
-    public Object instantiateItem(@NonNull ViewGroup container, int position) {
-        return mainActivity.getLayoutInflater().inflate(R.layout.empty, container);
+        this.bottomNavigationView.setCurrentItem(tabNumber);
     }
 
     @Override
-    public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
-        if (object instanceof View) {
-            container.removeView((View)object);
-        }
-    }
-
-    @Override
-    public CharSequence getPageTitle(int position) {
-        String title = "";
-        if (this.tabs != null && position < this.tabs.length()) {
-            JSONObject entry = this.tabs.optJSONObject(position);
-            if (entry != null) {
-                title = entry.optString("label", "");
-            }
-        }
-
-        return title;
-    }
-
-    @Override
-    public void onTabClick(int position) {
+    public boolean onTabSelected(int position, boolean wasSelected) {
         if (this.tabs != null && position < this.tabs.length()) {
             JSONObject entry = this.tabs.optJSONObject(position);
 
@@ -307,5 +297,6 @@ public class TabManager extends PagerAdapter implements PagerSlidingTabStrip.OnT
                 else mainActivity.loadUrl(url, true);
             }
         }
+        return true;
     }
 }
