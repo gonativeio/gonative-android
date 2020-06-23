@@ -63,6 +63,9 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         } else {
             this.bottomNavigationView.setAccentColor(Color.parseColor("#2f79fe"));
         }
+        if (appConfig.tabBarTextColor != null) {
+            this.bottomNavigationView.setInactiveColor(appConfig.tabBarTextColor);
+        }
 
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
             @Override
