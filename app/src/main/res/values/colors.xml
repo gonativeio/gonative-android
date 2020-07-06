@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="sidebarSeparatorColor">#30808080</color>
+    <color name="sidebarSeparatorColor">#585858</color>
 
     <color name="background_tab_pressed">#1AFFFFFF</color>
-    <color name="tab_foreground_color">#FFFFFF</color>
+    <color name="tab_foreground_color">#000000</color>
 </resources>

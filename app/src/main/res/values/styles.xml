@@ -6,16 +6,16 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">
+    <style name="GoNativeTheme.WithActionBar" parent="GN.Light">
         <!--Remove action bar shadow. We are managing it ourselves with the tabs.-->
         <item name="android:windowContentOverlay">@null</item>
 
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
 
         <!--GoNative placeholder: colorPrimary-->
-        <!--GoNative placeholder: colorPrimaryDark-->
+        <item name="colorPrimaryDark">#909090</item>
         <!--GoNative placeholder: titleTextColor-->
-        <!--GoNative placeholder: colorAccent-->
+        <item name="colorAccent">#26adf0</item>
     </style>
 
     <style name="DrawerArrowStyle" parent="@style/Widget.AppCompat.DrawerArrowToggle">
