@@ -13,6 +13,7 @@ import android.content.pm.ResolveInfo;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -22,11 +23,17 @@ import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
+
+import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.appcompat.app.AlertDialog;
+
+import android.security.KeyChain;
+import android.security.KeyChainAliasCallback;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.webkit.ClientCertRequest;
 import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
@@ -44,6 +51,8 @@ import org.json.JSONTokener;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Currency;
@@ -1185,5 +1194,56 @@ public class UrlNavigation {
     protected void onDownloadStart() {
         startLoadTimeout.removeCallbacksAndMessages(null);
         state = WebviewLoadState.STATE_DONE;
+    }
+
+
+    private static class GetKeyTask extends AsyncTask<String, Void, Pair<PrivateKey, X509Certificate[]>> {
+        private Activity activity;
+        private ClientCertRequest request;
+
+        public GetKeyTask(Activity activity, ClientCertRequest request) {
+            this.activity = activity;
+            this.request = request;
+        }
+
+        @Override
+        protected Pair<PrivateKey, X509Certificate[]> doInBackground(String... strings) {
+            String alias = strings[0];
+
+            try {
+                PrivateKey privateKey = KeyChain.getPrivateKey(activity, alias);
+                X509Certificate[] certificates = KeyChain.getCertificateChain(activity, alias);
+                return new Pair<>(privateKey, certificates);
+            } catch (Exception e) {
+                Log.e(TAG, "Erorr getting private key for alias " + alias, e);
+                return null;
+            }
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+        @Override
+        protected void onPostExecute(Pair<PrivateKey, X509Certificate[]> result) {
+            if (result != null && result.first != null & result.second != null) {
+                request.proceed(result.first, result.second);
+            } else {
+                request.ignore();;
+            }
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void onReceivedClientCertRequest(String url, ClientCertRequest request) {
+        Uri uri = Uri.parse(url);
+        KeyChainAliasCallback callback = alias -> {
+            if (alias == null) {
+                request.ignore();
+                return;
+            }
+
+            new GetKeyTask(mainActivity, request).execute(alias);
+        };
+
+        KeyChain.choosePrivateKeyAlias(mainActivity, callback, request.getKeyTypes(), request.getPrincipals(), request.getHost(),
+                request.getPort(), null);
     }
 }
