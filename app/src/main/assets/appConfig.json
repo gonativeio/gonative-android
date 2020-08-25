@@ -9,7 +9,7 @@
     "useCrosswalkWebView": false,
     "forceScreenOrientation": "portrait",
     "initialUrl": "https://www.medgo.fr/mobile",
-    "appName": "medGo",
+    "appName": "Hublo (ex-medGo & ex-whoog)",
     "iosBundleId": "fr.medgo.medgo1",
     "androidPackageName": "fr.medgo.medgo1",
     "androidVersionName": "1.3.1",
@@ -143,7 +143,8 @@
       "medgo.fr",
       "www.hublo.com",
       "hublo.com",
-      "m.hublo.com"
+      "m.hublo.com",
+      "app.hublo.com"
     ],
     "navigationLevels": {
       "levels": [

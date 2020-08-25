@@ -1742,7 +1742,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
 
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE
 
                     );
         } else {

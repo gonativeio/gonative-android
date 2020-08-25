@@ -48,7 +48,8 @@
     <data android:host="medgo.fr"/>
     <data android:host="www.hublo.com"/>
     <data android:host="hublo.com"/>
-    <data android:host="m.hublo.com"/>
+                <data android:host="m.hublo.com"/>
+                <data android:host="app.hublo.com"/>
     <data android:pathPrefix="/"/>
 </intent-filter>
 
