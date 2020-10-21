@@ -9,6 +9,7 @@ android {
         applicationId "io.gonative.android"
         versionCode 1
         multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
 
         manifestPlaceholders = [manifestApplicationId: "${applicationId}",
                                 onesignal_app_id: "",
