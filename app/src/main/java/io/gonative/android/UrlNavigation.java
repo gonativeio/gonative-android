@@ -5,6 +5,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -1083,11 +1085,22 @@ public class UrlNavigation {
         if (useCamera) {
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
             String imageFileName = "IMG_" + timeStamp + ".jpg";
-            File storageDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES);
-            File captureFile = new File(storageDir, imageFileName);
 
-            Uri captureUrl = Uri.fromFile(captureFile);
+            Uri captureUrl = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ContentResolver resolver = mainActivity.getContentResolver();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName);
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/*");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+
+                captureUrl = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+            }else {
+                File storageDir = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES);
+                File captureFile = new File(storageDir, imageFileName);
+                captureUrl = Uri.fromFile(captureFile);
+            }
 
             if (captureUrl != null) {
                 Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -1097,7 +1110,7 @@ public class UrlNavigation {
                     Intent intent = new Intent(captureIntent);
                     intent.setComponent(new ComponentName(resolve.activityInfo.packageName, resolve.activityInfo.name));
                     intent.setPackage(packageName);
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(captureFile));
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUrl);
                     mainActivity.setDirectUploadImageUri(captureUrl);
                     directCaptureIntents.add(intent);
                 }
