@@ -1035,12 +1035,7 @@ public class UrlNavigation {
     }
 
     public boolean chooseFileUpload(final String[] mimetypespec, final boolean multiple) {
-        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, new MainActivity.PermissionCallback() {
-            @Override
-            public void onPermissionResult(String[] permissions, int[] grantResults) {
-                chooseFileUploadAfterPermission(mimetypespec, multiple);
-            }
-        });
+        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
         return true;
     }
 
