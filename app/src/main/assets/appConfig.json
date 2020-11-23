@@ -9,10 +9,10 @@
     "useCrosswalkWebView": false,
     "forceScreenOrientation": "portrait",
     "initialUrl": "https://www.medgo.fr/mobile",
-    "appName": "medGo",
+    "appName": "Hublo",
     "iosBundleId": "fr.medgo.medgo1",
     "androidPackageName": "fr.medgo.medgo1",
-    "androidVersionName": "1.2.0",
+    "androidVersionName": "1.3.1",
     "publicKey": "owpbjr",
     "deviceRegKey": "yc4r0x24exknq1meptdetrxjmw"
   },
@@ -143,7 +143,8 @@
       "medgo.fr",
       "www.hublo.com",
       "hublo.com",
-      "m.hublo.com"
+      "m.hublo.com",
+      "app.hublo.com"
     ],
     "navigationLevels": {
       "levels": [

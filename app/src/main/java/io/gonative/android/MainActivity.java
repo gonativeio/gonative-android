@@ -478,6 +478,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onStart();
         if (AppConfig.getInstance(this).oneSignalEnabled) {
             OneSignal.clearOneSignalNotifications();
+            OSPermissionSubscriptionState status = OneSignal.getPermissionSubscriptionState();
+
+            if (!status.getSubscriptionStatus().getSubscribed()) {
+                OneSignal.addTrigger("unsubscribed", "true");
         }
     }
 
@@ -1742,8 +1746,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
 
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE
+
+                    );
         } else {
             this.fileDownloader.gotExternalStoragePermissions(true);
         }
