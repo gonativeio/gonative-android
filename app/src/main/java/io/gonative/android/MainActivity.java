@@ -478,6 +478,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onStart();
         if (AppConfig.getInstance(this).oneSignalEnabled) {
             OneSignal.clearOneSignalNotifications();
+            OSPermissionSubscriptionState status = OneSignal.getPermissionSubscriptionState();
+
+            if (!status.getSubscriptionStatus().getSubscribed()) {
+                OneSignal.addTrigger("unsubscribed", "true");
         }
     }
 

@@ -1,3 +1,17 @@
+buildscript {
+    repositories {
+        maven { url 'https://plugins.gradle.org/m2/'}
+    }
+    dependencies {
+        classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:0.12.9'
+    }
+}
+apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'
+
+repositories {
+    maven { url 'https://maven.google.com' }
+}
+
 apply plugin: 'com.android.application'
 
 android {
@@ -10,8 +24,8 @@ android {
         versionCode 31
 
         manifestPlaceholders = [manifestApplicationId: "${applicationId}",
-                                onesignal_app_id: "",
-                                onesignal_google_project_number: ""]
+                                onesignal_app_id: "54238b1e-3d06-4ca2-987d-552487546f59",
+                                onesignal_google_project_number: "REMOTE"]
     }
 
     compileOptions {
@@ -36,7 +50,7 @@ android {
 
     buildTypes {
         debug {
-	        applicationIdSuffix ".debug"
+            applicationIdSuffix ".debug"
         }
         release {
             minifyEnabled true
@@ -67,11 +81,13 @@ dependencies {
     implementation 'com.joanzapata.iconify:android-iconify-fontawesome:2.2.2'
     implementation 'com.facebook.android:facebook-android-sdk:5.0.0'
     implementation 'com.squareup:seismic:1.0.2'
+    implementation 'com.onesignal:OneSignal:3.15.4'
+    implementation 'com.segment.analytics.android:analytics:4.+'
     /**** end all apps ****/
 
     /**** add-on module dependencies ****/
     /**** end modules ****/
-    
+
     /**** Google Android and Play Services dependencies ****/
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.browser:browser:1.2.0'
