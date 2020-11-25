@@ -219,7 +219,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
             for(Pattern regex : patternList) {
                 if (regex.matcher(url).matches()) {
-                    bottomNavigationView.setCurrentItem(i);
+                    bottomNavigationView.setCurrentItem(i, false);
                     return;
                 }
             }
@@ -244,7 +244,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
                     if (url.equals(entryUrl) && javascript.equals(entryJs)) {
                         if (this.bottomNavigationView != null) {
-                            this.bottomNavigationView.setCurrentItem(i);
+                            this.bottomNavigationView.setCurrentItem(i, false);
                             return true;
                         }
                     }
