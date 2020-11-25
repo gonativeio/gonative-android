@@ -1,9 +1,12 @@
 package io.gonative.android;
 
-import android.app.Application;
 import android.content.Intent;
 import android.os.Message;
+
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.multidex.MultiDexApplication;
+
 import android.util.Log;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
@@ -26,7 +29,7 @@ import io.gonative.android.library.AppConfig;
  * Created by weiyin on 9/2/15.
  * Copyright 2014 GoNative.io LLC
  */
-public class GoNativeApplication extends Application {
+public class GoNativeApplication extends MultiDexApplication {
     public static final String ONESIGNAL_STATUS_CHANGED_MESSAGE = "io.gonative.android.onesignal.statuschanged";
 
     private LoginManager loginManager;
@@ -42,6 +45,8 @@ public class GoNativeApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
         AppConfig appConfig = AppConfig.getInstance(this);
         if (appConfig.configError != null) {
