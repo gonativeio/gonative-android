@@ -482,6 +482,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
             if (!status.getSubscriptionStatus().getSubscribed()) {
                 OneSignal.addTrigger("unsubscribed", "true");
+            }
         }
     }
 
