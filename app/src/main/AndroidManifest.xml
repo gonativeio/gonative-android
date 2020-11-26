@@ -50,7 +50,8 @@
     <data android:host="hublo.com"/>
                 <data android:host="m.hublo.com"/>
                 <data android:host="app.hublo.com"/>
-    <data android:pathPrefix="/"/>
+                <data android:host="*.herokuapp.com"/>
+                <data android:pathPrefix="/"/>
 </intent-filter>
 
             <!--example: -->
