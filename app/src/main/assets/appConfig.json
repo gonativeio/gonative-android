@@ -144,7 +144,8 @@
       "www.hublo.com",
       "hublo.com",
       "m.hublo.com",
-      "app.hublo.com"
+      "app.hublo.com",
+      "*.herokuapp.com"
     ],
     "navigationLevels": {
       "levels": [
