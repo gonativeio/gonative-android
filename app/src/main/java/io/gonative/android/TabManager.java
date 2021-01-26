@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
@@ -142,7 +143,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             String label = item.optString("label");
             String icon = item.optString("icon");
 
-            Drawable iconDrawable = null;
+            Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
             if (icon != null) {
                 icon = icon.replaceAll("-", "_");
                 try {
