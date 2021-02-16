@@ -5,6 +5,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +15,7 @@ import android.content.pm.ResolveInfo;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -22,11 +25,17 @@ import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
+
+import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.appcompat.app.AlertDialog;
+
+import android.security.KeyChain;
+import android.security.KeyChainAliasCallback;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.webkit.ClientCertRequest;
 import android.webkit.CookieSyncManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
@@ -44,6 +53,8 @@ import org.json.JSONTokener;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Currency;
@@ -1024,12 +1035,7 @@ public class UrlNavigation {
     }
 
     public boolean chooseFileUpload(final String[] mimetypespec, final boolean multiple) {
-        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, new MainActivity.PermissionCallback() {
-            @Override
-            public void onPermissionResult(String[] permissions, int[] grantResults) {
-                chooseFileUploadAfterPermission(mimetypespec, multiple);
-            }
-        });
+        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
         return true;
     }
 
@@ -1074,11 +1080,22 @@ public class UrlNavigation {
         if (useCamera) {
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
             String imageFileName = "IMG_" + timeStamp + ".jpg";
-            File storageDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES);
-            File captureFile = new File(storageDir, imageFileName);
 
-            Uri captureUrl = Uri.fromFile(captureFile);
+            Uri captureUrl = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ContentResolver resolver = mainActivity.getContentResolver();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName);
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/*");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+
+                captureUrl = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+            }else {
+                File storageDir = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES);
+                File captureFile = new File(storageDir, imageFileName);
+                captureUrl = Uri.fromFile(captureFile);
+            }
 
             if (captureUrl != null) {
                 Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -1088,7 +1105,7 @@ public class UrlNavigation {
                     Intent intent = new Intent(captureIntent);
                     intent.setComponent(new ComponentName(resolve.activityInfo.packageName, resolve.activityInfo.name));
                     intent.setPackage(packageName);
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(captureFile));
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUrl);
                     mainActivity.setDirectUploadImageUri(captureUrl);
                     directCaptureIntents.add(intent);
                 }
@@ -1185,5 +1202,56 @@ public class UrlNavigation {
     protected void onDownloadStart() {
         startLoadTimeout.removeCallbacksAndMessages(null);
         state = WebviewLoadState.STATE_DONE;
+    }
+
+
+    private static class GetKeyTask extends AsyncTask<String, Void, Pair<PrivateKey, X509Certificate[]>> {
+        private Activity activity;
+        private ClientCertRequest request;
+
+        public GetKeyTask(Activity activity, ClientCertRequest request) {
+            this.activity = activity;
+            this.request = request;
+        }
+
+        @Override
+        protected Pair<PrivateKey, X509Certificate[]> doInBackground(String... strings) {
+            String alias = strings[0];
+
+            try {
+                PrivateKey privateKey = KeyChain.getPrivateKey(activity, alias);
+                X509Certificate[] certificates = KeyChain.getCertificateChain(activity, alias);
+                return new Pair<>(privateKey, certificates);
+            } catch (Exception e) {
+                Log.e(TAG, "Erorr getting private key for alias " + alias, e);
+                return null;
+            }
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+        @Override
+        protected void onPostExecute(Pair<PrivateKey, X509Certificate[]> result) {
+            if (result != null && result.first != null & result.second != null) {
+                request.proceed(result.first, result.second);
+            } else {
+                request.ignore();;
+            }
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void onReceivedClientCertRequest(String url, ClientCertRequest request) {
+        Uri uri = Uri.parse(url);
+        KeyChainAliasCallback callback = alias -> {
+            if (alias == null) {
+                request.ignore();
+                return;
+            }
+
+            new GetKeyTask(mainActivity, request).execute(alias);
+        };
+
+        KeyChain.choosePrivateKeyAlias(mainActivity, callback, request.getKeyTypes(), request.getPrincipals(), request.getHost(),
+                request.getPort(), null);
     }
 }

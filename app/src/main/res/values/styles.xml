@@ -62,6 +62,6 @@
     </style>
 
     <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:background">@drawable/splash10</item>
     </style>
 </resources>

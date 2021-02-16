@@ -12,6 +12,8 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -375,6 +377,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 		if (getSupportActionBar() != null) {
             if (!isRoot || appConfig.showNavigationMenu) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
+                backArrow.setColorFilter(AppConfig.getInstance(this).actionbarForegroundColor, PorterDuff.Mode.SRC_ATOP);
+                getSupportActionBar().setHomeAsUpIndicator(backArrow);
             }
 
             showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
@@ -482,6 +487,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
             if (!status.getSubscriptionStatus().getSubscribed()) {
                 OneSignal.addTrigger("unsubscribed", "true");
+            }
         }
     }
 
