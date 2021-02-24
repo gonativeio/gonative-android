@@ -6,6 +6,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import androidx.appcompat.widget.SearchView;
+
 import com.joanzapata.iconify.IconDrawable;
 import com.joanzapata.iconify.fonts.FontAwesomeIcons;
 
@@ -126,6 +128,9 @@ public class ActionManager {
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
+        if (activity.getCurrentFocus() instanceof SearchView.SearchAutoComplete) {
+            activity.getCurrentFocus().clearFocus();
+        }
         String url = this.itemToUrl.get(item);
         if (url != null) {
             if (url.equals(ACTION_SHARE)) {

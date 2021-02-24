@@ -1227,6 +1227,20 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     closeButtonImage.setColorFilter(appConfig.actionbarForegroundColor);
                 }
 
+                searchView.setOnSearchClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        setMenuItemsVisible(menu, false, searchItem);
+                    }
+                });
+
+                searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+                    @Override
+                    public boolean onClose() {
+                        setMenuItemsVisible(menu, true, searchItem);
+                        return false;
+                    }
+                });
 
                 // listener to process query
                 searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -1257,6 +1271,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     public void onFocusChange(View v, boolean hasFocus) {
                         if (!hasFocus) {
                             searchItem.collapseActionView();
+                            setMenuItemsVisible(menu, true, searchItem);
                         }
                     }
                 });
@@ -1267,6 +1282,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             MenuItem refreshItem = menu.findItem(R.id.action_refresh);
             if (refreshItem != null) {
                 refreshItem.setVisible(false);
+                refreshItem.setEnabled(false);
             }
         }
 
@@ -1276,6 +1292,24 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
 		return true;
 	}
+
+	private void setMenuItemsVisible(Menu menu, boolean visible, MenuItem exception) {
+        MenuItem refreshItem = menu.findItem(R.id.action_refresh);
+
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            if (item == exception) {
+                continue;
+            }
+
+            if (visible && item == refreshItem && !AppConfig.getInstance(this).showRefreshButton) {
+                continue;
+            }
+
+            item.setVisible(visible);
+            item.setEnabled(visible);
+        }
+    }
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
