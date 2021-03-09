@@ -162,6 +162,8 @@ public class UrlNavigation {
         // return if loading from local assets
         if (url.startsWith(ASSET_URL)) return false;
 
+        if (url.startsWith("blob:")) return false;
+
         view.setCheckLoginSignup(true);
 
         Uri uri = Uri.parse(url);
