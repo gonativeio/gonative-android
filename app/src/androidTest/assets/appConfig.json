@@ -1,0 +1,153 @@
+{
+  "general": {
+    "userAgentAdd": "gonative",
+    "initialUrl": "https://gonative.io",
+    "appName": "GoNative.io"
+  },
+  "navigation": {
+    "androidPullToRefresh": true,
+    "sidebarNavigation": {
+      "sidebarEnabledRegex": null,
+      "menus": [{
+        "name": "default",
+        "items": [{
+          "url": "https://gonative.io/",
+          "label": "Home",
+          "subLinks": []
+        }, {
+          "url": "https://gonative.io/about/",
+          "label": "About",
+          "subLinks": []
+        }, {
+          "url": "https://gonative.io/examples/",
+          "label": "Examples",
+          "subLinks": []
+        }],
+        "active": true
+      }]
+    },
+    "tabNavigation": {
+      "tabSelectionConfig": [{
+        "id": "1",
+        "regex": ".*about.*"
+      }],
+      "tabMenus": [{
+        "id": "1",
+        "items": [{
+          "icon": "fa-cloud",
+          "label": "Tab 1",
+          "url": "https://www.gonative.io/pricing/"
+        }, {
+          "icon": "fa-globe",
+          "label": "Tab 2",
+          "url": "https://www.gonative.io/examples/"
+        }, {
+          "icon": "fa-users",
+          "label": "Tab 3",
+          "url": "javascript:alert('You selected tab 3. These tabs are only shown on the about page')"
+        }]
+      }],
+      "active": true
+    },
+    "actionConfig": {
+      "active": true,
+      "actions": [{
+        "id": "exampleActions",
+        "items": [{
+          "label": "Globe",
+          "icon": "fa-globe",
+          "url": "javascript:alert('You tapped the globe! It only appears on the Examples page')"
+        }]
+      }],
+      "actionSelection": [{
+        "regex": ".*/examples.*",
+        "id": "exampleActions"
+      }]
+    },
+    "regexInternalExternal": {
+      "rules": [{
+        "regex": "https?://([-\\w]+\\.)*facebook\\.com/login.php.*",
+        "internal": true
+      }, {
+        "regex": "https?://([-\\w]+\\.)*facebook\\.com/pages/.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*facebook\\.com/sharer\\.php.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*plus\\.google\\.com/share.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*twitter\\.com/intent/.*",
+        "internal": false
+      }, {
+        "regex": "https?://([-\\w]+\\.)*gonative\\.io/?.*",
+        "internal": true
+      }, {
+        "regex": "https?://([-\\w]+\\.)*google\\.com/?.*",
+        "internal": true
+      }, {
+        "regex": "https://gonative-test-web.web.app/.*",
+        "internal": true
+      },
+        {
+          "regex": "https://us-central1-gn-test-firebase-test-lab.cloudfunctions.net/.*",
+          "internal": true
+        }],
+      "active": true
+    },
+    "redirects": [{
+      "from": "https://example.com/from/",
+      "to": "https://example.com/to/"
+    }]
+  },
+  "forms": {
+    "search": {
+      "active": true,
+      "searchTemplateURL": "https://us-central1-gn-test-firebase-test-lab.cloudfunctions.net/gnTestSearch?q="
+    }
+  },
+  "styling": {
+    "showActionBar": true,
+    "showNavigationBar": true,
+    "iosTitleColor": "#333333",
+    "iosTintColor": "#0091fe",
+    "androidTheme": "Light.DarkActionBar",
+    "androidSidebarBackgroundColor": "#111111",
+    "androidSidebarForegroundColor": "#d0d0d0",
+    "androidHideTitleInActionBar": false,
+    "androidPullToRefreshColor": "#333333",
+    "androidTabBarBackgroundColor": "#fefefe",
+    "androidTabBarTextColor": "#747474",
+    "androidTabBarIndicatorColorx": "#2f79fe",
+    "androidShowSplash": true,
+    "androidShowSplashMaxTime": null,
+    "androidShowSplashForceTime": null,
+    "disableAnimations": false,
+    "menuAnimationDuration": 0.15,
+    "transitionInteractiveDelayMax": 0.2
+  },
+  "permissions": {
+    "usesGeolocation": false,
+    "androidDownloadToPublicStorage": false
+  },
+  "services": {
+    "oneSignal": {
+      "active": false,
+      "applicationId": ""
+    },
+    "facebook": {
+      "active": false,
+      "appId": "",
+      "displayName": ""
+    },
+    "registration": {
+      "active": false,
+      "endpoints": [{
+        "url": "https://gonative.io/example_push_endpoint",
+        "dataType": "onesignal",
+        "urlRegex": ".*/loginfinished"
+      }]
+    }
+  }
+}
