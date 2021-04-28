@@ -13,8 +13,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
-import com.joanzapata.iconify.IconDrawable;
-import com.joanzapata.iconify.fonts.FontAwesomeIcons;
+import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -145,10 +145,9 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
             Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
             if (icon != null) {
-                icon = icon.replaceAll("-", "_");
+                icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
                 try {
-                    iconDrawable = new IconDrawable(this.mainActivity, FontAwesomeIcons.valueOf(icon))
-                        .actionBarSize().color(appConfig.actionbarForegroundColor);
+                    iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon)).color(appConfig.actionbarForegroundColor).sizeDp(24);
                 } catch (IllegalArgumentException e) {
                     // icon was not found in IconValue enum
                     Log.e(TAG, e.getMessage(), e);

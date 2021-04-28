@@ -12,8 +12,6 @@ import android.webkit.ValueCallback;
 import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
-import com.joanzapata.iconify.Iconify;
-import com.joanzapata.iconify.fonts.FontAwesomeModule;
 import com.onesignal.OSSubscriptionObserver;
 import com.onesignal.OSSubscriptionState;
 import com.onesignal.OSSubscriptionStateChanges;
@@ -125,7 +123,6 @@ public class GoNativeApplication extends MultiDexApplication {
 
         webViewPool = new WebViewPool();
 
-        Iconify.with(new FontAwesomeModule());
     }
 
     public LoginManager getLoginManager() {

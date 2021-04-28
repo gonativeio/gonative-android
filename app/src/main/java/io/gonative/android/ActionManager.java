@@ -8,8 +8,8 @@ import android.view.MenuItem;
 
 import androidx.appcompat.widget.SearchView;
 
-import com.joanzapata.iconify.IconDrawable;
-import com.joanzapata.iconify.fonts.FontAwesomeIcons;
+import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -106,10 +106,9 @@ public class ActionManager {
 
                     Drawable iconDrawable = null;
                     if (icon != null) {
-                        icon = icon.replaceAll("-", "_");
+                        icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
                         try {
-                            iconDrawable = new IconDrawable(this.activity, FontAwesomeIcons.valueOf(icon))
-                                    .actionBarSize().color(appConfig.actionbarForegroundColor);
+                            iconDrawable = new IconicsDrawable(this.activity, FontAwesome.Icon.valueOf(icon)).sizeDp(24).color(appConfig.actionbarForegroundColor);
                         } catch (IllegalArgumentException e) {
                             // icon was not found in IconValue enum
                             Log.e(TAG, e.getMessage(), e);
