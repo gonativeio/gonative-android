@@ -44,8 +44,6 @@ public class FirstTestClass{
             appConfig = AppConfig.getInstance(activity);
             webView = activity.findViewById(R.id.webview);
             testMethods = new testMethods(activity, webView);
-            webView.getSettings().setDomStorageEnabled(true);
-            webView.getSettings().setJavaScriptEnabled(true);
             });
     }
 

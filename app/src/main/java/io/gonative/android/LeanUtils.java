@@ -173,23 +173,38 @@ public class LeanUtils {
     }
 
     public static String createJsForCallback(String functionName, JSONObject data) {
-        String jsonString = data.toString();
+        String jsonString;
+        String parameters;
+        String parseJSONStatement;
+        String callbackParameter;
+        String callingParameters;
+        // modify function based on input data
+        if(data == null){
+            parameters = "functionName";
+            parseJSONStatement = "";
+            callbackParameter = "return callbackFunction(); \n";
+            callingParameters = "'" + functionName + "'";
+        } else {
+            jsonString = data.toString();
+            parameters = "functionName, jsonString";
+            parseJSONStatement = "var data = JSON.parse(jsonString); \n";
+            callbackParameter = "callbackFunction(data); \n";
+            callingParameters = "'" + functionName + "', " + jsWrapString(jsonString);
+        }
 
-        return "function gonative_do_callback(functionName, jsonString) { \n" +
+        return "function gonative_do_callback("+ parameters +") { \n" +
                 "    if (typeof window[functionName] !== 'function') return; \n" +
                 " \n" +
                 "    try { \n" +
-                "        var data = JSON.parse(jsonString); \n" +
+                parseJSONStatement +
                 "        var callbackFunction = window[functionName]; \n" +
-                "        callbackFunction(data); \n" +
+                callbackParameter +
                 "    } catch (ignored) { \n" +
                 " \n" +
                 "    } \n" +
                 "} \n" +
-                "gonative_do_callback('" +
-                functionName +
-                "', " +
-                jsWrapString(jsonString) +
+                "gonative_do_callback(" +
+                callingParameters +
                 ");";
     }
 

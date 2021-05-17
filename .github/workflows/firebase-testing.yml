@@ -1,8 +1,5 @@
 name: firebase-testing
-on:
-  push:
-    branches:
-      - main
+on: [push, workflow_dispatch]
 jobs:
   test-app:
     runs-on: ubuntu-latest
@@ -31,7 +28,7 @@ jobs:
         run: cp -f ./app/src/androidTest/assets/appConfig.json ./app/src/main/assets/appConfig.json
         
       - name: Add dependencies in app/build.gradle
-        run: sed -i "s/dependencies *\n*{/dependencies {\nandroidTestImplementation 'androidx.test:core:1.3.0'\nandroidTestImplementation 'androidx.test:runner:1.3.0'\nandroidTestImplementation 'androidx.test:rules:1.3.0'\nandroidTestImplementation 'androidx.test.ext:junit:1.1.2'\nandroidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'\nandroidTestImplementation 'androidx.test.espresso:espresso-contrib:3.3.0'\nandroidTestImplementation 'androidx.test.espresso:espresso-accessibility:3.3.0'\nandroidTestImplementation 'androidx.test.espresso:espresso-web:3.3.0'\nandroidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'\ndebugImplementation 'androidx.fragment:fragment-testing:1.3.1'\n/" ./app/build.gradle
+        run: sed -i "s/dependencies *\n*{/dependencies {\nandroidTestImplementation 'androidx.test.ext:junit:1.1.2'\nandroidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'\nandroidTestImplementation 'androidx.test.espresso:espresso-contrib:3.3.0'\nandroidTestImplementation 'androidx.test.espresso:espresso-web:3.3.0'\nandroidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'\n/" ./app/build.gradle
 
       - name: Add test runner in defaultConfig in app/build.gradle
         run: sed -i "s/defaultConfig *\n*{/defaultConfig {\ntestInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'/" ./app/build.gradle
