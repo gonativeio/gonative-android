@@ -29,8 +29,7 @@
         android:logo="@drawable/ic_actionbar"
         android:theme="@style/GoNativeTheme.WithActionBar"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
-        android:requestLegacyExternalStorage="true">
+        android:usesCleartextTraffic="true">
 
         <meta-data android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
