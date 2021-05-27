@@ -59,6 +59,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -241,6 +242,29 @@ public class UrlNavigation {
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Error calling gonative://nativebridge/multi", e);
+                    }
+                } else if("/custom".equals(uri.getPath())) {
+                    Map<String, String> params = new HashMap<String, String>();
+                    for(String parameterName : uri.getQueryParameterNames()) {
+                        String parameter = uri.getQueryParameter(parameterName);
+                        params.put(parameterName, parameter);
+                    }
+
+                    // execute code defined by the CustomCodeHandler
+                    // call JsCustomCodeExecutor#setHandler to override this default handler
+                    JSONObject data = JsCustomCodeExecutor.execute(params);
+
+                    String callback = params.get("callback");
+                    if(callback != null && !callback.isEmpty()) {
+                        final String js = LeanUtils.createJsForCallback(callback, data);
+                        // run on main thread
+                        Handler mainHandler = new Handler(mainActivity.getMainLooper());
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mainActivity.runJavascript(js);
+                            }
+                        });
                     }
                 }
                 return true;
