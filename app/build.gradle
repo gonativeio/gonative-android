@@ -9,7 +9,9 @@ ext {
 task parseAppConfig {
     def jsonFile = file('src/main/assets/appConfig.json')
     def parsedJson = new JsonSlurper().parseText(jsonFile.text)
-    fbAppId = parsedJson.services.facebook.appId
+    if (parsedJson.services.facebook && parsedJson.services.facebook.appId) {
+        fbAppId = parsedJson.services.facebook.appId
+    }
 }
 build.dependsOn parseAppConfig
 
