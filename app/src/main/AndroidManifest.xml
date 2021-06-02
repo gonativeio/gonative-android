@@ -66,6 +66,9 @@
         <!-- Disable default OneSignal handling -->
         <meta-data android:name="com.onesignal.NotificationOpened.DEFAULT" android:value="DISABLE" />
 
+        <!-- Facebook -->
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="fb${facebook_app_id}"/>
+
         <activity
             android:name=".SplashActivity"
             android:theme="@style/SplashTheme">

@@ -60,7 +60,9 @@ public class GoNativeApplication extends MultiDexApplication {
         }
 
         if (appConfig.facebookEnabled) {
-            FacebookSdk.setApplicationId(appConfig.facebookAppId);
+            Log.d(TAG, "Facebook is enabled with  App ID: " + FacebookSdk.getApplicationId());
+            FacebookSdk.setAutoLogAppEventsEnabled(appConfig.facebookAutoLogging);
+            FacebookSdk.setAdvertiserIDCollectionEnabled(true);
         }
 
         this.loginManager = new LoginManager(this);

@@ -1,4 +1,17 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
+
+ext {
+    fbAppId = ""
+}
+
+task parseAppConfig {
+    def jsonFile = file('src/main/assets/appConfig.json')
+    def parsedJson = new JsonSlurper().parseText(jsonFile.text)
+    fbAppId = parsedJson.services.facebook.appId
+}
+build.dependsOn parseAppConfig
 
 android {
     compileSdkVersion 29
@@ -13,7 +26,8 @@ android {
 
         manifestPlaceholders = [manifestApplicationId: "${applicationId}",
                                 onesignal_app_id: "",
-                                onesignal_google_project_number: ""]
+                                onesignal_google_project_number: "",
+                                facebook_app_id: fbAppId ]
     }
 
     compileOptions {
@@ -68,7 +82,7 @@ dependencies {
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
     implementation "com.mikepenz:iconics-core:3.2.5"
     implementation 'com.mikepenz:fontawesome-typeface:5.3.1.1@aar'
-    implementation 'com.facebook.android:facebook-android-sdk:5.0.0'
+    implementation 'com.facebook.android:facebook-android-sdk:9.1.1'
     implementation 'com.squareup:seismic:1.0.2'
     /**** end all apps ****/
 

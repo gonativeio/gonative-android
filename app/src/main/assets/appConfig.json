@@ -132,7 +132,8 @@
     "facebook": {
       "active": false,
       "appId": "",
-      "displayName": ""
+      "displayName": "",
+      "autoLogging": true
     },
     "registration": {
       "active": false,
