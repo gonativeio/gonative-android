@@ -53,10 +53,7 @@ public class GoNativeApplication extends MultiDexApplication {
         }
 
         if (appConfig.oneSignalEnabled) {
-            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
-            OneSignal.init(this, "REMOTE", appConfig.oneSignalAppId,
-                    new OneSignalNotificationHandler(this));
-            OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
+            LeanUtils.initOneSignal(this, appConfig);
         }
 
         if (appConfig.facebookEnabled) {

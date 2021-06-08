@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.webkit.URLUtil;
 
+import com.onesignal.OneSignal;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -269,5 +271,14 @@ public class LeanUtils {
         }
 
         return bundle;
+    }
+
+    public static void initOneSignal(Context context, AppConfig appConfig) {
+        if (appConfig.oneSignalEnabled) {
+            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
+            OneSignal.init(context, "REMOTE", appConfig.oneSignalAppId,
+                    new OneSignalNotificationHandler(context));
+            OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
+        }
     }
 }

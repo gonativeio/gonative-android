@@ -4,6 +4,7 @@ apply plugin: 'com.android.application'
 
 ext {
     fbAppId = ""
+    onesignalAppId = ""
 }
 
 task parseAppConfig {
@@ -11,6 +12,9 @@ task parseAppConfig {
     def parsedJson = new JsonSlurper().parseText(jsonFile.text)
     if (parsedJson.services.facebook && parsedJson.services.facebook.appId) {
         fbAppId = parsedJson.services.facebook.appId
+    }
+    if (parsedJson.services.oneSignal && parsedJson.services.oneSignal.applicationId) {
+        onesignalAppId = parsedJson.services.oneSignal.applicationId
     }
 }
 build.dependsOn parseAppConfig
@@ -27,7 +31,7 @@ android {
         vectorDrawables.useSupportLibrary = true
 
         manifestPlaceholders = [manifestApplicationId: "${applicationId}",
-                                onesignal_app_id: "",
+                                onesignal_app_id: onesignalAppId,
                                 onesignal_google_project_number: "",
                                 facebook_app_id: fbAppId ]
     }

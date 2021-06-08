@@ -79,6 +79,7 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -711,7 +712,31 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (javascript == null) return;
         this.mWebview.runJavascript(javascript);
     }
-	
+
+    public String getJsResults(String js) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                runJavascript(js);
+            }
+        });
+        int loopCounter = 0;
+        while (JsResultBridge.jsResult.isEmpty() || JsResultBridge.jsResult.equals("null")){ // wait for 15 seconds, then break the thread
+            if (loopCounter > 30) { // loop max 30 times
+                return "GoNativeGetJsResultsError";
+            }
+            loopCounter++;
+            try {
+                TimeUnit.MILLISECONDS.sleep(500);
+            } catch (InterruptedException e) {
+                Log.d(TAG, "GoNative TimeUnit sleep Interruption Exception :- " + e.getMessage());
+            }
+        }
+        String jsResult = JsResultBridge.jsResult;
+        JsResultBridge.jsResult = "";
+        return jsResult;
+    }
+    	
 	public boolean isDisconnected(){
 		NetworkInfo ni = cm.getActiveNetworkInfo();
         return ni == null || !ni.isConnected();

@@ -32,6 +32,7 @@ import androidx.appcompat.app.AlertDialog;
 
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -59,6 +60,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -552,6 +554,76 @@ public class UrlNavigation {
                 if ("/showTagsUI".equals(uri.getPath())) {
                     Intent intent = new Intent(mainActivity, SubscriptionsActivity.class);
                     mainActivity.startActivity(intent);
+                }
+
+                if ("/iam/addTrigger".equals(uri.getPath())) {
+                    String key = uri.getQueryParameter("key");
+                    if (TextUtils.isEmpty(key)) return true;
+                    String value = uri.getQueryParameter("value");
+                    if (TextUtils.isEmpty(value)) return true;
+
+                    OneSignal.addTrigger(key, value);
+                    return true;
+                }
+
+                if ("/iam/addTriggers".equals(uri.getPath())) {
+                    String map = uri.getQueryParameter("map");
+                    if (TextUtils.isEmpty(map)) return true;
+
+                    String jsonString = Uri.decode(map);
+                    OneSignal.addTriggersFromJsonString(jsonString);
+                    return true;
+                }
+
+                if ("/iam/removeTriggerForKey".equals(uri.getPath())) {
+                    String key = uri.getQueryParameter("key");
+                    if (TextUtils.isEmpty(key)) return true;
+
+                    OneSignal.removeTriggerForKey(key);
+                    return true;
+                }
+
+                if ("/iam/getTriggerValueForKey".equals(uri.getPath())) {
+                    String key = uri.getQueryParameter("key");
+                    if (TextUtils.isEmpty(key)) return true;
+
+                    String value = (String) OneSignal.getTriggerValueForKey(key);
+                    HashMap<String, Object> params = new HashMap<>();
+                    params.put("key", key);
+                    params.put("value", value);
+
+                    JSONObject jsonObject = new JSONObject(params);
+                    String js = LeanUtils.createJsForCallback("gonative_iam_trigger_value", jsonObject);
+                    mainActivity.runJavascript(js);
+                    return true;
+                }
+
+                if ("/iam/pauseInAppMessages".equals(uri.getPath())) {
+                    boolean value = uri.getBooleanQueryParameter("pause", false);
+                    OneSignal.pauseInAppMessages(value);
+                    return true;
+                }
+
+                if ("/iam/setInAppMessageClickHandler".equals(uri.getPath())) {
+                    String handler = uri.getQueryParameter("handler");
+                    if (TextUtils.isEmpty(handler)) return true;
+
+                    OneSignal.startInit(mainActivity)
+                            .setInAppMessageClickHandler(action -> {
+                                HashMap<String, Object> params = new HashMap<>();
+                                params.put("clickName", action.clickName);
+                                params.put("clickUrl", action.clickUrl);
+                                params.put("firstClick", action.firstClick);
+                                params.put("closesMessage", action.closesMessage);
+
+                                JSONObject jsonObject = new JSONObject(params);
+                                String js = LeanUtils.createJsForCallback(handler, jsonObject);
+                                mainActivity.runJavascript(js);
+                            }).init(); // fails if onesignal_app_id is not in build.gradle
+
+                    // have to re-initialize after init with builder to restore the other configurations
+                    LeanUtils.initOneSignal(mainActivity, appConfig);
+                    return true;
                 }
             }
 
