@@ -1,7 +1,7 @@
 {
   "general": {
     "userAgentAdd": "gonative",
-    "initialUrl": "https://gonative.io",
+    "initialUrl": "https://gonative.io/",
     "appName": "GoNative.io"
   },
   "navigation": {

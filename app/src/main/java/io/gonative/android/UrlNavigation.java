@@ -359,6 +359,26 @@ public class UrlNavigation {
                 return true;
             }
 
+            if ("navigationMaxWindows".equals(uri.getHost())) {
+                if ("/set".equals(uri.getPath())) {
+                    String dataString = uri.getQueryParameter("data");
+                    boolean persist = uri.getBooleanQueryParameter("persist", false);
+
+                    if (!TextUtils.isEmpty(dataString)) {
+                        try {
+                            int maxWindow = Integer.parseInt(dataString);
+                            appConfig.setMaxWindows(maxWindow, persist);
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "Invalid navigationMaxWindows: " + dataString, e);
+                            return true;
+                        }
+                    } else {
+                        appConfig.setMaxWindows(0, persist);
+                    }
+                }
+                return true;
+            }
+
             if ("navigationTitles".equals(uri.getHost())) {
                 if ("/set".equals(uri.getPath())) {
                     String dataString = uri.getQueryParameter("data");
@@ -751,6 +771,12 @@ public class UrlNavigation {
         if (currentLevel >= 0 && newLevel >= 0) {
             if (newLevel > currentLevel) {
                 if (noAction) return true;
+
+                if (appConfig.maxWindows > 0 && mainActivity.getWebViewCount() > appConfig.maxWindows) {
+                    mainActivity.setRemoveExcessWebView(true);
+                    LocalBroadcastManager.getInstance(mainActivity)
+                            .sendBroadcast(new Intent(MainActivity.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
+                }
 
                 // new activity
                 Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);

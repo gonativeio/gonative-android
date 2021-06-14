@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         LeanWebView.OnSwipeListener,
         ShakeDetector.Listener,
         ShakeDialogFragment.ShakeDialogListener {
+    public static final String BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED = "io.gonative.android.MainActivity.Extra.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED";
     public static final String webviewCacheSubdir = "webviewAppCache";
     private static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
@@ -109,6 +110,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     boolean isPoolWebview = false;
     private Stack<String> backHistory = new Stack<>();
     private String initialUrl;
+
+    private static int webViewCount = 0;
+    private static boolean removeExcessWebView = false;
 
 	private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
@@ -158,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private BroadcastReceiver oneSignalStatusChangedReceiver;
     private BroadcastReceiver navigationTitlesChangedReceiver;
     private BroadcastReceiver navigationLevelsChangedReceiver;
+    private BroadcastReceiver webviewLimitReachedReceiver;
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
     private Stack<Bundle>previousWebviewStates;
@@ -186,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         isRoot = getIntent().getBooleanExtra("isRoot", true);
         parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
+        webViewCount++;
 
         if (isRoot) {
             // Splash screen stuff
@@ -434,6 +440,20 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationLevelsChangedReceiver,
                 new IntentFilter(AppConfig.PROCESSED_NAVIGATION_LEVELS));
+
+        this.webviewLimitReachedReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED.equals(intent.getAction())) {
+                    if (!isRoot && removeExcessWebView) {
+                        removeExcessWebView = false;
+                        finish();
+                    }
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(this.webviewLimitReachedReceiver,
+                new IntentFilter(BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -522,6 +542,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        webViewCount--;
 
         // destroy webview
         if (this.mWebview != null) {
@@ -544,6 +565,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
         if (this.navigationLevelsChangedReceiver != null) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(this.navigationLevelsChangedReceiver);
+        }
+        if (this.webviewLimitReachedReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(this.webviewLimitReachedReceiver);
         }
     }
 
@@ -2012,5 +2036,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
         WindowManager.LayoutParams layout = getWindow().getAttributes();
         layout.screenBrightness = brightness;
         getWindow().setAttributes(layout);
+    }
+
+    public void setRemoveExcessWebView(boolean removeExcessWebView){
+        this.removeExcessWebView = removeExcessWebView;
+    }
+
+    public int getWebViewCount(){
+        return webViewCount;
     }
 }

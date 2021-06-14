@@ -34,9 +34,9 @@ import static org.hamcrest.Matchers.equalTo;
 import io.gonative.android.MainActivity;
 import io.gonative.android.R;
 
-public class testMethods {
+public class TestMethods {
 
-    public testMethods(MainActivity mainActivity, WebView webView){
+    public TestMethods(MainActivity mainActivity, WebView webView){
         m_mainActivity = mainActivity;
         m_webView = webView;
     }
@@ -65,19 +65,22 @@ public class testMethods {
     }
 
     public void waitForPageLoaded() throws InterruptedException {
-        long startTimeMillis = SystemClock.elapsedRealtime();
+        int counter = 0;
         while (getNewLoad() == 0) {
-            long endTimeMillis = SystemClock.elapsedRealtime();
-            if (((startTimeMillis - endTimeMillis) / 1000) > 15) {
-                throw new RuntimeException("Page failed to load in less than 15 seconds.");
-            }
+            if (counter >= 15) throw new RuntimeException("Page failed to load in less than 15 seconds.");
+            Thread.sleep(1000);
+            counter++;
         }
         m_UpdateCurrentURL();
         Thread.sleep(1000);
-        if(!currentURL.endsWith("/")){
-            currentURL += "/";
+        counter = 0;
+        while(currentURL == null && counter <= 10){
+            Thread.sleep(1000);
+            counter++;
+            m_UpdateCurrentURL();
         }
-        HelperClass.newLoad = 0;
+        if(currentURL != null) HelperClass.newLoad = 0;
+        else throw new RuntimeException("Current URL cannot be retrieved from the WebView.");
     }
 
     public void testNavigation(JSONArray sidebarObjects) throws InterruptedException, JSONException {
@@ -86,11 +89,7 @@ public class testMethods {
             onData(anything()).inAdapterView(withId(R.id.drawer_list)).atPosition(i).perform(click());
             waitForPageLoaded();
             String sidebarURL = sidebarObjects.getJSONObject(i).getString("url");
-            m_UpdateCurrentURL();
-            if(currentURL.matches(sidebarURL)){
-            }else{
-                throw new RuntimeException("Sidebar Menu " + (i+1) + " did not load the designated URL - " + sidebarURL);
-            }
+            if(!currentURL.matches(sidebarURL)) throw new RuntimeException("Sidebar Menu " + (i+1) + " did not load the designated URL - " + sidebarURL);
         }
     }
 
@@ -104,23 +103,21 @@ public class testMethods {
         if(dFacebook.contains("io.gonative.android")){
             uiDevice.pressBack();
             Thread.sleep(2000);
-        }else{
-            throw new RuntimeException("Facebook link opened externally");
-        }
+        }else throw new RuntimeException("Facebook link opened externally");
 
         onWebView().withElement(findElement(Locator.ID, "twitter_link")).perform(webClick());
         Thread.sleep(8000);
         String dTwitter = uiDevice.getCurrentPackageName();
-        if(dTwitter.contains("io.gonative.android")){
-            throw new RuntimeException("Twitter opened internally.");
-        }else {
+        if(dTwitter.contains("io.gonative.android")) throw new RuntimeException("Twitter opened internally.");
+        else {
             uiDevice.pressBack();
             Thread.sleep(1000);
         }
     }
 
-    public void testRefreshButton(){
+    public void testRefreshButton() throws InterruptedException {
         onView(withId(R.id.action_refresh)).perform(click());
+        waitForPageLoaded();
     }
 
     public void testSearchButton() throws InterruptedException {
@@ -140,12 +137,11 @@ public class testMethods {
 
     public void m_testTabNavigation(HashMap<String, JSONArray> tabMenus, ArrayList<Pattern> tabMenuRegexes) throws JSONException, InterruptedException {
         while(!(currentURL.matches(tabMenuRegexes.get(0).pattern()))){
-            m_mainActivity.runOnUiThread(() -> m_webView.loadUrl("https://gonative.io/about"));
+            m_mainActivity.runOnUiThread(() -> m_webView.loadUrl("https://gonative.io/about/"));
             waitForPageLoaded();
         }
-        if (tabMenus.size() == 0) {
-            throw new RuntimeException("No Tab Menus Added.");
-        } else {
+        if (tabMenus.size() == 0) throw new RuntimeException("No Tab Menus Added.");
+        else {
             for (Pattern p : tabMenuRegexes) {
                 if (currentURL.matches(p.pattern())) {
                     try {
@@ -160,10 +156,7 @@ public class testMethods {
                                         pressBackUnconditionally();
                                         waitForPageLoaded();
                                         String tabURL = tabMenus.get(i).getJSONObject(j).get("url").toString();
-                                        if ((prevURL.matches(tabURL))) {
-                                        } else {
-                                            throw new RuntimeException("Tab " + (j+1) + " could not load the designated URL - " + prevURL);
-                                        }
+                                        if (!(prevURL.matches(tabURL))) throw new RuntimeException("Tab " + (j+1) + " could not load the designated URL - " + prevURL);
                                         j++;
                                         prevURL = currentURL;
                                     } else {

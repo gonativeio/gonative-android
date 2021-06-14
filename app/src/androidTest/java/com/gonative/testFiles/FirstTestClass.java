@@ -20,7 +20,7 @@ import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentat
 @SdkSuppress(minSdkVersion = 18)
 @LargeTest
 public class FirstTestClass{
-    testMethods testMethods;
+    TestMethods testMethods;
     AppConfig appConfig;
     WebView webView;
     private UiDevice uiDevice;
@@ -30,7 +30,7 @@ public class FirstTestClass{
 
     @Before
     public void initMethod() throws InterruptedException {
-        for(int i = 0; i < 15; i++){
+        for(int i = 0; i < 10; i++){
             try{
                 uiDevice = UiDevice.getInstance(getInstrumentation());
             }catch (RuntimeException runtimeException){
@@ -43,18 +43,16 @@ public class FirstTestClass{
         activityScenarioRule.getScenario().onActivity(activity -> {
             appConfig = AppConfig.getInstance(activity);
             webView = activity.findViewById(R.id.webview);
-            testMethods = new testMethods(activity, webView);
-            });
+            testMethods = new TestMethods(activity, webView);
+        });
     }
 
     //Sidebar Navigation Test
     @Test
     public void testSidebarNavigation() throws InterruptedException, JSONException {
-
         if(appConfig.showNavigationMenu && (appConfig.menus.get("default") != null)){
-            if(appConfig.menus.get("default") == null){
-                throw new RuntimeException("Navigation drawer list not found.");
-            }else {
+            if(appConfig.menus.get("default") == null) throw new RuntimeException("Navigation drawer list not found.");
+            else {
                 testMethods.waitForPageLoaded();
                 testMethods.testNavigation(appConfig.menus.get("default"));
             }
@@ -64,10 +62,8 @@ public class FirstTestClass{
     //Tab Menu Navigation Test
     @Test
     public void testTabMenuNavigation() throws JSONException, InterruptedException {
-
-        if(appConfig.tabMenuRegexes.size() == 0){
-            throw new RuntimeException("No Tab Menus found.");
-        }else{
+        if(appConfig.tabMenuRegexes.size() == 0) throw new RuntimeException("No Tab Menus found.");
+        else{
             testMethods.waitForPageLoaded();
             testMethods.m_testTabNavigation(appConfig.tabMenus, appConfig.tabMenuRegexes);
         }
@@ -83,15 +79,13 @@ public class FirstTestClass{
     //Pull to Refresh Test
     @Test
     public void pullToRefresh() throws InterruptedException {
-
         if(appConfig.pullToRefresh){
             testMethods.waitForPageLoaded();
             testMethods.testPullToRefresh();
-
         }
     }
 
-    //Search Button Test (appConfig.showSearchButton() will be helpful.)
+    //Search Button Test
     @Test
     public void testSearch() throws InterruptedException {
         if(appConfig.searchTemplateUrl != null && !appConfig.searchTemplateUrl.isEmpty()){
