@@ -1,5 +1,5 @@
 package io.gonative.android;
 
 public class HelperClass {
-    public static int newLoad = 0;
+    public volatile static int newLoad = 0;
 }

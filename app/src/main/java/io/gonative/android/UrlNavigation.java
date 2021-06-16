@@ -1205,7 +1205,7 @@ public class UrlNavigation {
             String imageFileName = "IMG_" + timeStamp + ".jpg";
 
             Uri captureUrl = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                 ContentResolver resolver = mainActivity.getContentResolver();
                 ContentValues contentValues = new ContentValues();
                 contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName);
