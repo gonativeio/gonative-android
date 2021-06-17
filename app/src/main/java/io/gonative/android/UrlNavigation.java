@@ -86,7 +86,7 @@ public class UrlNavigation {
     public static final String OFFLINE_PAGE_URL = "file:///android_asset/offline.html";
     public static final int DEFAULT_HTML_SIZE = 10 * 1024; // 10 kilobytes
 
-	private MainActivity mainActivity;
+    private MainActivity mainActivity;
     private String profilePickerExec;
     private String currentWebviewUrl;
     private HtmlIntercept htmlIntercept;
@@ -99,7 +99,7 @@ public class UrlNavigation {
     private double connectionOfflineTime;
 
     UrlNavigation(MainActivity activity) {
-		this.mainActivity = activity;
+        this.mainActivity = activity;
         this.htmlIntercept = new HtmlIntercept(activity);
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
@@ -116,9 +116,9 @@ public class UrlNavigation {
         }
 
         connectionOfflineTime = appConfig.androidConnectionOfflineTime;
-	}
-	
-	private boolean isInternalUri(Uri uri) {
+    }
+
+    private boolean isInternalUri(Uri uri) {
         String scheme = uri.getScheme();
         if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
             return false;
@@ -575,7 +575,7 @@ public class UrlNavigation {
                         if (style.equals("light")) {
                             // light icons and text
                             View decor = this.mainActivity.getWindow().getDecorView();
-                            decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                            decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
                         } else if (style.equals("dark")) {
                             // dark icons and text
                             View decor = this.mainActivity.getWindow().getDecorView();
@@ -627,7 +627,7 @@ public class UrlNavigation {
             }
         }
 
-        if (!isInternalUri(uri)){
+        if (!isInternalUri(uri)) {
             if (noAction) return true;
 
             // launch browser
@@ -667,8 +667,7 @@ public class UrlNavigation {
                 mainActivity.postLoadJavascriptForRefresh = null;
 
                 return true;
-            }
-            else if (newLevel < currentLevel && newLevel <= mainActivity.getParentUrlLevel()) {
+            } else if (newLevel < currentLevel && newLevel <= mainActivity.getParentUrlLevel()) {
                 if (noAction) return true;
 
                 // pop activity
@@ -710,7 +709,7 @@ public class UrlNavigation {
         }
 
         // check to see if the webview exists in pool.
-        WebViewPool webViewPool = ((GoNativeApplication)mainActivity.getApplication()).getWebViewPool();
+        WebViewPool webViewPool = ((GoNativeApplication) mainActivity.getApplication()).getWebViewPool();
         Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy> pair = webViewPool.webviewForUrl(url);
         final GoNativeWebviewInterface poolWebview = pair.first;
         WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
@@ -762,7 +761,7 @@ public class UrlNavigation {
         return false;
     }
 
-	public boolean shouldOverrideUrlLoading(final GoNativeWebviewInterface view, String url,
+    public boolean shouldOverrideUrlLoading(final GoNativeWebviewInterface view, String url,
                                             @SuppressWarnings("unused") boolean isReload) {
         if (url == null) return false;
 
@@ -792,20 +791,20 @@ public class UrlNavigation {
                         view.loadUrlDirect(OFFLINE_PAGE_URL);
                     }
                 }
-            }, (long)(connectionOfflineTime * 1000));
+            }, (long) (connectionOfflineTime * 1000));
         }
 
         return false;
     }
 
-	public void onPageStarted(String url) {
+    public void onPageStarted(String url) {
 //        Log.d(TAG, "onpagestarted " + url);
         state = WebviewLoadState.STATE_PAGE_STARTED;
         startLoadTimeout.removeCallbacksAndMessages(null);
         htmlIntercept.setInterceptUrl(url);
 
         UrlInspector.getInstance().inspectUrl(url);
-		Uri uri = Uri.parse(url);
+        Uri uri = Uri.parse(url);
 
         // reload menu if internal url
         if (AppConfig.getInstance(mainActivity).loginDetectionUrl != null && isInternalUri(uri)) {
@@ -839,7 +838,7 @@ public class UrlNavigation {
         });
     }
 
-	@SuppressLint("ApplySharedPref")
+    @SuppressLint("ApplySharedPref")
     public void onPageFinished(GoNativeWebviewInterface view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
         state = WebviewLoadState.STATE_DONE;
@@ -847,7 +846,7 @@ public class UrlNavigation {
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
         if (url != null && appConfig.ignorePageFinishedRegexes != null) {
-            for (Pattern pattern: appConfig.ignorePageFinishedRegexes) {
+            for (Pattern pattern : appConfig.ignorePageFinishedRegexes) {
                 if (pattern.matcher(url).matches()) return;
             }
         }
@@ -861,13 +860,13 @@ public class UrlNavigation {
 
         UrlInspector.getInstance().inspectUrl(url);
 
-		Uri uri = Uri.parse(url);		
-		if (isInternalUri(uri)){
+        Uri uri = Uri.parse(url);
+        if (isInternalUri(uri)) {
             CookieSyncManager.getInstance().sync();
-		}
+        }
 
         if (appConfig.loginDetectionUrl != null) {
-            if (mVisitedLoginOrSignup){
+            if (mVisitedLoginOrSignup) {
                 mainActivity.updateMenu();
             }
 
@@ -877,7 +876,7 @@ public class UrlNavigation {
 
         // post-load javascript
         if (appConfig.postLoadJavascript != null) {
-		    view.runJavascript(appConfig.postLoadJavascript);
+            view.runJavascript(appConfig.postLoadJavascript);
         }
 
         // profile picker
@@ -894,7 +893,7 @@ public class UrlNavigation {
             mainActivity.postLoadJavascript = null;
             mainActivity.runJavascript(js);
         }
-		
+
         // send broadcast message
         LocalBroadcastManager.getInstance(mainActivity).sendBroadcast(new Intent(UrlNavigation.FINISHED_LOADING_MESSAGE));
 
@@ -907,13 +906,13 @@ public class UrlNavigation {
         if (doNativeBridge) {
             runGonativeDeviceInfo();
         }
-	}
+    }
 
     public void onFormResubmission(GoNativeWebviewInterface view, Message dontResend, Message resend) {
         resend.sendToTarget();
     }
 
-	private void runGonativeDeviceInfo() {
+    private void runGonativeDeviceInfo() {
         Map<String, Object> installationInfo = Installation.getInfo(mainActivity);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
         if (!sharedPreferences.getBoolean("hasLaunched", false)) {
@@ -938,10 +937,10 @@ public class UrlNavigation {
             mainActivity.addToHistory(url);
         }
     }
-	
-	public void onReceivedError(final GoNativeWebviewInterface view,
+
+    public void onReceivedError(final GoNativeWebviewInterface view,
                                 @SuppressWarnings("unused") int errorCode,
-                                String errorDescription, String failingUrl){
+                                String errorDescription, String failingUrl) {
         if (errorDescription != null && errorDescription.contains("net::ERR_CACHE_MISS")) {
             mainActivity.runOnUiThread(new Runnable() {
                 @Override
@@ -992,7 +991,7 @@ public class UrlNavigation {
                 }
             });
         }
-	}
+    }
 
     public void onReceivedSslError(SslError error) {
         int errorMessage;
@@ -1035,7 +1034,14 @@ public class UrlNavigation {
     }
 
     public boolean chooseFileUpload(final String[] mimetypespec, final boolean multiple) {
-        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
+        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> {
+            boolean isAllPermissionsGranted = PermissionUtils.isAllGranted(permissions, grantResults);
+            if (isAllPermissionsGranted) {
+                chooseFileUploadAfterPermission(mimetypespec, multiple);
+            } else {
+                mainActivity.openSettingsApp();
+            }
+        });
         return true;
     }
 
@@ -1090,9 +1096,9 @@ public class UrlNavigation {
                 contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
 
                 captureUrl = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-            }else {
+            } else {
                 File storageDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES);
+                        Environment.DIRECTORY_PICTURES);
                 File captureFile = new File(storageDir, imageFileName);
                 captureUrl = Uri.fromFile(captureFile);
             }
@@ -1166,7 +1172,7 @@ public class UrlNavigation {
     }
 
     public boolean createNewWindow(Message resultMsg) {
-        ((GoNativeApplication)mainActivity.getApplication()).setWebviewMessage(resultMsg);
+        ((GoNativeApplication) mainActivity.getApplication()).setWebviewMessage(resultMsg);
         return createNewWindow();
     }
 
@@ -1186,8 +1192,7 @@ public class UrlNavigation {
         return true;
     }
 
-    public boolean isLocationServiceEnabled()
-    {
+    public boolean isLocationServiceEnabled() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             LocationManager lm = mainActivity.getSystemService(LocationManager.class);
             return lm.isLocationEnabled();
@@ -1195,7 +1200,7 @@ public class UrlNavigation {
             // This is Deprecated in API 28
             int mode = Settings.Secure.getInt(mainActivity.getContentResolver(), Settings.Secure.LOCATION_MODE,
                     Settings.Secure.LOCATION_MODE_OFF);
-            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
+            return (mode != Settings.Secure.LOCATION_MODE_OFF);
         }
     }
 
@@ -1234,9 +1239,11 @@ public class UrlNavigation {
             if (result != null && result.first != null & result.second != null) {
                 request.proceed(result.first, result.second);
             } else {
-                request.ignore();;
+                request.ignore();
+                ;
             }
         }
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

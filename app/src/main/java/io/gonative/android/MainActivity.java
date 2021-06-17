@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
@@ -34,6 +35,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -91,10 +93,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         ShakeDialogFragment.ShakeDialogListener {
     public static final String webviewCacheSubdir = "webviewAppCache";
     private static final String webviewDatabaseSubdir = "webviewDatabase";
-	private static final String TAG = MainActivity.class.getName();
+    private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
     public static final String EXTRA_WEBVIEW_WINDOW_OPEN = "io.gonative.android.MainActivity.Extra.WEBVIEW_WINDOW_OPEN";
-	public static final int REQUEST_SELECT_FILE = 100;
+    public static final int REQUEST_SELECT_FILE = 100;
     private static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     private static final int REQUEST_PERMISSION_GEOLOCATION = 102;
     private static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 103;
@@ -109,22 +111,22 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private Stack<String> backHistory = new Stack<>();
     private String initialUrl;
 
-	private ValueCallback<Uri> mUploadMessage;
+    private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
     private Uri directUploadImageUri;
-	private DrawerLayout mDrawerLayout;
-	private View mDrawerView;
-	private ExpandableListView mDrawerList;
+    private DrawerLayout mDrawerLayout;
+    private View mDrawerView;
+    private ExpandableListView mDrawerList;
     private ProgressBar mProgress;
     private Dialog splashDialog;
     private boolean splashDismissRequiresForce;
     private MySwipeRefreshLayout swipeRefresh;
     private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
-	private ActionBarDrawerToggle mDrawerToggle;
+    private ActionBarDrawerToggle mDrawerToggle;
     private AHBottomNavigation bottomNavigationView;
     private ImageView navigationTitleImage;
-	private ConnectivityManager cm = null;
+    private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private TabManager tabManager;
     private ActionManager actionManager;
@@ -159,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private BroadcastReceiver navigationLevelsChangedReceiver;
     protected String postLoadJavascript;
     protected String postLoadJavascriptForRefresh;
-    private Stack<Bundle>previousWebviewStates;
+    private Stack<Bundle> previousWebviewStates;
     private GeolocationPermissionCallback geolocationPermissionCallback;
     private ArrayList<PermissionsCallbackPair> pendingPermissionRequests = new ArrayList<>();
     private ArrayList<Intent> pendingStartActivityAfterPermissions = new ArrayList<>();
@@ -169,9 +171,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private SignalStrength latestSignalStrength;
 
     @Override
-	protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         final AppConfig appConfig = AppConfig.getInstance(this);
-        GoNativeApplication application = (GoNativeApplication)getApplication();
+        GoNativeApplication application = (GoNativeApplication) getApplication();
 
         setScreenOrientationPreference();
 
@@ -179,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
 
-        this.hideWebviewAlpha  = appConfig.hideWebviewAlpha;
+        this.hideWebviewAlpha = appConfig.hideWebviewAlpha;
 
         super.onCreate(savedInstanceState);
 
@@ -227,10 +229,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         // webview pools
         application.getWebViewPool().init(this);
 
-		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu)
-	    	setContentView(R.layout.activity_gonative);
+            setContentView(R.layout.activity_gonative);
         else
             setContentView(R.layout.activity_gonative_nonav);
 
@@ -267,10 +269,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
             new SegmentedController(this, segmentedSpinner);
         }
 
-		// to save webview cookies to permanent storage
-		CookieSyncManager.createInstance(getApplicationContext());
-		
-		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
+        // to save webview cookies to permanent storage
+        CookieSyncManager.createInstance(getApplicationContext());
+
+        // proxy cookie manager for httpUrlConnection (syncs to webview cookies)
         CookieHandler.setDefault(new WebkitCookieManagerProxy());
 
 
@@ -305,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (url != null) {
             this.initialUrl = url;
             this.mWebview.loadUrl(url);
-        } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
+        } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
             // no worries, loadUrl will be called when this new web view is passed back to the message
         } else {
             Log.e(TAG, "No url specified for MainActivity");
@@ -353,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
             mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                    R.string.drawer_open, R.string.drawer_close){
+                    R.string.drawer_open, R.string.drawer_close) {
                 //Called when a drawer has settled in a completely closed state.
                 public void onDrawerClosed(View view) {
                     invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
@@ -374,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
         }
 
-		if (getSupportActionBar() != null) {
+        if (getSupportActionBar() != null) {
             if (!isRoot || appConfig.showNavigationMenu) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
@@ -418,7 +420,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationTitlesChangedReceiver,
-            new IntentFilter(AppConfig.PROCESSED_NAVIGATION_TITLES));
+                new IntentFilter(AppConfig.PROCESSED_NAVIGATION_TITLES));
 
         this.navigationLevelsChangedReceiver = new BroadcastReceiver() {
             @Override
@@ -439,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (intent == null) return null;
         // first check intent in case it was created from push notification
         String targetUrl = intent.getStringExtra(INTENT_TARGET_URL);
-        if (targetUrl != null && !targetUrl.isEmpty()){
+        if (targetUrl != null && !targetUrl.isEmpty()) {
             return targetUrl;
         }
 
@@ -506,7 +508,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.loginManager.checkLogin();
 
         if (AppConfig.getInstance(this).shakeToClearCache) {
-            SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+            SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
             shakeDetector.setSensitivity(ShakeDetector.SENSITIVITY_HARD);
             shakeDetector.start(sensorManager);
         }
@@ -533,7 +535,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // must remove from view hierarchy to destroy
             ViewGroup parent = (ViewGroup) this.mWebview.getParent();
             if (parent != null) {
-                parent.removeView((View)this.mWebview);
+                parent.removeView((View) this.mWebview);
             }
             if (!this.isPoolWebview) this.mWebview.destroy();
         }
@@ -569,7 +571,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.loadUrl(this.backHistory.pop());
     }
 
-    protected void onSaveInstanceState (Bundle outState) {
+    protected void onSaveInstanceState(Bundle outState) {
         outState.putString("url", mWebview.getUrl());
         outState.putInt("urlLevel", urlLevel);
         super.onSaveInstanceState(outState);
@@ -716,19 +718,20 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (javascript == null) return;
         this.mWebview.runJavascript(javascript);
     }
-	
-	public boolean isDisconnected(){
-		NetworkInfo ni = cm.getActiveNetworkInfo();
-        return ni == null || !ni.isConnected();
-	}
 
-	public void clearWebviewCache() {
+    public boolean isDisconnected() {
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        return ni == null || !ni.isConnected();
+    }
+
+    public void clearWebviewCache() {
         mWebview.clearCache(true);
     }
-	// configures webview settings
-	private void setupWebview(GoNativeWebviewInterface wv){
+
+    // configures webview settings
+    private void setupWebview(GoNativeWebviewInterface wv) {
         WebViewSetup.setupWebviewForActivity(wv, this);
-	}
+    }
 
     private void showSplashScreen(double maxTime, double forceTime) {
         splashDialog = new Dialog(this, R.style.SplashScreen);
@@ -881,23 +884,23 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-	public void updatePageTitle() {
+    public void updatePageTitle() {
         if (AppConfig.getInstance(this).useWebpageTitle) {
             setTitle(this.mWebview.getTitle());
         }
     }
 
-    public void update (Observable sender, Object data) {
+    public void update(Observable sender, Object data) {
         if (sender instanceof LoginManager) {
             updateMenu(((LoginManager) sender).isLoggedIn());
         }
     }
 
-	public void updateMenu(){
+    public void updateMenu() {
         this.loginManager.checkLogin();
-	}
+    }
 
-    private void updateMenu(boolean isLoggedIn){
+    private void updateMenu(boolean isLoggedIn) {
         if (menuAdapter == null)
             setupMenu();
 
@@ -911,7 +914,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-	private boolean isDrawerOpen() {
+    private boolean isDrawerOpen() {
         return mDrawerLayout != null && mDrawerLayout.isDrawerOpen(mDrawerView);
     }
 
@@ -931,8 +934,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             actionBar.setDisplayHomeAsUpEnabled(enabled);
         }
     }
-	
-	private void setupMenu(){
+
+    private void setupMenu() {
         menuAdapter = new JsonMenuAdapter(this);
         try {
             menuAdapter.update("default");
@@ -943,26 +946,26 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         mDrawerList.setOnGroupClickListener(menuAdapter);
         mDrawerList.setOnChildClickListener(menuAdapter);
-	}
-	
-	
-	@Override
-	protected void onPostCreate(Bundle savedInstanceState) {
-		super.onPostCreate(savedInstanceState);
-		// Sync the toggle state after onRestoreInstanceState has occurred.
+    }
+
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
         if (mDrawerToggle != null)
-		    mDrawerToggle.syncState();
-	}
-	
+            mDrawerToggle.syncState();
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-     // Pass any configuration change to the drawer toggles
+        // Pass any configuration change to the drawer toggles
         if (mDrawerToggle != null)
             mDrawerToggle.onConfigurationChanged(newConfig);
     }
-	
-	@Override
+
+    @Override
     @TargetApi(21)
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -1060,15 +1063,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
             if (this.directUploadImageUri != null) {
                 // check if we have external storage permissions
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) !=
-                    PackageManager.PERMISSION_GRANTED) {
+                        PackageManager.PERMISSION_GRANTED) {
                     if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                            Manifest.permission.READ_EXTERNAL_STORAGE)) {
                         Toast.makeText(this, R.string.external_storage_explanation, Toast.LENGTH_LONG).show();
                     }
 
                     ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
+                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                            REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
                     // wait for the onRequestPermissionsResult callback
                     return;
                 }
@@ -1117,35 +1120,33 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     @Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if ((keyCode == KeyEvent.KEYCODE_BACK)) {
-		    if (AppConfig.getInstance(this).disableBackButton) {
-		        return true;
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            if (AppConfig.getInstance(this).disableBackButton) {
+                return true;
             }
 
             if (this.mWebview.exitFullScreen()) {
                 return true;
             }
 
-			if (isDrawerOpen()){
-				mDrawerLayout.closeDrawers();
-				return true;
-			}
-            else if (canGoBack()) {
+            if (isDrawerOpen()) {
+                mDrawerLayout.closeDrawers();
+                return true;
+            } else if (canGoBack()) {
                 goBack();
                 return true;
-            }
-            else if (!this.previousWebviewStates.isEmpty()) {
+            } else if (!this.previousWebviewStates.isEmpty()) {
                 Bundle state = previousWebviewStates.pop();
                 LeanWebView webview = new LeanWebView(this);
                 webview.restoreStateFromBundle(state);
                 switchToWebview(webview, /* isPool */ false, /* isBack */ true);
                 return true;
             }
-		}
+        }
 
-		return super.onKeyDown(keyCode, event);
-	}
+        return super.onKeyDown(keyCode, event);
+    }
 
     // isPoolWebView is used to keep track of whether we are showing a pooled webview, which has implications
     // for page navigation, namely notifying the pool to disown the webview.
@@ -1155,9 +1156,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         setupWebview(newWebview);
 
         // scroll to top
-        ((View)newWebview).scrollTo(0, 0);
+        ((View) newWebview).scrollTo(0, 0);
 
-        View prev = (View)this.mWebview;
+        View prev = (View) this.mWebview;
 
         if (!isBack) {
             // save the state for back button behavior
@@ -1171,25 +1172,25 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // a view can only have one parent, and attempting to add newWebview if it already has
             // a parent will cause a runtime exception. So be extra safe by removing it from its parent.
             ViewParent temp = newWebview.getParent();
-            if (temp instanceof  ViewGroup) {
-                ((ViewGroup) temp).removeView((View)newWebview);
+            if (temp instanceof ViewGroup) {
+                ((ViewGroup) temp).removeView((View) newWebview);
             }
 
             ViewGroup parent = (ViewGroup) prev.getParent();
             int index = parent.indexOfChild(prev);
             parent.removeView(prev);
             parent.addView((View) newWebview, index);
-            ((View)newWebview).setLayoutParams(prev.getLayoutParams());
+            ((View) newWebview).setLayoutParams(prev.getLayoutParams());
 
             // webviews can still send some extraneous events to this activity if we do not remove
             // its callbacks
             WebViewSetup.removeCallbacks((LeanWebView) prev);
 
             if (!this.isPoolWebview) {
-                ((GoNativeWebviewInterface)prev).destroy();
+                ((GoNativeWebviewInterface) prev).destroy();
             }
 
-            ((GoNativeWebviewInterface)prev).setOnSwipeListener(null);
+            ((GoNativeWebviewInterface) prev).setOnSwipeListener(null);
             if ((AppConfig.getInstance(this).swipeGestures)) {
                 newWebview.setOnSwipeListener(this);
             }
@@ -1204,15 +1205,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.topmenu, menu);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.topmenu, menu);
 
         AppConfig appConfig = AppConfig.getInstance(this);
 
         // search item in action bar
-		final MenuItem searchItem = menu.findItem(R.id.action_search);
+        final MenuItem searchItem = menu.findItem(R.id.action_search);
         if (appConfig.searchTemplateUrl != null) {
             // make it visible
             searchItem.setVisible(true);
@@ -1280,17 +1281,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
             this.actionManager.addActions(menu);
         }
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
         // Pass the event to ActionBarDrawerToggle, if it returns
         // true, then it has handled the app icon touch event
 
         if (mDrawerToggle != null) {
             if (mDrawerToggle.onOptionsItemSelected(item)) {
-              return true;
+                return true;
             }
         }
 
@@ -1300,18 +1301,18 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 return true;
             }
         }
-        
+
         // handle other items
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
                 return true;
-	        case R.id.action_search:
-	        	return true;
-	        case R.id.action_refresh:
+            case R.id.action_search:
+                return true;
+            case R.id.action_refresh:
                 onRefresh();
-	        	return true;
-        	default:
+                return true;
+            default:
                 return super.onOptionsItemSelected(item);
         }
     }
@@ -1335,15 +1336,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     private void refreshPage() {
         String url = this.mWebview.getUrl();
-        if (url != null && url.equals(UrlNavigation.OFFLINE_PAGE_URL)){
+        if (url != null && url.equals(UrlNavigation.OFFLINE_PAGE_URL)) {
             if (this.mWebview.canGoBack()) {
                 this.mWebview.goBack();
             } else if (this.initialUrl != null) {
                 this.mWebview.loadUrl(this.initialUrl);
             }
             updateMenu();
-        }
-        else {
+        } else {
             this.postLoadJavascript = this.postLoadJavascriptForRefresh;
             this.mWebview.loadUrl(url);
         }
@@ -1437,20 +1437,20 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public String titleForUrl(String url) {
-        ArrayList<HashMap<String,Object>> entries = AppConfig.getInstance(this).navTitles;
+        ArrayList<HashMap<String, Object>> entries = AppConfig.getInstance(this).navTitles;
         String title = null;
 
         if (entries != null) {
-            for (HashMap<String,Object> entry : entries) {
-                Pattern regex = (Pattern)entry.get("regex");
+            for (HashMap<String, Object> entry : entries) {
+                Pattern regex = (Pattern) entry.get("regex");
 
                 if (regex.matcher(url).matches()) {
                     if (entry.containsKey("title")) {
-                        title = (String)entry.get("title");
+                        title = (String) entry.get("title");
                     }
 
                     if (title == null && entry.containsKey("urlRegex")) {
-                        Pattern urlRegex = (Pattern)entry.get("urlRegex");
+                        Pattern urlRegex = (Pattern) entry.get("urlRegex");
                         Matcher match = urlRegex.matcher(url);
                         if (match.find() && match.groupCount() >= 1) {
                             String temp = match.group(1);
@@ -1463,11 +1463,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
                         // remove words from end of title
                         if (title != null && entry.containsKey("urlChompWords") &&
-                                (Integer)entry.get("urlChompWords") > 0) {
-                            int chompWords = (Integer)entry.get("urlChompWords");
+                                (Integer) entry.get("urlChompWords") > 0) {
+                            int chompWords = (Integer) entry.get("urlChompWords");
                             String[] words = title.split("\\s+");
                             StringBuilder sb = new StringBuilder();
-                            for (int i = 0; i < words.length - chompWords - 1; i++){
+                            for (int i = 0; i < words.length - chompWords - 1; i++) {
                                 sb.append(words[i]);
                                 sb.append(" ");
                             }
@@ -1550,8 +1550,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (status.equals("loading") || (Double.isNaN(interactiveDelay) && status.equals("interactive"))) {
             startedLoading = true;
-        }
-        else if ((!Double.isNaN(interactiveDelay) && status.equals("interactive"))
+        } else if ((!Double.isNaN(interactiveDelay) && status.equals("interactive"))
                 || (startedLoading && status.equals("complete"))) {
 
             if (status.equals("interactive")) {
@@ -1753,12 +1752,19 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
 
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE
 
-                    );
+            );
         } else {
             this.fileDownloader.gotExternalStoragePermissions(true);
         }
+    }
+
+    public void openSettingsApp() {
+        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + this.getPackageName()));
+        this.startActivity(intent);
+        Toast.makeText(this, R.string.hublo_request_permission_explanation_storage, Toast.LENGTH_SHORT).show();
     }
 
     public void getPermission(String[] permissions, PermissionCallback callback) {
@@ -1863,7 +1869,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
 
         try {
-            TelephonyManager telephonyManager = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
+            TelephonyManager telephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
             if (telephonyManager == null) {
                 Log.e(TAG, "Error getting system telephony manager");
             } else {

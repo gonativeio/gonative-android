@@ -14,6 +14,7 @@ import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -22,9 +23,9 @@ import java.util.ArrayList;
 import io.gonative.android.library.AppConfig;
 
 /**
-* Created by weiyin on 2/2/15.
-* Copyright 2014 GoNative.io LLC
-*/
+ * Created by weiyin on 2/2/15.
+ * Copyright 2014 GoNative.io LLC
+ */
 class GoNativeWebChromeClient extends WebChromeClient {
     private MainActivity mainActivity;
     private UrlNavigation urlNavigation;
@@ -40,7 +41,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
     }
 
     @Override
-    public boolean onJsAlert(WebView view, String url, String message, JsResult result){
+    public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
         Toast.makeText(mainActivity, message, Toast.LENGTH_LONG).show();
         result.confirm();
         return true;
@@ -173,9 +174,29 @@ class GoNativeWebChromeClient extends WebChromeClient {
     }
 
     @Override
-    public void onReceivedTitle(WebView view, String title){
+    public void onReceivedTitle(WebView view, String title) {
         mainActivity.updatePageTitle();
     }
+
+
+    /*
+    @Override
+    public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+        WebView targetWebView = new WebView(mainActivity); // pass a context
+        targetWebView.setWebViewClient(new WebViewClient(){
+            @Override
+            public boolean shouldOverrideUrlLoading (WebView view, String url) {
+                // handleWebViewLinks(url); // you can get your target url here
+                return false; // return false if you want the load to continue
+            }
+        });
+        WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+        transport.setWebView(targetWebView);
+        resultMsg.sendToTarget();
+        return true;
+    }
+    */
+
 
     @Override
     public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
