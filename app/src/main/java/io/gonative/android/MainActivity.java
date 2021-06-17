@@ -736,6 +736,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
         }
         splashDialog.setContentView(R.layout.splash_screen);
+        // splashDialog.setContentView(R.layout.splash_screen_animated);
         splashDialog.setCancelable(false);
         splashDialog.show();
 

@@ -100,6 +100,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:18.0.0'
     /**** end google ****/
 
+    implementation "com.airbnb.android:lottie:3.7.0"
+
     /**** local dependencies ****/
     implementation fileTree(dir: 'libs', include: '*.jar')
     implementation fileTree(dir: 'libs', include: '*.aar')
