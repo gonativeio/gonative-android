@@ -197,7 +197,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             boolean noSplash = getIntent().getBooleanExtra("noSplash", false);
 
             if (!noSplash && isFromLauncher && !isFromRecents) {
-                showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
+                // showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
+                showSplashScreen(appConfig.showSplashMaxTime, getShowSplashTime());
             }
 
             // html5 app cache (manifest)
@@ -435,6 +436,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.navigationLevelsChangedReceiver,
                 new IntentFilter(AppConfig.PROCESSED_NAVIGATION_LEVELS));
+    }
+
+    private int getShowSplashTime() {
+        return 2;
     }
 
     private String getUrlFromIntent(Intent intent) {
