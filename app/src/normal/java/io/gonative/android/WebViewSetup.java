@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -119,6 +120,10 @@ public class WebViewSetup {
         }
         if (appConfig.webviewTextZoom > 0) {
             webSettings.setTextZoom(appConfig.webviewTextZoom);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         }
     }
 

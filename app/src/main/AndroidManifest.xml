@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.gonative.android"
-    android:versionName="1.5.4" >
+    android:versionName="1.5.4">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -16,7 +16,8 @@
 
     <!-- permissions for push messages -->
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-    <permission android:name="${applicationId}.permission.C2D_MESSAGE"
+    <permission
+        android:name="${applicationId}.permission.C2D_MESSAGE"
         android:protectionLevel="signature" />
     <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
 
@@ -26,43 +27,46 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:logo="@drawable/ic_actionbar"
-        android:theme="@style/GoNativeTheme.WithActionBar"
         android:supportsRtl="true"
+        android:theme="@style/GoNativeTheme.WithActionBar"
         android:usesCleartextTraffic="true">
 
-        <meta-data android:name="com.google.android.gms.version"
+        <meta-data
+            android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
         <activity
             android:name="io.gonative.android.MainActivity"
-            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize"
             android:label="@string/app_name"
-            android:configChanges="orientation|screenSize">
+            android:launchMode="standard">
             <intent-filter>
-    <action android:name="android.intent.action.VIEW"/>
-    <category android:name="android.intent.category.DEFAULT"/>
-    <category android:name="android.intent.category.BROWSABLE"/>
-    <data android:scheme="http"/>
-    <data android:scheme="https"/>
-    <data android:host="www.medgo.fr"/>
-    <data android:host="medgo.fr"/>
-    <data android:host="www.hublo.com"/>
-    <data android:host="hublo.com"/>
-                <data android:host="m.hublo.com"/>
-                <data android:host="app.hublo.com"/>
-                <data android:host="*.herokuapp.com"/>
-                <data android:pathPrefix="/"/>
-</intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="www.medgo.fr" />
+                <data android:host="medgo.fr" />
+                <data android:host="www.hublo.com" />
+                <data android:host="hublo.com" />
+                <data android:host="m.hublo.com" />
+                <data android:host="app.hublo.com" />
+                <data android:host="*.herokuapp.com" />
+                <data android:pathPrefix="/" />
+            </intent-filter>
 
             <!--example: -->
             <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.VIEW"></action>-->
-                <!--<category android:name="android.intent.category.DEFAULT"></category>-->
-                <!--<category android:name="android.intent.category.BROWSABLE"></category>-->
-                <!--<data android:scheme="http"></data>-->
-                <!--<data android:scheme="https"></data>-->
-                <!--<data android:host="gonative.io"></data>-->
-                <!--<data android:pathPrefix="/"></data>-->
+            <!--<action android:name="android.intent.action.VIEW"></action>-->
+            <!--<category android:name="android.intent.category.DEFAULT"></category>-->
+            <!--<category android:name="android.intent.category.BROWSABLE"></category>-->
+            <!--<data android:scheme="http"></data>-->
+            <!--<data android:scheme="https"></data>-->
+            <!--<data android:host="gonative.io"></data>-->
+            <!--<data android:pathPrefix="/"></data>-->
             <!--</intent-filter>-->
         </activity>
 
@@ -70,15 +74,17 @@
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
-            android:grantUriPermissions="true"
-            android:exported="false">
+            android:exported="false"
+            android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
         </provider>
 
         <!-- Disable default OneSignal handling -->
-        <meta-data android:name="com.onesignal.NotificationOpened.DEFAULT" android:value="DISABLE" />
+        <meta-data
+            android:name="com.onesignal.NotificationOpened.DEFAULT"
+            android:value="DISABLE" />
 
         <activity
             android:name=".SplashActivity"
@@ -89,8 +95,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".SubscriptionsActivity"
-            android:label="@string/subscriptions_activity_title"/>
+        <activity
+            android:name=".SubscriptionsActivity"
+            android:label="@string/subscriptions_activity_title" />
     </application>
 
 </manifest>

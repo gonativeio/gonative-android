@@ -4,10 +4,13 @@
     android:layout_height="match_parent"
     android:background="@android:color/white">
 
-    <androidx.appcompat.widget.AppCompatImageView
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/animationView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:visibility="visible"
-        app:srcCompat="@drawable/ic_vector_logo" />
+        android:background="@android:color/white"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/logo" />
+
 </RelativeLayout>

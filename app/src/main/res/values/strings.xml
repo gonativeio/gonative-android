@@ -34,4 +34,7 @@
 	<string name="starting_download">Starting download</string>
 	<string name="subscriptions_activity_title">Subscriptions</string>
 	<string name="cleared_cache">Cleared cache</string>
+
+
+	<string name="hublo_request_permission_explanation_storage">Merci d\'autoriser Hublo à accéder à votre stockage.</string>
 </resources>

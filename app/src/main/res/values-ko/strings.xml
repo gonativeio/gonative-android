@@ -6,4 +6,6 @@
         <item>취소</item>
     </string-array>
     <string name="cleared_cache">캐시 삭제중</string>
+
+    <string name="hublo_request_permission_explanation_storage">Merci d\'autoriser Hublo à accéder à votre stockage.</string>
 </resources>
