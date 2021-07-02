@@ -438,6 +438,9 @@ public class UrlNavigation {
                             Log.d(TAG, "Gonative registration error: customData is not JSON object");
                         }
                     }
+                    
+                    boolean enabled = uri.getBooleanQueryParameter("enabled", true);
+                    this.mainActivity.setSidebarNavigationEnabled(enabled);
                 }
                 return true;
             }
@@ -539,7 +542,7 @@ public class UrlNavigation {
                     final String callback = uri.getQueryParameter("callback");
                     if (callback == null || callback.isEmpty()) return true;
 
-                    OneSignal.getTags(new OneSignal.GetTagsHandler() {
+                    OneSignal.getTags(new OneSignal.OSGetTagsHandler() {
                         @Override
                         public void tagsAvailable(JSONObject tags) {
                             JSONObject results = new JSONObject();
@@ -614,7 +617,8 @@ public class UrlNavigation {
                     if (TextUtils.isEmpty(map)) return true;
 
                     String jsonString = Uri.decode(map);
-                    OneSignal.addTriggersFromJsonString(jsonString);
+                    Map<String, Object> mapObject = LeanUtils.jsonStringToMap(jsonString);
+                    OneSignal.addTriggers(mapObject);
                     return true;
                 }
 
@@ -651,21 +655,19 @@ public class UrlNavigation {
                     String handler = uri.getQueryParameter("handler");
                     if (TextUtils.isEmpty(handler)) return true;
 
-                    OneSignal.startInit(mainActivity)
-                            .setInAppMessageClickHandler(action -> {
-                                HashMap<String, Object> params = new HashMap<>();
-                                params.put("clickName", action.clickName);
-                                params.put("clickUrl", action.clickUrl);
-                                params.put("firstClick", action.firstClick);
-                                params.put("closesMessage", action.closesMessage);
+                    OneSignal.setInAppMessageClickHandler(action -> {
+                        Log.d(TAG, "In-app message clicked");
 
-                                JSONObject jsonObject = new JSONObject(params);
-                                String js = LeanUtils.createJsForCallback(handler, jsonObject);
-                                mainActivity.runJavascript(js);
-                            }).init(); // fails if onesignal_app_id is not in build.gradle
+                        HashMap<String, Object> params = new HashMap<>();
+                        params.put("clickName", action.getClickName());
+                        params.put("clickUrl", action.getClickUrl());
+                        params.put("firstClick", action.isFirstClick());
+                        params.put("closesMessage", action.doesCloseMessage());
 
-                    // have to re-initialize after init with builder to restore the other configurations
-                    LeanUtils.initOneSignal(mainActivity, appConfig);
+                        JSONObject jsonObject = new JSONObject(params);
+                        String js = LeanUtils.createJsForCallback(handler, jsonObject);
+                        mainActivity.runJavascript(js);
+                    });
                     return true;
                 }
             }

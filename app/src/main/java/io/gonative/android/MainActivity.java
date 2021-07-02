@@ -60,7 +60,7 @@ import android.widget.Toast;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.facebook.applinks.AppLinkData;
-import com.onesignal.OSPermissionSubscriptionState;
+import com.onesignal.OSDeviceState;
 import com.onesignal.OneSignal;
 import com.squareup.seismic.ShakeDetector;
 
@@ -110,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     boolean isPoolWebview = false;
     private Stack<String> backHistory = new Stack<>();
     private String initialUrl;
+    private boolean sidebarNavigationEnabled = true;
 
     private static int webViewCount = 0;
     private static boolean removeExcessWebView = false;
@@ -1439,12 +1440,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 String userId = null;
                 String pushToken = null;
                 boolean subscribed = false;
-
-                OSPermissionSubscriptionState state = OneSignal.getPermissionSubscriptionState();
-                if (state != null && state.getSubscriptionStatus() != null) {
-                    userId = state.getSubscriptionStatus().getUserId();
-                    pushToken = state.getSubscriptionStatus().getPushToken();
-                    subscribed = state.getSubscriptionStatus().getSubscribed();
+    
+                OSDeviceState state = OneSignal.getDeviceState();
+                if (state != null) {
+                    userId = state.getUserId();
+                    pushToken = state.getPushToken();
+                    subscribed = state.isSubscribed();
                 }
 
                 Map installationInfo = Installation.getInfo(this);
@@ -1495,7 +1496,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         AppConfig appConfig = AppConfig.getInstance(this);
-        setDrawerEnabled(appConfig.shouldShowSidebarForUrl(url));
+        setDrawerEnabled(appConfig.shouldShowSidebarForUrl(url) && sidebarNavigationEnabled);
     }
 
     public int urlLevelForUrl(String url) {
@@ -2044,5 +2045,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     public int getWebViewCount(){
         return webViewCount;
+    }
+    
+    public void setSidebarNavigationEnabled(boolean enabled){
+        sidebarNavigationEnabled = enabled;
+        setDrawerEnabled(enabled);
     }
 }

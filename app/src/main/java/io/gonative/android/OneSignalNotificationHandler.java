@@ -3,9 +3,10 @@ package io.gonative.android;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import com.onesignal.OSNotification;
-import com.onesignal.OSNotificationOpenResult;
+import com.onesignal.OSNotificationOpenedResult;
 import com.onesignal.OneSignal;
 
 import org.json.JSONObject;
@@ -13,7 +14,7 @@ import org.json.JSONObject;
 /**
  * Created by weiyin on 2/10/16.
  */
-public class OneSignalNotificationHandler implements OneSignal.NotificationOpenedHandler {
+public class OneSignalNotificationHandler implements OneSignal.OSNotificationOpenedHandler {
     private Context context;
 
     @SuppressWarnings("unused")
@@ -26,10 +27,10 @@ public class OneSignalNotificationHandler implements OneSignal.NotificationOpene
     }
 
     @Override
-    public void notificationOpened(OSNotificationOpenResult openedResult) {
-        OSNotification notification = openedResult.notification;
+    public void notificationOpened(OSNotificationOpenedResult openedResult) {
+        OSNotification notification = openedResult.getNotification();
 
-        String launchUrl = notification.payload.launchURL;
+        String launchUrl = notification.getLaunchURL();
         if (launchUrl != null && !launchUrl.isEmpty()) {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(launchUrl));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -37,7 +38,7 @@ public class OneSignalNotificationHandler implements OneSignal.NotificationOpene
             return;
         }
 
-        JSONObject additionalData = notification.payload.additionalData;
+        JSONObject additionalData = notification.getAdditionalData();
 
         String targetUrl = LeanUtils.optString(additionalData, "targetUrl");
         if (targetUrl == null) targetUrl = LeanUtils.optString(additionalData, "u");

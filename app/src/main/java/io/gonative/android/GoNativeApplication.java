@@ -12,6 +12,7 @@ import android.webkit.ValueCallback;
 import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
+import com.onesignal.OSDeviceState;
 import com.onesignal.OSSubscriptionObserver;
 import com.onesignal.OSSubscriptionState;
 import com.onesignal.OSSubscriptionStateChanges;
@@ -53,7 +54,10 @@ public class GoNativeApplication extends MultiDexApplication {
         }
 
         if (appConfig.oneSignalEnabled) {
-            LeanUtils.initOneSignal(this, appConfig);
+            OneSignal.initWithContext(this);
+            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
+            OneSignal.setAppId(appConfig.oneSignalAppId);
+            OneSignal.setNotificationOpenedHandler(new OneSignalNotificationHandler(this));
         }
 
         if (appConfig.facebookEnabled) {
@@ -76,10 +80,10 @@ public class GoNativeApplication extends MultiDexApplication {
                 public void onOSSubscriptionChanged(OSSubscriptionStateChanges stateChanges) {
                     OSSubscriptionState to = stateChanges.getTo();
                     if (registrationManager != null) {
-                        registrationManager.setOneSignalUserId(to.getUserId(), to.getPushToken(), to.getSubscribed());
+                        registrationManager.setOneSignalUserId(to.getUserId(), to.getPushToken(), to.isSubscribed());
                     }
 
-                    if (to.getSubscribed()) {
+                    if (to.isSubscribed()) {
                         oneSignalRegistered = true;
                     }
 
@@ -98,12 +102,16 @@ public class GoNativeApplication extends MultiDexApplication {
                         return;
                     }
 
-                    OSSubscriptionState state = OneSignal.getPermissionSubscriptionState().getSubscriptionStatus();
+                    OSDeviceState state = OneSignal.getDeviceState();
+                    if (state == null) {
+                        Log.w(TAG, "OSDeviceState is null. OneSignal.initWithContext not called");
+                        return;
+                    }
                     if (registrationManager != null) {
-                        registrationManager.setOneSignalUserId(state.getUserId(), state.getPushToken(), state.getSubscribed());
+                        registrationManager.setOneSignalUserId(state.getUserId(), state.getPushToken(), state.isSubscribed());
                     }
 
-                    if (state.getSubscribed()) {
+                    if (state.isSubscribed()) {
                         scheduler.shutdown();
                         oneSignalRegistered = true;
 

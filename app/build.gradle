@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
+apply plugin: "com.onesignal.androidsdk.onesignal-gradle-plugin"
 
 ext {
     fbAppId = ""
@@ -90,6 +91,7 @@ dependencies {
     implementation 'com.mikepenz:fontawesome-typeface:5.3.1.1@aar'
     implementation 'com.facebook.android:facebook-android-sdk:9.1.1'
     implementation 'com.squareup:seismic:1.0.2'
+    implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'
     /**** end all apps ****/
 
     /**** add-on module dependencies ****/

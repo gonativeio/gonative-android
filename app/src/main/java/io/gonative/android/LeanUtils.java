@@ -19,6 +19,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -273,12 +274,32 @@ public class LeanUtils {
         return bundle;
     }
 
-    public static void initOneSignal(Context context, AppConfig appConfig) {
-        if (appConfig.oneSignalEnabled) {
-            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
-            OneSignal.init(context, "REMOTE", appConfig.oneSignalAppId,
-                    new OneSignalNotificationHandler(context));
-            OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
+    public static HashMap<String, Object> jsonStringToMap(String string) {
+        HashMap<String, Object> map = new HashMap<>();
+        JSONObject jObject = null;
+        try {
+            jObject = new JSONObject(string);
+            Iterator<?> keys = jObject.keys();
+
+            while (keys.hasNext()) {
+                String key = (String) keys.next();
+                String value = jObject.getString(key);
+                map.put(key, value);
+
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
         }
+        return map;
     }
+    
+//    public static void initOneSignal(Context context, AppConfig appConfig) {
+//        if (appConfig.oneSignalEnabled) {
+//            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
+//            OneSignal.init(context, "REMOTE", appConfig.oneSignalAppId,
+//                    new OneSignalNotificationHandler(context));
+//            OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
+//        }
+//    }
 }
