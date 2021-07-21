@@ -4,16 +4,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
-import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
@@ -143,11 +142,16 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             String label = item.optString("label");
             String icon = item.optString("icon");
 
-            Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
-            if (icon != null) {
+            IconicsDrawable iconDrawable = null;
+            if (!icon.isEmpty()) {
                 icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
                 try {
-                    iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon)).color(appConfig.actionbarForegroundColor).sizeDp(24);
+                    iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon));
+                    if(appConfig.tabBarTextColor != null){
+                        iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
+                    }
+                    iconDrawable.setSizeXPx(R.dimen.tabbar_icon_size);
+                    iconDrawable.setSizeYPx(R.dimen.tabbar_icon_size);
                 } catch (IllegalArgumentException e) {
                     // icon was not found in IconValue enum
                     Log.e(TAG, e.getMessage(), e);

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.content.res.ColorStateList;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -16,8 +17,7 @@ import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.mikepenz.fontawesome_typeface_library.FontAwesome;
-import com.mikepenz.iconics.Iconics;
+import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
@@ -225,9 +225,10 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             else
                 iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.faw_angle_down);
 
-            iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_expand_indicator_size);
+            iconDrawable.setSizeXPx(R.dimen.sidebar_expand_indicator_size);
+            iconDrawable.setSizeYPx(R.dimen.sidebar_expand_indicator_size);
             if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
+                iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
             }
             indicator.setImageDrawable(iconDrawable);
             indicator.setVisibility(View.VISIBLE);
@@ -247,9 +248,10 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
             try {
                 IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
                 if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                    iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
+                    iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
                 }
                 imageView.setImageDrawable(iconDrawable);
                 imageView.setVisibility(View.VISIBLE);
@@ -295,9 +297,10 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
             try {
                 IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable = iconDrawable.sizeRes(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
                 if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                    iconDrawable = iconDrawable.color(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
+                    iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
                 }
                 imageView.setImageDrawable(iconDrawable);
                 imageView.setVisibility(View.VISIBLE);

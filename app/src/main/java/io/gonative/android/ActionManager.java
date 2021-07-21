@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -8,7 +9,7 @@ import android.view.MenuItem;
 
 import androidx.appcompat.widget.SearchView;
 
-import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
@@ -104,11 +105,16 @@ public class ActionManager {
                     String icon = AppConfig.optString(entry, "icon");
                     String url = AppConfig.optString(entry, "url");
 
-                    Drawable iconDrawable = null;
+                    IconicsDrawable iconDrawable = null;
                     if (icon != null) {
                         icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
                         try {
-                            iconDrawable = new IconicsDrawable(this.activity, FontAwesome.Icon.valueOf(icon)).sizeDp(24).color(appConfig.actionbarForegroundColor);
+                            iconDrawable = new IconicsDrawable(this.activity, FontAwesome.Icon.valueOf(icon));
+                            if(appConfig.actionbarForegroundColor != null){
+                                iconDrawable.setColorList(ColorStateList.valueOf(appConfig.actionbarForegroundColor));
+                            }
+                            iconDrawable.setSizeXPx(64);
+                            iconDrawable.setSizeYPx(64);
                         } catch (IllegalArgumentException e) {
                             // icon was not found in IconValue enum
                             Log.e(TAG, e.getMessage(), e);
