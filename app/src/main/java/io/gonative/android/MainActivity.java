@@ -34,6 +34,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -46,6 +49,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
@@ -630,12 +635,18 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     public void onSwipeLeft() {
+        if (!AppConfig.getInstance(this).swipeGestures) return;
+        if (canGoForward()) {
+            animateGestureIcon(findViewById(R.id.icon_goForward));
+            goForward();
+        }
     }
 
     @Override
     public void onSwipeRight() {
         if (!AppConfig.getInstance(this).swipeGestures) return;
         if (canGoBack()) {
+            animateGestureIcon(findViewById(R.id.icon_goBack));
             goBack();
         }
     }
@@ -652,6 +663,50 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         this.mWebview.goBack();
+    }
+    
+    private boolean canGoForward() {
+        return this.mWebview.canGoForward();
+    }
+    
+    private void goForward() {
+        if (LeanWebView.isCrosswalk()) {
+            // not safe to do for non-crosswalk, as we may never get a page finished callback
+            // for single-page apps
+            hideWebview();
+        }
+        
+        this.mWebview.goForward();
+    }
+    
+    private void animateGestureIcon(View view) {
+        if (view == null) return;
+        
+        Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
+        anim.setDuration(800); //Duration of the animation
+        anim.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                view.setVisibility(View.VISIBLE);
+            }
+            
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                view.setVisibility(View.GONE);
+            }
+            
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+            }
+        });
+        view.startAnimation(anim);
+    
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(VibrationEffect.createOneShot(100, 50));
+        } else {
+            v.vibrate(100);
+        }
     }
 
     public void sharePage(String optionalUrl) {

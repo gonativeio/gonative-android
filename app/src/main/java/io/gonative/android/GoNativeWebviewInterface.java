@@ -16,6 +16,8 @@ public interface GoNativeWebviewInterface {
     void reload();
     boolean canGoBack();
     void goBack();
+    boolean canGoForward();
+    void goForward();
     void onPause();
     void onResume();
     void stopLoading();

@@ -150,8 +150,8 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
                     if(appConfig.tabBarTextColor != null){
                         iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
                     }
-                    iconDrawable.setSizeXPx(R.dimen.tabbar_icon_size);
-                    iconDrawable.setSizeYPx(R.dimen.tabbar_icon_size);
+                    iconDrawable.setSizeXPx(24);
+                    iconDrawable.setSizeYPx(24);
                 } catch (IllegalArgumentException e) {
                     // icon was not found in IconValue enum
                     Log.e(TAG, e.getMessage(), e);

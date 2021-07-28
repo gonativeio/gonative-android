@@ -225,8 +225,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             else
                 iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.faw_angle_down);
 
-            iconDrawable.setSizeXPx(R.dimen.sidebar_expand_indicator_size);
-            iconDrawable.setSizeYPx(R.dimen.sidebar_expand_indicator_size);
+            iconDrawable.setSizeXPx(32);
+            iconDrawable.setSizeYPx(32);
             if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                 iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
             }
@@ -248,8 +248,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
             try {
                 IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
-                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeXPx(20);
+                iconDrawable.setSizeYPx(20);
                 if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                     iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
                 }
@@ -297,8 +297,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
             try {
                 IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
-                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeXPx(20);
+                iconDrawable.setSizeYPx(20);
                 if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                     iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
                 }

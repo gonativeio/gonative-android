@@ -1,11 +1,14 @@
 package io.gonative.android;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.JsonReader;
 import android.util.JsonToken;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.webkit.ValueCallback;
@@ -14,6 +17,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebHistoryItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import androidx.annotation.RequiresApi;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -47,17 +52,32 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
         @Override
         public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
             if (onSwipeListener == null) return true;
-
-            float absVelocityX = Math.abs(velocityX);
-            float absVelocityY = Math.abs(velocityY);
-            if (absVelocityX < 500 || absVelocityX < absVelocityY) return true;
-
-            if (velocityX < 0) {
-                onSwipeListener.onSwipeLeft();
-            } else {
-                onSwipeListener.onSwipeRight();
+            
+            int swipeVelocityThreshold = 500;
+            int swipeThreshold = 100;
+            int edgeArea = 1000;
+    
+            float diffY = event2.getY() - event1.getY();
+            float diffX = event2.getX() - event1.getX();
+            if (Math.abs(diffX) > Math.abs(diffY)
+                    && Math.abs(velocityX) > swipeVelocityThreshold
+                    && Math.abs(diffX) > swipeThreshold) {
+                if (diffX > 0 && event1.getX() < edgeArea) {
+                    // swipe from edge
+                    onSwipeListener.onSwipeRight();
+                } else if (event1.getX() > getScreenX() - edgeArea) {
+                    // swipe from edge
+                    onSwipeListener.onSwipeLeft();
+                }
+                return true;
             }
-            return true;
+            return false;
+        }
+        
+        private int getScreenX(){
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            ((Activity)getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            return displayMetrics.widthPixels;
         }
 
         @Override
