@@ -151,9 +151,12 @@ public class HtmlIntercept {
             if (insertPoint >= 0) {
                 StringBuilder builder = new StringBuilder(initialLength);
                 builder.append(origString.substring(0, insertPoint));
-                if (appConfig.customCSS != null) {
+                if (appConfig.customCSS != null || appConfig.androidCustomCSS != null) {
                     builder.append("<style>");
-                    builder.append(appConfig.customCSS);
+                    if(appConfig.customCSS != null)
+                        builder.append(appConfig.customCSS).append(" ");
+                    if(appConfig.androidCustomCSS != null)
+                        builder.append(appConfig.androidCustomCSS);
                     builder.append("</style>");
                 }
                 if (appConfig.stringViewport != null) {

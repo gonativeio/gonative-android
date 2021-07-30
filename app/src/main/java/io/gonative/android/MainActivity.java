@@ -64,6 +64,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
+import com.facebook.CallbackManager;
 import com.facebook.applinks.AppLinkData;
 import com.onesignal.OSDeviceState;
 import com.onesignal.OneSignal;
@@ -179,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private String connectivityOnceCallback;
     private PhoneStateListener phoneStateListener;
     private SignalStrength latestSignalStrength;
+    private CallbackManager mFacebookCallbackManager;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -186,7 +188,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         GoNativeApplication application = (GoNativeApplication)getApplication();
 
         setScreenOrientationPreference();
-
+        if(appConfig.androidFullScreen){
+            toggleFullscreen(true);
+        }
         if (appConfig.keepScreenOn) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
@@ -938,10 +942,16 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     private void injectCSSviaJavascript() {
         AppConfig appConfig = AppConfig.getInstance(this);
-        if (appConfig.customCSS == null || appConfig.customCSS.isEmpty()) return;
+        if ((appConfig.customCSS == null || appConfig.customCSS.isEmpty())
+                && (appConfig.androidCustomCSS == null || appConfig.androidCustomCSS.isEmpty())) return;
 
         try {
-            String encoded = Base64.encodeToString(appConfig.customCSS.getBytes("utf-8"), Base64.NO_WRAP);
+            StringBuilder builder = new StringBuilder();
+            if(appConfig.customCSS != null)
+                builder.append(appConfig.customCSS).append(" ");
+            if(appConfig.androidCustomCSS != null)
+                builder.append(appConfig.androidCustomCSS);
+            String encoded = Base64.encodeToString(builder.toString().getBytes("utf-8"), Base64.NO_WRAP);
             String js = "(function() {" +
                     "var parent = document.getElementsByTagName('head').item(0);" +
                     "var style = document.createElement('style');" +
@@ -1065,6 +1075,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @TargetApi(21)
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (mFacebookCallbackManager != null) {
+            mFacebookCallbackManager.onActivityResult(requestCode, resultCode, data);
+        }
         super.onActivityResult(requestCode, resultCode, data);
         if (data != null && data.getBooleanExtra("exit", false))
             finish();
@@ -2105,5 +2118,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public void setSidebarNavigationEnabled(boolean enabled){
         sidebarNavigationEnabled = enabled;
         setDrawerEnabled(enabled);
+    }
+    
+    public void setFacebookCallbackManager(CallbackManager callbackManager){
+        mFacebookCallbackManager = callbackManager;
+    }
+    
+    public void unregisterFacebookCallbackManager(){
+        if(mFacebookCallbackManager == null) return;
+        com.facebook.login.LoginManager.getInstance().unregisterCallback(mFacebookCallbackManager);
+        mFacebookCallbackManager = null;
     }
 }
