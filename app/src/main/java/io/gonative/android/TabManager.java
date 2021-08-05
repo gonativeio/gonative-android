@@ -126,7 +126,11 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             this.currentMenuId = id;
             JSONArray tabs = AppConfig.getInstance(this.mainActivity).tabMenus.get(id);
             setTabs(tabs);
-            showTabs();
+            if(bottomNavigationView.getItemsCount() == 0) {
+                hideTabs();
+            } else {
+                showTabs();
+            }
         }
     }
 
@@ -135,6 +139,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
         int selectedNumber = -1;
         bottomNavigationView.removeAllItems();
+        if(tabs == null) return;
         for (int i = 0; i < tabs.length(); i++) {
             JSONObject item = tabs.optJSONObject(i);
             if (item == null) continue;
@@ -142,21 +147,36 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             String label = item.optString("label");
             String icon = item.optString("icon");
 
-            IconicsDrawable iconDrawable = null;
-            if (!icon.isEmpty()) {
-                icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
-                try {
-                    iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon));
-                    if(appConfig.tabBarTextColor != null){
-                        iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
-                    }
-                    iconDrawable.setSizeXPx(24);
-                    iconDrawable.setSizeYPx(24);
-                } catch (IllegalArgumentException e) {
-                    // icon was not found in IconValue enum
-                    Log.e(TAG, e.getMessage(), e);
-                }
+            // if no label, icon and url is provided, do not include
+            if(label.isEmpty() && icon.isEmpty() && item.optString("url").isEmpty()){
+                continue;
             }
+
+            // set default drawable "Question Mark" when no icon provided
+            if (icon.isEmpty()) {
+                icon = "faw_question";
+                Log.e(TAG, "All tabs must have icons.");
+            } else {
+                icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
+            }
+
+            // create drawable from icon string
+            IconicsDrawable iconDrawable;
+            try {
+                iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon));
+            } catch (IllegalArgumentException e) {
+                // icon was not found in IconValue enum
+                icon = "faw_question";
+                iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon));
+                Log.e(TAG, e.getMessage(), e);
+            }
+
+            // set icon color and size
+            if(appConfig.tabBarTextColor != null){
+                iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
+            }
+            iconDrawable.setSizeXPx(24);
+            iconDrawable.setSizeYPx(24);
 
             AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, iconDrawable);
             bottomNavigationView.addItem(navigationItem);
