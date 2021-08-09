@@ -29,6 +29,7 @@ public class HtmlIntercept {
 
     private Context context;
     private String interceptUrl;
+    private String JSBridgeScript;
 
     // track whether we have intercepted a page at all. We will always try to intercept the first time,
     // because interceptUrl may not have been set if restoring from a bundle.
@@ -48,7 +49,7 @@ public class HtmlIntercept {
         }
 
         AppConfig appConfig = AppConfig.getInstance(context);
-        if (!appConfig.interceptHtml && (appConfig.customHeaders == null || appConfig.customHeaders.isEmpty())) return null;
+        if (!appConfig.interceptHtml && (appConfig.customHeaders == null || appConfig.customHeaders.isEmpty()) && !LeanUtils.checkNativeBridgeUrls(url,context)) return null;
 
         if (!hasIntercepted) {
             interceptUrl = url;
@@ -159,6 +160,19 @@ public class HtmlIntercept {
                         builder.append(appConfig.androidCustomCSS);
                     builder.append("</style>");
                 }
+                // inject JS Bridge Library
+                if(LeanUtils.checkNativeBridgeUrls(url,context)) {
+                    builder.append("<script>");
+                    if(JSBridgeScript == null) {
+                        baos = new ByteArrayOutputStream();
+                        is = new BufferedInputStream(context.getAssets().open("GoNativeJSBridgeLibrary.js"));
+                        IOUtils.copy(is, baos);
+                        JSBridgeScript = baos.toString();
+                    }
+                    builder.append(JSBridgeScript);
+                    builder.append("</script>");
+                }
+
                 if (appConfig.stringViewport != null) {
                     builder.append("<meta name=\"viewport\" content=\"");
                     builder.append(TextUtils.htmlEncode(appConfig.stringViewport));

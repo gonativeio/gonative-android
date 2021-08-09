@@ -27,7 +27,6 @@ import androidx.fragment.app.DialogFragment;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.core.view.GravityCompat;
-import androidx.core.view.ViewCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.appcompat.app.ActionBar;
@@ -64,7 +63,6 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
-import com.facebook.CallbackManager;
 import com.facebook.applinks.AppLinkData;
 import com.onesignal.OSDeviceState;
 import com.onesignal.OneSignal;
@@ -73,7 +71,10 @@ import com.squareup.seismic.ShakeDetector;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.URISyntaxException;
@@ -109,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private static final int REQUEST_PERMISSION_GENERIC = 199;
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
+    public static final int GOOGLE_SIGN_IN = 500;
     private static final float ACTIONBAR_ELEVATION = 12.0f;
 
     private GoNativeWebviewInterface mWebview;
@@ -180,12 +182,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private String connectivityOnceCallback;
     private PhoneStateListener phoneStateListener;
     private SignalStrength latestSignalStrength;
+    private SocialLoginManager socialLoginManager;
+    private String JSBridgeScript;
     private CallbackManager mFacebookCallbackManager;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
+        socialLoginManager = new SocialLoginManager();
 
         setScreenOrientationPreference();
         if(appConfig.androidFullScreen){
@@ -464,6 +469,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.webviewLimitReachedReceiver,
                 new IntentFilter(BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
+    
+        if (appConfig.googleSignInEnabled) {
+            socialLoginManager.initGoogleSignIn(this, appConfig.googleClientID);
+        }
+    
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -910,6 +920,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
             injectCSSviaJavascript();
+            injectJSBridgeLibrary();
         }
     }
 
@@ -928,6 +939,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
             injectCSSviaJavascript();
+            injectJSBridgeLibrary();
         }
 
         webviewIsHidden = false;
@@ -963,6 +975,30 @@ public class MainActivity extends AppCompatActivity implements Observer,
             runJavascript(js);
         } catch (Exception e) {
             Log.e(TAG, "Error injecting customCSS via javascript", e);
+        }
+    }
+
+    private void injectJSBridgeLibrary(){
+        if(!LeanUtils.checkNativeBridgeUrls(mWebview.getUrl(),this)) return;
+        try {
+            if(JSBridgeScript == null) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream is = new BufferedInputStream(getAssets().open("GoNativeJSBridgeLibrary.js"));
+                IOUtils.copy(is, baos);
+                JSBridgeScript = baos.toString();
+            }
+            String encoded = Base64.encodeToString(JSBridgeScript.getBytes(), Base64.NO_WRAP);
+            String js = "(function() {" +
+                    "var parent = document.getElementsByTagName('head').item(0);" +
+                    "var script = document.createElement('script');" +
+                    "script.type = 'text/javascript';" +
+                    // Tell the browser to BASE64-decode the string into your script !!!
+                    "script.innerHTML = window.atob('" + encoded + "');" +
+                    "parent.appendChild(script)" +
+                    "})()";
+            runJavascript(js);
+        } catch (Exception e) {
+            Log.d(TAG, "GoNative JSBridgeLibrary Injection Error:- " + e.getMessage());
         }
     }
 
@@ -1075,10 +1111,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @TargetApi(21)
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (mFacebookCallbackManager != null) {
-            mFacebookCallbackManager.onActivityResult(requestCode, resultCode, data);
+        if (socialLoginManager != null) {
+            socialLoginManager.onActivityResult(this, requestCode, resultCode, data);
         }
         super.onActivityResult(requestCode, resultCode, data);
+        
         if (data != null && data.getBooleanExtra("exit", false))
             finish();
 
@@ -2120,13 +2157,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         setDrawerEnabled(enabled);
     }
     
-    public void setFacebookCallbackManager(CallbackManager callbackManager){
-        mFacebookCallbackManager = callbackManager;
+    public SocialLoginManager getSocialLoginManager(){
+        return socialLoginManager;
     }
     
-    public void unregisterFacebookCallbackManager(){
-        if(mFacebookCallbackManager == null) return;
-        com.facebook.login.LoginManager.getInstance().unregisterCallback(mFacebookCallbackManager);
-        mFacebookCallbackManager = null;
-    }
 }

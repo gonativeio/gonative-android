@@ -45,13 +45,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import com.facebook.AccessToken;
-import com.facebook.CallbackManager;
-import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
-import com.facebook.GraphRequest;
 import com.facebook.appevents.AppEventsLogger;
-import com.facebook.login.LoginResult;
 import com.onesignal.OneSignal;
 
 import org.json.JSONArray;
@@ -762,14 +756,19 @@ public class UrlNavigation {
                 return true;
             }
         }
-
+        
+        if (appConfig.googleSignInEnabled && uri.toString().contains(SocialLoginManager.GOOGLE_LOGIN_URL)) {
+            Log.d(TAG, "Google login URL found. Will do mobile Google SignIn instead.");
+            if (mainActivity.getSocialLoginManager().googleSignIn(mainActivity, uri)) return true;
+        }
+        
+        if (appConfig.facebookEnabled && appConfig.facebookAndroidLogin && uri.toString().contains(SocialLoginManager.FACEBOOK_LOGIN_URL)) {
+            Log.d(TAG, "Facebook login URL found. Will perform Facebook's SDK login instead.");
+            if (mainActivity.getSocialLoginManager().loginViaFacebookSdk(mainActivity, uri)) return true;
+        }
+        
         if (!isInternalUri(uri)){
             if (noAction) return true;
-    
-            if (appConfig.facebookEnabled && appConfig.facebookAndroidLogin && uri.toString().contains("facebook.com/dialog/oauth")) {
-                Log.d(TAG, "Facebook login URL found. Will perform Facebook's SDK login instead.");
-                if (loginViaFacebookSdk(uri)) return true;
-            }
             
             // launch browser
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
@@ -1401,65 +1400,4 @@ public class UrlNavigation {
         KeyChain.choosePrivateKeyAlias(mainActivity, callback, request.getKeyTypes(), request.getPrincipals(), request.getHost(),
                 request.getPort(), null);
     }
-    
-    private boolean loginViaFacebookSdk(Uri uri) {
-        if (uri == null) return false;
-        final String redirectUrl = Uri.decode(uri.getQueryParameter("redirect_uri"));
-        final String state = uri.getQueryParameter("state");
-        final String[] scope = Uri.decode(uri.getQueryParameter("scope")).split(",");
-        
-        FacebookCallback<LoginResult> facebookCallback = new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                GraphRequest request = GraphRequest.newMeRequest(
-                        AccessToken.getCurrentAccessToken(),
-                        (object, response) -> {
-                            // send facebook user details to web
-                            StringBuilder urlBuilder = new StringBuilder(redirectUrl);
-                            urlBuilder.append("?access_token=");
-                            urlBuilder.append(AccessToken.getCurrentAccessToken().getToken());
-                            urlBuilder.append("&state=");
-                            urlBuilder.append(state);
-                            mainActivity.loadUrl(urlBuilder.toString());
-                            mainActivity.unregisterFacebookCallbackManager();
-                        });
-                
-                Bundle parameters = new Bundle();
-                parameters.putString("fields", "id,name,link");
-                request.setParameters(parameters);
-                request.executeAsync();
-            }
-            
-            @Override
-            public void onCancel() {
-                StringBuilder urlBuilder = new StringBuilder(redirectUrl);
-                urlBuilder.append("?error=");
-                urlBuilder.append(Uri.encode("Login Canceled"));
-                urlBuilder.append("&state=");
-                urlBuilder.append(state);
-                mainActivity.loadUrl(urlBuilder.toString());
-                mainActivity.unregisterFacebookCallbackManager();
-            }
-            
-            @Override
-            public void onError(FacebookException exception) {
-                StringBuilder urlBuilder = new StringBuilder(redirectUrl);
-                urlBuilder.append("?error=");
-                urlBuilder.append(Uri.encode(exception.getMessage()));
-                urlBuilder.append("&state=");
-                urlBuilder.append(state);
-                mainActivity.loadUrl(urlBuilder.toString());
-                mainActivity.unregisterFacebookCallbackManager();
-            }
-        };
-        
-        CallbackManager callbackManager = CallbackManager.Factory.create();
-        mainActivity.setFacebookCallbackManager(callbackManager);
-        
-        // login with no button
-        com.facebook.login.LoginManager.getInstance().registerCallback(callbackManager, facebookCallback);
-        com.facebook.login.LoginManager.getInstance().logInWithReadPermissions(mainActivity, Arrays.asList(scope));
-        return true;
-    }
-    
 }
