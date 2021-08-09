@@ -184,7 +184,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private SignalStrength latestSignalStrength;
     private SocialLoginManager socialLoginManager;
     private String JSBridgeScript;
-    private CallbackManager mFacebookCallbackManager;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
