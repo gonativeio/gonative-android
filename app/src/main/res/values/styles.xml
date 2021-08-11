@@ -12,15 +12,15 @@
 
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
 
-        <item name="colorPrimary">#ffffff</item>
-        <item name="colorPrimaryDark">#5c5c5c</item>
-        <item name="titleTextColor">#1e496e</item>
-        <item name="colorAccent">#1e496e</item>
+        <!--GoNative placeholder: colorPrimary-->
+        <!--GoNative placeholder: colorPrimaryDark-->
+        <!--GoNative placeholder: titleTextColor-->
+        <!--GoNative placeholder: colorAccent-->
     </style>
 
     <style name="DrawerArrowStyle" parent="@style/Widget.AppCompat.DrawerArrowToggle">
         <item name="spinBars">true</item>
-        <item name="color">#1e496e</item>
+        <!--GoNative placeholder: drawerArrowColor-->
     </style>
 
     <attr name="ic_action_refresh" format="reference"/>

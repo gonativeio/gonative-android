@@ -75,15 +75,15 @@ if (accentColor !== '' && !/^([0-9a-f]){6}$/.test(accentColor)) {
 // set theme
 if (theme === 'light') {
     console.log('Setting light theme');
-    replaceStringInFile(styleFile, '<style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">',
-        '<style name="GoNativeTheme.WithActionBar" parent="GN.Light">');
+    // default theme, no change necessary
 } else if (theme === 'dark') {
     console.log('Setting dark theme');
-    replaceStringInFile(styleFile, '<style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">',
+    replaceStringInFile(styleFile, '<style name="GoNativeTheme.WithActionBar" parent="GN.Light">',
         '<style name="GoNativeTheme.WithActionBar" parent="GN.Dark">');
 } else if (theme === 'light.darkactionbar') {
     console.log('Setting light with dark actionbar theme');
-    // default theme, no change necessary
+    replaceStringInFile(styleFile, '<style name="GoNativeTheme.WithActionBar" parent="GN.Light">',
+            '<style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">');
 }
 
 // set actionbar background color
