@@ -524,6 +524,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (AppConfig.getInstance(this).oneSignalEnabled) {
             OneSignal.clearOneSignalNotifications();
         }
+        AudioUtils.initAudioFocusListener(this);
     }
 
     @Override

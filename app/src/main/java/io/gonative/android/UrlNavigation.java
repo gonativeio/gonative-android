@@ -697,7 +697,19 @@ public class UrlNavigation {
                     this.mainActivity.unsubscribeConnectivity();
                 }
             }
-
+    
+            if ("audio".equals(uri.getHost())) {
+                if ("/requestFocus".equals(uri.getPath())) {
+                    boolean requestFocusEnabled = uri.getBooleanQueryParameter("enabled", true);
+                    if (requestFocusEnabled) {
+                        AudioUtils.requestAudioFocus(mainActivity);
+                    } else {
+                        AudioUtils.abandonFocusRequest(mainActivity);
+                    }
+                    return true;
+                }
+            }
+            
             if ("statusbar".equals(uri.getHost())) {
                 if ("/set".equals(uri.getPath())) {
                     String style = uri.getQueryParameter("style");
