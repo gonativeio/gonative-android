@@ -120,9 +120,10 @@ public class HtmlIntercept {
                 return null;
 
             // get and intercept the data
-            String encoding = connection.getContentEncoding();
-            if (encoding == null)
-                encoding = "UTF-8";
+            String characterEncoding = getCharset(mimetype);
+            if (characterEncoding == null) {
+                characterEncoding = "UTF-8";
+            }
 
             if (is == null) {
                 try {
@@ -140,7 +141,7 @@ public class HtmlIntercept {
             IOUtils.copy(is, baos);
             String origString;
             try {
-                origString = baos.toString(encoding);
+                origString = baos.toString(characterEncoding);
             } catch (UnsupportedEncodingException e){
                 // Everything should support UTF-8
                 origString = baos.toString("UTF-8");
@@ -250,5 +251,20 @@ public class HtmlIntercept {
 
     private static boolean stringsNotEqual(String s1, String s2) {
         return !(s1 == null ? s2 == null : s1.equals(s2));
+    }
+
+    private static String getCharset(String contentType) {
+        if (contentType == null || contentType.isEmpty()) {
+            return null;
+        }
+
+        String[] tokens = contentType.split("; *");
+        for (String s : tokens) {
+            if (s.startsWith("charset=")) {
+                return s.substring("charset=".length());
+            }
+        }
+
+        return null;
     }
 }
