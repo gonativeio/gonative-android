@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.facebook.AccessToken;
@@ -20,12 +21,13 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class SocialLoginManager {
     private static final String TAG = UrlNavigation.class.getName();
     
     public static final String GOOGLE_LOGIN_URL = "accounts.google.com/o/oauth";
-    public static final String FACEBOOK_LOGIN_URL = "facebook.com/dialog/oauth";
+    public static final Pattern FACEBOOK_LOGIN_URL_REGEX = Pattern.compile(".*facebook\\.com.*dialog/oauth.*"); // regex to handle version code
     
     private CallbackManager mFacebookCallbackManager;
     private GoogleSignInClient mGoogleSignInClient;
@@ -54,7 +56,13 @@ public class SocialLoginManager {
         
         final String redirectUrl = Uri.decode(uri.getQueryParameter("redirect_uri"));
         final String state = uri.getQueryParameter("state");
-        final String[] scope = Uri.decode(uri.getQueryParameter("scope")).split(",");
+        final String scopeStr = Uri.decode(uri.getQueryParameter("scope"));
+        final String[] scope;
+        if (TextUtils.isEmpty(scopeStr)) {
+            scope = new String[0];
+        } else {
+            scope = scopeStr.split(",");
+        }
         
         FacebookCallback<LoginResult> facebookCallback = new FacebookCallback<LoginResult>() {
             @Override
@@ -63,10 +71,10 @@ public class SocialLoginManager {
                         AccessToken.getCurrentAccessToken(),
                         (object, response) -> {
                             // send facebook user details to web
-                            String url = redirectUrl + "?access_token=" +
-                                    AccessToken.getCurrentAccessToken().getToken() +
-                                    "&state=" +
-                                    Uri.encode(state);
+                            String url = Uri.parse(redirectUrl).buildUpon()
+                                    .appendQueryParameter("access_token", AccessToken.getCurrentAccessToken().getToken())
+                                    .appendQueryParameter("state", state)
+                                    .toString();
                             mainActivity.loadUrl(url);
                             unregisterFacebookCallbackManager();
                         });
@@ -79,20 +87,20 @@ public class SocialLoginManager {
             
             @Override
             public void onCancel() {
-                String url = redirectUrl + "?error=" +
-                        Uri.encode("Login Canceled") +
-                        "&state=" +
-                        Uri.encode(state);
+                String url = Uri.parse(redirectUrl).buildUpon()
+                        .appendQueryParameter("error", "Login Canceled")
+                        .appendQueryParameter("state", state)
+                        .toString();
                 mainActivity.loadUrl(url);
                 unregisterFacebookCallbackManager();
             }
             
             @Override
             public void onError(FacebookException exception) {
-                String url = redirectUrl + "?error=" +
-                        Uri.encode(exception.getMessage()) +
-                        "&state=" +
-                        Uri.encode(state);
+                String url = Uri.parse(redirectUrl).buildUpon()
+                        .appendQueryParameter("error", exception.getMessage())
+                        .appendQueryParameter("state", state)
+                        .toString();
                 mainActivity.loadUrl(url);
                 unregisterFacebookCallbackManager();
             }
@@ -127,12 +135,15 @@ public class SocialLoginManager {
         return true;
     }
     
-    private void handleGoogleSignInResult(MainActivity mainActivity, Task<GoogleSignInAccount> completedTask) {
+    private void handleGoogleSignInResult(MainActivity
+                                                  mainActivity, Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             
             // send google user details to web
-            String url = mGoogleSignInRedirectUrl + "?id_token=" + account.getIdToken();
+            String url = Uri.parse(mGoogleSignInRedirectUrl).buildUpon()
+                    .appendQueryParameter("id_token", account.getIdToken())
+                    .toString();
             mainActivity.loadUrl(url);
             
         } catch (ApiException e) {
@@ -140,7 +151,9 @@ public class SocialLoginManager {
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
             Log.w(TAG, "Google SignIn result failed = " + e.getStatusCode());
             // send error to web
-            String url = mGoogleSignInRedirectUrl + "?error=" + e.getStatusCode();
+            String url = Uri.parse(mGoogleSignInRedirectUrl).buildUpon()
+                    .appendQueryParameter("error", String.valueOf(e.getStatusCode()))
+                    .toString();
             mainActivity.loadUrl(url);
             
         }
