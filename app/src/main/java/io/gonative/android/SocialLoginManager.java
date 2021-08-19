@@ -82,7 +82,7 @@ public class SocialLoginManager {
                 String url = redirectUrl + "?error=" +
                         Uri.encode("Login Canceled") +
                         "&state=" +
-                        state;
+                        Uri.encode(state);
                 mainActivity.loadUrl(url);
                 unregisterFacebookCallbackManager();
             }
