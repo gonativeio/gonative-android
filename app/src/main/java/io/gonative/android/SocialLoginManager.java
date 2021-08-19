@@ -66,7 +66,7 @@ public class SocialLoginManager {
                             String url = redirectUrl + "?access_token=" +
                                     AccessToken.getCurrentAccessToken().getToken() +
                                     "&state=" +
-                                    state;
+                                    Uri.encode(state);
                             mainActivity.loadUrl(url);
                             unregisterFacebookCallbackManager();
                         });
@@ -92,7 +92,7 @@ public class SocialLoginManager {
                 String url = redirectUrl + "?error=" +
                         Uri.encode(exception.getMessage()) +
                         "&state=" +
-                        state;
+                        Uri.encode(state);
                 mainActivity.loadUrl(url);
                 unregisterFacebookCallbackManager();
             }
