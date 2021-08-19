@@ -123,6 +123,10 @@ public class HtmlIntercept {
             String characterEncoding = getCharset(mimetype);
             if (characterEncoding == null) {
                 characterEncoding = "UTF-8";
+            } else if (characterEncoding.toLowerCase().equals("iso-8859-1")) {
+                // windows-1252 is a superset of ios-8859-1 that supports the euro symbol €.
+                // The html5 spec actually maps "iso-8859-1" to windows-1252 encoding
+                characterEncoding = "windows-1252";
             }
 
             if (is == null) {
