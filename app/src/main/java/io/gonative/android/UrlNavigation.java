@@ -699,7 +699,7 @@ public class UrlNavigation {
             }
     
             if ("audio".equals(uri.getHost())) {
-                if ("/requestFocus".equals(uri.getPath())) {
+                if ("/requestFocus".equals(uri.getPath()) && appConfig.enableWebRTCBluetoothAudio) {
                     boolean requestFocusEnabled = uri.getBooleanQueryParameter("enabled", true);
                     if (requestFocusEnabled) {
                         AudioUtils.requestAudioFocus(mainActivity);
