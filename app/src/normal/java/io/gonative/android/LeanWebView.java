@@ -18,8 +18,6 @@ import android.webkit.WebHistoryItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.RequiresApi;
-
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -32,6 +30,7 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     private boolean checkLoginSignup = true;
     private GestureDetector gd;
     private OnSwipeListener onSwipeListener;
+    private boolean zoomed = false;
 
     public LeanWebView(Context context) {
         super(context);
@@ -51,15 +50,36 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     GestureDetector.SimpleOnGestureListener sogl = new GestureDetector.SimpleOnGestureListener() {
         @Override
         public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
-            if (onSwipeListener == null) return true;
-            
-            int swipeVelocityThreshold = 500;
-            int swipeThreshold = 100;
-            int edgeArea = 1000;
+            if (onSwipeListener == null) return false;
+            return compareEvents(event1, event2, velocityX, velocityY);
+        }
     
+        @Override
+        public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX, float distanceY) {
+            if (onSwipeListener == null) return false;
+            return compareEvents(event1, event2, 0, 0);
+        }
+        
+        private int getScreenX(){
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            ((Activity)getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            return displayMetrics.widthPixels;
+        }
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return true;
+        }
+    
+        private boolean compareEvents(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
+            int swipeVelocityThreshold = 0;
+            int swipeThreshold = 100;
+            int edgeArea = 500;
+            int diagonalMovementThreshold = 100;
+        
             float diffY = event2.getY() - event1.getY();
             float diffX = event2.getX() - event1.getX();
-            if (Math.abs(diffX) > Math.abs(diffY)
+            if (Math.abs(diffX) > (Math.abs(diffY) - diagonalMovementThreshold)
                     && Math.abs(velocityX) > swipeVelocityThreshold
                     && Math.abs(diffX) > swipeThreshold) {
                 if (diffX > 0 && event1.getX() < edgeArea) {
@@ -72,17 +92,6 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
                 return true;
             }
             return false;
-        }
-        
-        private int getScreenX(){
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            ((Activity)getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            return displayMetrics.widthPixels;
-        }
-
-        @Override
-        public boolean onDown(MotionEvent e) {
-            return true;
         }
     };
 
@@ -240,12 +249,40 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
         void onSwipeLeft();
         void onSwipeRight();
     }
-
+    
+    /**
+     * @deprecated use GoNativeEdgeSwipeLayout in place of LeanWebView's swipe listener.
+     */
     public OnSwipeListener getOnSwipeListener() {
         return onSwipeListener;
     }
-
+    
+    /**
+     * @deprecated use GoNativeEdgeSwipeLayout in place of LeanWebView's swipe listener.
+     */
     public void setOnSwipeListener(OnSwipeListener onSwipeListener) {
         this.onSwipeListener = onSwipeListener;
+    }
+    
+    @Override
+    public int getMaxHorizontalScroll() {
+        return computeHorizontalScrollRange() - getWidth();
+    }
+    
+    @Override
+    public void zoomBy(float zoom){
+        super.zoomBy(zoom);
+        zoomed = true;
+    }
+    
+    @Override
+    public boolean isZoomed(){
+        return zoomed;
+    }
+    
+    @Override
+    public boolean zoomOut(){
+        zoomed = false;
+        return super.zoomOut();
     }
 }

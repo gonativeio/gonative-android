@@ -7,51 +7,32 @@
     <io.gonative.android.MySwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottom_navigation"
-        >
+        android:layout_height="match_parent">
 
-        <RelativeLayout
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+        <io.gonative.android.widget.SwipeHistoryNavigationLayout
+            android:id="@+id/swipe_history_nav"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-            <io.gonative.android.LeanWebView android:id="@+id/webview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-            <View
-                android:id="@+id/webviewOverlay"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:alpha="0.0"
-                android:background="@android:color/white"/>
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
 
-            <ImageView
-                android:id="@+id/icon_goBack"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentLeft="true"
-                android:layout_centerVertical="true"
-                android:layout_margin="8dp"
-                android:background="@drawable/bg_nav_icon"
-                android:padding="4dp"
-                android:visibility="gone"
-                app:srcCompat="@drawable/ic_go_back" />
+                <io.gonative.android.LeanWebView
+                    android:id="@+id/webview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
-            <ImageView
-                android:id="@+id/icon_goForward"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:layout_margin="8dp"
-                android:background="@drawable/bg_nav_icon"
-                android:padding="4dp"
-                android:visibility="gone"
-                app:srcCompat="@drawable/ic_go_forward" />
-        </RelativeLayout>
+                <View
+                    android:id="@+id/webviewOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.0"
+                    android:background="@android:color/white" />
 
+            </RelativeLayout>
+
+        </io.gonative.android.widget.SwipeHistoryNavigationLayout>
     </io.gonative.android.MySwipeRefreshLayout>
 
     <ProgressBar

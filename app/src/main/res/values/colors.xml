@@ -4,4 +4,8 @@
 
     <color name="background_tab_pressed">#1AFFFFFF</color>
     <color name="tab_foreground_color">#1e496e</color>
+
+    <color name="swipe_nav_background">#fafafa</color>
+    <color name="swipe_nav_inactive">#888888</color>
+    <color name="swipe_nav_active">#1e88e5</color>
 </resources>

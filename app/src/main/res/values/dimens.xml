@@ -9,5 +9,11 @@
     <dimen name="sidebar_expand_indicator_size">32dp</dimen>
     <dimen name="tabbar_icon_size">24dp</dimen>
 
+    <dimen name="handle_icon_corner_radius">32dp</dimen>
+    <dimen name="handle_icon_size">40dp</dimen>
+    <dimen name="handle_icon_padding">8dp</dimen>
+    <dimen name="handle_icon_elevation">2dp</dimen>
+    <dimen name="handle_text_padding_right">12dp</dimen>
+    <dimen name="handle_text_padding_bottom">1dp</dimen>
 
 </resources>

@@ -27,15 +27,11 @@ import androidx.fragment.app.DialogFragment;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -48,8 +44,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
@@ -91,10 +85,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.android.widget.GoNativeDrawerLayout;
+import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
+import io.gonative.android.widget.SwipeHistoryNavigationLayout;
 
 public class MainActivity extends AppCompatActivity implements Observer,
-        SwipeRefreshLayout.OnRefreshListener,
-        LeanWebView.OnSwipeListener,
+        GoNativeSwipeRefreshLayout.OnRefreshListener,
         ShakeDetector.Listener,
         ShakeDialogFragment.ShakeDialogListener {
     public static final String BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED = "io.gonative.android.MainActivity.Extra.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED";
@@ -126,13 +122,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
     private Uri directUploadImageUri;
-	private DrawerLayout mDrawerLayout;
+	private GoNativeDrawerLayout mDrawerLayout;
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
     private ProgressBar mProgress;
     private Dialog splashDialog;
     private boolean splashDismissRequiresForce;
-    private MySwipeRefreshLayout swipeRefresh;
+    private MySwipeRefreshLayout swipeRefreshLayout;
+    private SwipeHistoryNavigationLayout swipeNavLayout;
     private RelativeLayout fullScreenLayout;
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
@@ -259,25 +256,67 @@ public class MainActivity extends AppCompatActivity implements Observer,
         mProgress = findViewById(R.id.progress);
         this.fullScreenLayout = findViewById(R.id.fullscreen);
 
-        swipeRefresh = findViewById(R.id.swipe_refresh);
-        swipeRefresh.setEnabled(appConfig.pullToRefresh);
-        swipeRefresh.setOnRefreshListener(this);
-        swipeRefresh.setCanChildScrollUpCallback(new MySwipeRefreshLayout.CanChildScrollUpCallback() {
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setEnabled(appConfig.pullToRefresh);
+        swipeRefreshLayout.setOnRefreshListener(this);
+        swipeRefreshLayout.setCanChildScrollUpCallback(() -> mWebview.getScrollY() > 0);
+        
+        swipeNavLayout = findViewById(R.id.swipe_history_nav);
+        swipeNavLayout.setEnabled(appConfig.swipeGestures);
+        swipeNavLayout.setSwipeNavListener(new SwipeHistoryNavigationLayout.OnSwipeNavListener() {
             @Override
-            public boolean canSwipeRefreshChildScrollUp() {
-                return mWebview.getScrollY() > 0;
+            public boolean canSwipeLeftEdge() {
+                return canGoBack();
+            }
+    
+            @Override
+            public boolean canSwipeRightEdge() {
+                return canGoForward();
+            }
+    
+            @NonNull
+            @Override
+            public String getGoBackLabel() {
+                return "";
+            }
+    
+            @Override
+            public boolean navigateBack() {
+                if (appConfig.swipeGestures && canGoBack()) {
+                    goBack();
+                    return true;
+                }
+                return false;
+            }
+    
+            @Override
+            public boolean navigateForward() {
+                if (appConfig.swipeGestures && canGoForward()) {
+                    goForward();
+                    return true;
+                }
+                return false;
+            }
+    
+            @Override
+            public void leftSwipeReachesLimit() {
+        
+            }
+    
+            @Override
+            public void rightSwipeReachesLimit() {
+        
             }
         });
+        
         if (appConfig.pullToRefreshColor != null) {
-            swipeRefresh.setColorSchemeColors(appConfig.pullToRefreshColor);
+            swipeRefreshLayout.setColorSchemeColors(appConfig.pullToRefreshColor);
+            swipeNavLayout.setActiveColor(appConfig.pullToRefreshColor);
         }
 
         this.webviewOverlay = findViewById(R.id.webviewOverlay);
         this.mWebview = findViewById(R.id.webview);
         setupWebview(this.mWebview);
-        if (appConfig.swipeGestures) {
-            this.mWebview.setOnSwipeListener(this);
-        }
 
         // profile picker
         if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
@@ -386,6 +425,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 }
             };
             mDrawerLayout.addDrawerListener(mDrawerToggle);
+            mDrawerLayout.setDisableTouch(appConfig.swipeGesturesEdge);
 
             setupMenu();
 
@@ -649,24 +689,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         Toast.makeText(this, R.string.cleared_cache, Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void onSwipeLeft() {
-        if (!AppConfig.getInstance(this).swipeGestures) return;
-        if (canGoForward()) {
-            animateGestureIcon(findViewById(R.id.icon_goForward));
-            goForward();
-        }
-    }
-
-    @Override
-    public void onSwipeRight() {
-        if (!AppConfig.getInstance(this).swipeGestures) return;
-        if (canGoBack()) {
-            animateGestureIcon(findViewById(R.id.icon_goBack));
-            goBack();
-        }
-    }
-
     private boolean canGoBack() {
         return this.mWebview.canGoBack();
     }
@@ -693,36 +715,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
         
         this.mWebview.goForward();
-    }
-    
-    private void animateGestureIcon(View view) {
-        if (view == null) return;
-        
-        Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-        anim.setDuration(800); //Duration of the animation
-        anim.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-                view.setVisibility(View.VISIBLE);
-            }
-            
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                view.setVisibility(View.GONE);
-            }
-            
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-            }
-        });
-        view.startAnimation(anim);
-    
-        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            v.vibrate(VibrationEffect.createOneShot(100, 50));
-        } else {
-            v.vibrate(100);
-        }
     }
 
     public void sharePage(String optionalUrl) {
@@ -1069,8 +1061,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (!appConfig.showNavigationMenu) return;
 
         if (mDrawerLayout != null) {
-            mDrawerLayout.setDrawerLockMode(enabled ? DrawerLayout.LOCK_MODE_UNLOCKED :
-                    DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+            mDrawerLayout.setDrawerLockMode(enabled ? GoNativeDrawerLayout.LOCK_MODE_UNLOCKED :
+                    GoNativeDrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         }
 
         ActionBar actionBar = getSupportActionBar();
@@ -1107,6 +1099,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
      // Pass any configuration change to the drawer toggles
         if (mDrawerToggle != null)
             mDrawerToggle.onConfigurationChanged(newConfig);
+//        if (swipeRefreshLayout != null)
+//       TODO     swipeRefreshLayout.onConfigurationChanged(newConfig);
     }
 	
 	@Override
@@ -1339,11 +1333,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             if (!this.isPoolWebview) {
                 ((GoNativeWebviewInterface)prev).destroy();
             }
-
-            ((GoNativeWebviewInterface)prev).setOnSwipeListener(null);
-            if ((AppConfig.getInstance(this).swipeGestures)) {
-                newWebview.setOnSwipeListener(this);
-            }
         }
 
         this.isPoolWebview = isPoolWebview;
@@ -1500,21 +1489,29 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 return super.onOptionsItemSelected(item);
         }
     }
-
+    
     @Override
     public void onRefresh() {
         refreshPage();
+        stopNavAnimation(true, 1000);
+    }
+    
+    private void stopNavAnimation(boolean isConsumed){
+        stopNavAnimation(isConsumed, 100);
+    }
+    
+    private void stopNavAnimation(boolean isConsumed, int delay){
         // let the refreshing spinner stay for a little bit if the native show/hide is disabled
         // otherwise there isn't enough of a user confirmation that the page is refreshing
-        if (AppConfig.getInstance(this).disableAnimations) {
+        if (isConsumed && AppConfig.getInstance(this).disableAnimations) {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    swipeRefresh.setRefreshing(false);
+                    swipeRefreshLayout.setRefreshing(false);
                 }
-            }, 1000); // 1 second
+            }, delay);
         } else {
-            this.swipeRefresh.setRefreshing(false);
+            this.swipeRefreshLayout.setRefreshing(false);
         }
     }
 
@@ -2016,15 +2013,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void enableSwipeRefresh() {
-        if (this.swipeRefresh != null) {
-            this.swipeRefresh.setEnabled(true);
+        if (this.swipeRefreshLayout != null) {
+            this.swipeRefreshLayout.setEnabled(true);
         }
     }
 
     public void restoreSwipRefreshDefault() {
-        if (this.swipeRefresh != null) {
+        if (this.swipeRefreshLayout != null) {
             AppConfig appConfig = AppConfig.getInstance(this);
-            this.swipeRefresh.setEnabled(appConfig.pullToRefresh);
+            this.swipeRefreshLayout.setEnabled(appConfig.pullToRefresh);
         }
     }
 

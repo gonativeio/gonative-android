@@ -1,14 +1,15 @@
 package io.gonative.android;
 
 import android.content.Context;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.AttributeSet;
+
+import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
 
 /**
  * Created by weiyin on 9/13/15.
  * Copyright 2014 GoNative.io LLC
  */
-public class MySwipeRefreshLayout extends SwipeRefreshLayout {
+public class MySwipeRefreshLayout extends GoNativeSwipeRefreshLayout {
     private CanChildScrollUpCallback canChildScrollUpCallback;
 
     public interface CanChildScrollUpCallback {

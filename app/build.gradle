@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 apply plugin: "com.onesignal.androidsdk.onesignal-gradle-plugin"
 
 ext {
@@ -86,6 +87,8 @@ android {
 
 dependencies {
     /**** dependencies used by all apps ****/
+    implementation "androidx.core:core-ktx:1.6.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
     implementation "com.mikepenz:iconics-core:5.3.0-b01"
     implementation 'com.mikepenz:fontawesome-typeface:5.13.3.0-kotlin@aar'

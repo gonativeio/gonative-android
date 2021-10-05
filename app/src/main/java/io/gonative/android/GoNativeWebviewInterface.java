@@ -1,8 +1,10 @@
 package io.gonative.android;
 
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewParent;
 import android.view.ViewPropertyAnimator;
+import android.webkit.WebSettings;
 
 /**
  * Created by weiyin on 9/8/15.
@@ -33,7 +35,13 @@ public interface GoNativeWebviewInterface {
     ViewPropertyAnimator animate();
     int getWidth();
     int getScrollY();
+    int getScrollX();
+    int getMaxHorizontalScroll();
     void clearFocus();
+    void flingScroll(int vx, int vy);
+    void zoomBy(float zoom);
+    boolean zoomOut();
+    boolean isZoomed();
 
     void runJavascript(String js);
     boolean checkLoginSignup();
@@ -41,7 +49,13 @@ public interface GoNativeWebviewInterface {
 
     void saveStateToBundle(Bundle outBundle);
     void restoreStateFromBundle(Bundle inBundle);
-
+    
+    /**
+     * @deprecated use GoNativeEdgeSwipeLayout in place of LeanWebView's swipe listener.
+     */
     LeanWebView.OnSwipeListener getOnSwipeListener();
+    /**
+     * @deprecated use GoNativeEdgeSwipeLayout in place of LeanWebView's swipe listener.
+     */
     void setOnSwipeListener(LeanWebView.OnSwipeListener listener);
 }
