@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -196,9 +197,11 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                 lastTouchX = ev.x
                 oldDeltaX = deltaX
                 deltaX = abs(lastTouchX - firstTouchX)
-                if (isSwipingLeftEdge) {
+                val mDrawerLayout = findViewById<GoNativeDrawerLayout>(R.id.drawer_layout)
+
+                if (isSwipingLeftEdge && swipeNavListener.isSwipeEnabled()) {
                     moveLeftHandle()
-                } else if (isSwipingRightEdge) {
+                } else if (isSwipingRightEdge && swipeNavListener.isSwipeEnabled()) {
                     if (swipeNavListener.canSwipeRightEdge()) {
                         moveRightHandle()
                     } else if (deltaX > oldDeltaX) {
@@ -367,6 +370,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         override fun navigateForward(): Boolean = true
         override fun leftSwipeReachesLimit() {}
         override fun rightSwipeReachesLimit() {}
+        override fun isSwipeEnabled(): Boolean = true
     }
 
     interface OnSwipeNavListener {
@@ -405,5 +409,9 @@ class SwipeHistoryNavigationLayout : FrameLayout {
          * Called when the movement of the right-edge swipe reaches its limit.
          */
         fun rightSwipeReachesLimit()
+        /**
+         * Return true if swipe edge to navigate is enabled
+         */
+        fun isSwipeEnabled(): Boolean
     }
 }

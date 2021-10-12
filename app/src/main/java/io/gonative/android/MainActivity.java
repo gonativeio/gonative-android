@@ -307,6 +307,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
             public void rightSwipeReachesLimit() {
         
             }
+
+            @Override
+            public boolean isSwipeEnabled() {
+                return appConfig.swipeGestures;
+            }
         });
         
         if (appConfig.pullToRefreshColor != null) {
@@ -425,7 +430,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 }
             };
             mDrawerLayout.addDrawerListener(mDrawerToggle);
-            mDrawerLayout.setDisableTouch(appConfig.swipeGesturesEdge);
+            mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
 
             setupMenu();
 
