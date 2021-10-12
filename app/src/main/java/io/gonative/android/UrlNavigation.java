@@ -774,7 +774,7 @@ public class UrlNavigation {
             if (mainActivity.getSocialLoginManager().googleSignIn(mainActivity, uri)) return false;
         }
         
-        if (appConfig.facebookEnabled && appConfig.facebookAndroidLogin && SocialLoginManager.FACEBOOK_LOGIN_URL_REGEX.matcher(uri.toString()).matches()) {
+        if (appConfig.facebookEnabled && appConfig.facebookLogin && SocialLoginManager.FACEBOOK_LOGIN_URL_REGEX.matcher(uri.toString()).matches()) {
             Log.d(TAG, "Facebook login URL found. Will perform Facebook's SDK login instead.");
             if (mainActivity.getSocialLoginManager().loginViaFacebookSdk(mainActivity, uri)) return true;
         }
