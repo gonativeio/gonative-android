@@ -6,7 +6,7 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="GoNativeTheme.WithActionBar" parent="GN.Light">
+    <style name="GoNativeTheme.WithActionBar" parent="GN.DayNight">
         <!--Remove action bar shadow. We are managing it ourselves with the tabs.-->
         <item name="android:windowContentOverlay">@null</item>
 
@@ -43,6 +43,13 @@
         <item name="ic_action_refresh">@drawable/ic_refresh_white_24dp</item>
         <item name="ic_action_search">@drawable/ic_search_white_24dp</item>
         <item name="ic_action_share">@drawable/ic_share_white_24dp</item>
+    </style>
+
+    <style name="GN.DayNight" parent="Theme.AppCompat.DayNight">
+        <!-- Can add custom styles -->
+        <item name="ic_action_refresh">@drawable/ic_refresh_black_24dp</item>
+        <item name="ic_action_search">@drawable/ic_search_black_24dp</item>
+        <item name="ic_action_share">@drawable/ic_share_black_24dp</item>
     </style>
 
     <style name="LoginFormContainer">

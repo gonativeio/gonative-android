@@ -25,11 +25,6 @@ import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
-
-import androidx.annotation.RequiresApi;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.appcompat.app.AlertDialog;
-
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
 import android.text.TextUtils;
@@ -45,6 +40,10 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.facebook.appevents.AppEventsLogger;
 import com.onesignal.OneSignal;
 
@@ -59,7 +58,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
@@ -744,6 +742,27 @@ public class UrlNavigation {
                                     ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN &
                                     ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
                         }
+                    }
+                }
+            }
+
+            if ("theme".equals(uri.getHost())) {
+                if ("/set".equals(uri.getPath())) {
+                    String themeMode = uri.getQueryParameter("mode");
+                    String mode = "";
+
+                    if (!TextUtils.isEmpty(themeMode)) {
+                        if (themeMode.equals("light")) {
+                            mode = mainActivity.LIGHT_THEME;
+                        } else if (themeMode.equals("dark")) {
+                            mode = mainActivity.DARK_THEME;
+                        } else if (themeMode.equals("default")) {
+                            mode = mainActivity.DEFAULT_THEME;
+                        }
+                    }
+
+                    if (!TextUtils.isEmpty(mode)) {
+                        mainActivity.setWebviewTheme(mode);
                     }
                 }
             }

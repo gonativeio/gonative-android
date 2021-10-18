@@ -96,6 +96,7 @@ dependencies {
     implementation 'com.squareup:seismic:1.0.2'
     implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'
     implementation 'com.facebook.android:facebook-login:[8.1)'
+    implementation 'androidx.webkit:webkit:1.4.0'
     /**** end all apps ****/
 
     /**** add-on module dependencies ****/

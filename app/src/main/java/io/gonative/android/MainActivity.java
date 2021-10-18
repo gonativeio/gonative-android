@@ -21,20 +21,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.DialogFragment;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.core.view.GravityCompat;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
-
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -49,12 +39,27 @@ import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.fragment.app.DialogFragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.facebook.applinks.AppLinkData;
@@ -108,6 +113,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int GOOGLE_SIGN_IN = 500;
     private static final float ACTIONBAR_ELEVATION = 12.0f;
+    public static final String LIGHT_THEME = "LIGHT";
+    public static final String DARK_THEME = "DARK";
+    public static final String DEFAULT_THEME = "DEFAULT";
 
     private GoNativeWebviewInterface mWebview;
     private View webviewOverlay;
@@ -146,6 +154,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private int urlLevel = -1;
     private int parentUrlLevel = -1;
     private Handler handler = new Handler();
+    private String defaultTheme = LIGHT_THEME;
+
     private Runnable statusChecker = new Runnable() {
         @Override
         public void run() {
@@ -517,7 +527,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (appConfig.googleSignInEnabled) {
             socialLoginManager.initGoogleSignIn(this, appConfig.googleClientID);
         }
-    
+
+        setupAppTheme(appConfig);
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -2163,6 +2174,73 @@ public class MainActivity extends AppCompatActivity implements Observer,
     
     public SocialLoginManager getSocialLoginManager(){
         return socialLoginManager;
+    }
+
+    public void setupAppTheme(AppConfig appConfig) {
+        if (!setThemeViaDeviceTheme()) {
+            // Retrieve theme from appConfig
+            if (!TextUtils.isEmpty(appConfig.androidTheme)) {
+                String appConfigTheme = "";
+
+                if (appConfig.androidTheme.equals("light")) {
+                    appConfigTheme = LIGHT_THEME;
+                } else if (appConfig.androidTheme.equals("dark")) {
+                    appConfigTheme = DARK_THEME;
+                } else if (appConfig.androidTheme.equals("default")) {
+                    appConfigTheme = DEFAULT_THEME;
+                }
+
+                setWebviewTheme(appConfigTheme);
+            } else {
+                setWebviewTheme(defaultTheme);
+            }
+        }
+    }
+
+    private boolean setThemeViaDeviceTheme() {
+        try {
+            int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            boolean isNightMode = nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+
+            setWebviewTheme(isNightMode ? DARK_THEME : LIGHT_THEME);
+            return true;
+        } catch (Exception e) {
+            Log.d("MainActivity", "setupAppTheme: Failed to retrieve device theme");
+            return false;
+        }
+    }
+
+    public void setWebviewTheme(String themeMode) {
+        WebSettings settings = this.mWebview.getSettings();
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
+            WebSettingsCompat.setForceDarkStrategy(
+                    settings,
+                    WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING
+            );
+        }
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+            if (themeMode.equals(LIGHT_THEME)) {
+
+                WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_OFF);
+                // Setting app theme
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            } else if (themeMode.equals(DARK_THEME)) {
+                WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_ON);
+                // Setting app theme
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            } else if (themeMode.equals(DEFAULT_THEME)) {
+                // Use app's default theme - LIGHT
+                setWebviewTheme(defaultTheme);
+            } else {
+                // Get device's default theme
+                int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                boolean isNightMode = nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+
+                setWebviewTheme(isNightMode ? DARK_THEME : LIGHT_THEME);
+            }
+        }
     }
     
 }
