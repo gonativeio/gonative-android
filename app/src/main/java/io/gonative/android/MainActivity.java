@@ -70,10 +70,7 @@ import com.squareup.seismic.ShakeDetector;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.URISyntaxException;
@@ -190,7 +187,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private PhoneStateListener phoneStateListener;
     private SignalStrength latestSignalStrength;
     private SocialLoginManager socialLoginManager;
-    private String JSBridgeScript;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -930,7 +926,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
             injectCSSviaJavascript();
-            injectJSBridgeLibrary();
         }
     }
 
@@ -949,7 +944,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
             injectCSSviaJavascript();
-            injectJSBridgeLibrary();
         }
 
         webviewIsHidden = false;
@@ -985,30 +979,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             runJavascript(js);
         } catch (Exception e) {
             Log.e(TAG, "Error injecting customCSS via javascript", e);
-        }
-    }
-
-    private void injectJSBridgeLibrary(){
-        if(!LeanUtils.checkNativeBridgeUrls(mWebview.getUrl(),this)) return;
-        try {
-            if(JSBridgeScript == null) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                InputStream is = new BufferedInputStream(getAssets().open("GoNativeJSBridgeLibrary.js"));
-                IOUtils.copy(is, baos);
-                JSBridgeScript = baos.toString();
-            }
-            String encoded = Base64.encodeToString(JSBridgeScript.getBytes(), Base64.NO_WRAP);
-            String js = "(function() {" +
-                    "var parent = document.getElementsByTagName('head').item(0);" +
-                    "var script = document.createElement('script');" +
-                    "script.type = 'text/javascript';" +
-                    // Tell the browser to BASE64-decode the string into your script !!!
-                    "script.innerHTML = window.atob('" + encoded + "');" +
-                    "parent.appendChild(script)" +
-                    "})()";
-            runJavascript(js);
-        } catch (Exception e) {
-            Log.d(TAG, "GoNative JSBridgeLibrary Injection Error:- " + e.getMessage());
         }
     }
 

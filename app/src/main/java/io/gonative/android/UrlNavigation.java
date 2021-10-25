@@ -28,6 +28,7 @@ import android.provider.Settings;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -52,7 +53,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -99,6 +103,7 @@ public class UrlNavigation {
     private boolean finishOnExternalUrl = false;
     private boolean restoreBrightnessOnNavigation = false;
     private double connectionOfflineTime;
+    private String JSBridgeScript;
 
     UrlNavigation(MainActivity activity) {
 		this.mainActivity = activity;
@@ -1084,7 +1089,25 @@ public class UrlNavigation {
         if (doNativeBridge) {
             runGonativeDeviceInfo();
         }
-	}
+        injectJSBridgeLibrary();
+    }
+
+    private void injectJSBridgeLibrary(){
+        if(!LeanUtils.checkNativeBridgeUrls(currentWebviewUrl,mainActivity)) return;
+        try {
+            if(JSBridgeScript == null) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream is = new BufferedInputStream(mainActivity.getAssets().open("GoNativeJSBridgeLibrary.js"));
+                IOUtils.copy(is, baos);
+                JSBridgeScript = baos.toString();
+            }
+            mainActivity.runJavascript(JSBridgeScript);
+            // call the user created function that needs library access on page finished.
+            mainActivity.runJavascript(LeanUtils.createJsForCallback("gonative_library_ready", null));
+        } catch (Exception e) {
+            Log.d(TAG, "GoNative JSBridgeLibrary Injection Error:- " + e.getMessage());
+        }
+    }
 
     public void onFormResubmission(GoNativeWebviewInterface view, Message dontResend, Message resend) {
         resend.sendToTarget();
