@@ -751,27 +751,6 @@ public class UrlNavigation {
                 }
             }
 
-            if ("theme".equals(uri.getHost())) {
-                if ("/set".equals(uri.getPath())) {
-                    String themeMode = uri.getQueryParameter("mode");
-                    String mode = "";
-
-                    if (!TextUtils.isEmpty(themeMode)) {
-                        if (themeMode.equals("light")) {
-                            mode = mainActivity.LIGHT_THEME;
-                        } else if (themeMode.equals("dark")) {
-                            mode = mainActivity.DARK_THEME;
-                        } else if (themeMode.equals("default")) {
-                            mode = mainActivity.DEFAULT_THEME;
-                        }
-                    }
-
-                    if (!TextUtils.isEmpty(mode)) {
-                        mainActivity.setWebviewTheme(mode);
-                    }
-                }
-            }
-
             return true;
         }
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="GN.DayNight" parent="Theme.AppCompat.DayNight">
+        <!-- Can add custom styles -->
+        <item name="ic_action_refresh">@drawable/ic_refresh_black_24dp</item>
+        <item name="ic_action_search">@drawable/ic_search_black_24dp</item>
+        <item name="ic_action_share">@drawable/ic_share_black_24dp</item>
+        <item name="android:forceDarkAllowed">true</item>
+        <item name="android:isLightTheme">true</item>
+    </style>
+</resources>
