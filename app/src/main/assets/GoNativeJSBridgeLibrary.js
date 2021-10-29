@@ -2,25 +2,50 @@
 function setNextTimeout() {
     if (gonative._nextTimeout) return;
     gonative._nextTimeout = setTimeout(function() {
-            gonative._nextTimeout = null;
-            if (gonative._pendingCalls.length == 0) return;
-            if (gonative._pendingCalls.length == 1) {
-                window.location.href = gonative._pendingCalls.pop();
-                return;
-            } else {
-                var json = JSON.stringify({
-                    urls: gonative._pendingCalls
-                });
-                window.location.href = "gonative://nativebridge/multi?data=" + encodeURIComponent(json);
-                gonative._pendingCalls = [];
-            }
-        },
-        0);
+                gonative._nextTimeout = null;
+                if (gonative._pendingCalls.length == 0) return;
+                if (gonative._pendingCalls.length == 1) {
+                  window.location.href = gonative._pendingCalls.pop();
+                  return;
+                } else {
+                    var json = JSON.stringify({urls: gonative._pendingCalls});
+                    window.location.href = "gonative://nativebridge/multi?data=" + encodeURIComponent(json);
+                    gonative._pendingCalls = [];
+                }
+              }, 0);
 }
 
-function addCallbackFunction(callbackFunction) {
+// this function returns a promise and also supports callback as params.callback
+function addCommandCallback(command, params) {
+    var tempFunctionName = '_gonative_temp_' + Math.random().toString(36).slice(2);
+    var callback;
+    if(params) callback = params.callback;
+    else {
+        params = {
+            'callback': tempFunctionName
+        };
+    }
+    return new Promise(function(resolve, reject) {
+        // declare a temporary function
+        window[tempFunctionName] = function(data) {
+            resolve(data);
+            if (typeof callback === 'function') {
+                callback(data);
+            } else if (typeof callback === 'string' &&
+                typeof window[callback] === 'function'){
+                window[callback](data);
+            }
+            // delete this temporary function when done
+            delete window[tempFunctionName];
+        }
+        // execute command
+        addCommand(command, params);
+    });
+}
+
+function addCallbackFunction(callbackFunction){
     var callbackName;
-    if (typeof callbackFunction === 'string') {
+    if(typeof callbackFunction === 'string'){
         callbackName = callbackFunction;
     } else {
         callbackName = '_gonative_temp_' + Math.random().toString(36).slice(2);
@@ -32,17 +57,17 @@ function addCallbackFunction(callbackFunction) {
     return callbackName;
 }
 
-function addCommand(command, params) {
-    if (params) {
+function addCommand(command, params){
+    if(params){
         command += "?";
         var keysArray = Object.keys(params);
-        for (var i = 0; i < keysArray.length; i++) {
-            if (typeof params[keysArray[i]] === 'function') {
+        for(var i = 0; i < keysArray.length; i++){
+            if(typeof params[keysArray[i]] === 'function'){
                 command += keysArray[i] + "=" + addCallbackFunction(params[keysArray[i]]);
             } else {
                 command += keysArray[i] + "=" + encodeURIComponent(params[keysArray[i]]);
             }
-            if (i != keysArray.length - 1) command += "&";
+            if(i != keysArray.length - 1) command += "&";
         }
     }
     gonative._pendingCalls.push(command);
@@ -60,171 +85,169 @@ var gonative = {
 
 // to be modified as required
 gonative.nativebridge = {
-    custom: function(params) {
+    custom: function (params){
         addCommand("gonative://nativebridge/custom", params);
     }
 };
 
 gonative.registration = {
-    send: function(params) {
+    send: function(params){
         addCommand("gonative://registration/send", params);
     }
 };
 
 gonative.sidebar = {
-    setItems: function(params) {
+    setItems: function (params){
         addCommand("gonative://sidebar/setItems", params);
     }
 };
 
 gonative.tabNavigation = {
-    selectTab: function(tabIndex) {
+    selectTab: function (tabIndex){
         addCommand('gonative://tabs/select/' + tabIndex);
     },
-    setTabs: function(params) {
+    setTabs: function (params){
         addCommand('gonative://tabs/setTabs', params);
     }
 };
 
 gonative.share = {
-    sharePage: function(params) {
+    sharePage: function (params){
         addCommand("gonative://share/sharePage", params);
     },
-    downloadFile: function(params) {
+    downloadFile: function (params){
         addCommand("gonative://share/downloadFile", params);
     }
 };
 
 gonative.open = {
-    appSettings: function() {
+    appSettings: function (){
         addCommand("gonative://open/app-settings");
     }
 };
 
 gonative.webview = {
-    clearCache: function() {
+    clearCache: function(){
         addCommand("gonative://webview/clearCache");
     }
 };
 
 gonative.config = {
-    set: function(params) {
+    set: function(params){
         addCommand("gonative://config/set", params);
     }
 };
 
 gonative.navigationTitles = {
-    set: function(params) {
+    set: function (params){
         addCommand("gonative://navigationTitles/set", params);
     },
-    setCurrent: function(params) {
+    setCurrent: function (params){
         addCommand("gonative://navigationTitles/setCurrent", params);
     },
-    revert: function() {
+    revert: function(){
         addCommand("gonative://navigationTitles/set?persist=true");
     }
 };
 
 gonative.navigationLevels = {
-    set: function(params) {
-        var json = JSON.stringify(params);
+    set: function (params){
         addCommand("gonative://navigationLevels/set", params);
     },
-    setCurrent: function(params) {
-        var json = JSON.stringify(params);
+    setCurrent: function(params){
         addCommand("gonative://navigationLevels/set", params);
     },
-    revert: function() {
+    revert: function(){
         addCommand("gonative://navigationLevels/set?persist=true");
     }
 };
 
 gonative.statusbar = {
-    set: function(params) {
+    set: function (params){
         addCommand("gonative://statusbar/set", params);
     }
 };
 
 gonative.screen = {
-    setBrightness: function(params) {
+    setBrightness: function(params){
         addCommand("gonative://screen/setBrightness", params);
     }
 };
 
 gonative.navigationMaxWindows = {
-    set: function(params) {
+    set: function (params){
         addCommand("gonative://navigationMaxWindows/set", params);
     }
 };
 
 gonative.connectivity = {
-    get: function(params) {
-        addCommand("gonative://connectivity/get", params);
+    get: function (params){
+        return addCommandCallback("gonative://connectivity/get", params);
     },
-    subscribe: function(params) {
-        addCommand("gonative://connectivity/subscribe", params);
+    subscribe: function (params){
+        return addCommandCallback("gonative://connectivity/subscribe", params);
     },
-    unsubscribe: function(params) {
-        addCommand("gonative://connectivity/unsubscribe", params);
+    unsubscribe: function (){
+        addCommand("gonative://connectivity/unsubscribe");
     }
 };
 
 gonative.run = {
-    deviceInfo: function() {
+    deviceInfo: function(){
         addCommand("gonative://run/gonative_device_info");
     },
-    onesignalInfo: function() {
+    onesignalInfo: function(){
         addCommand("gonative://run/gonative_onesignal_info");
     }
 };
 
 // onesignal
 gonative.onesignal = {
-    register: function() {
+    register: function (){
         addCommand("gonative://onesignal/register");
     },
-    userPrivacyConsent: {
-        grant: function() {
+    userPrivacyConsent:{
+        grant: function (){
             addCommand("gonative://onesignal/userPrivacyConsent/grant");
         },
-        revoke: function() {
+        revoke: function (){
             addCommand("gonative://onesignal/userPrivacyConsent/revoke");
         }
     },
     tags: {
-        getTags: function(params) {
-            addCommand("gonative://onesignal/tags/get", params);
+        getTags: function(params){
+            return addCommandCallback("gonative://onesignal/tags/get", params);
         },
-        setTags: function(params) {
+        setTags: function (params){
             addCommand("gonative://onesignal/tags/set", params);
         }
     },
-    showTagsUI: function() {
+    showTagsUI: function (){
         addCommand("gonative://onesignal/showTagsUI");
     },
-    promptLocation: function() {
+    promptLocation: function (){
         addCommand("gonative://onesignal/promptLocation");
     },
     iam: {
-        addTrigger: function(params) {
+        addTrigger: function (params){
             addCommand("gonative://onesignal/iam/addTrigger", params);
         },
-        addTriggers: function(params) {
+        addTriggers: function (params){
             addCommand("gonative://onesignal/iam/addTriggers", params);
         },
-        removeTriggerForKey: function(params) {
+        removeTriggerForKey: function (params){
             addCommand("gonative://onesignal/iam/removeTriggerForKey", params);
         },
-        getTriggerValueForKey: function(params) {
+        getTriggerValueForKey: function (params){
             addCommand("gonative://onesignal/iam/getTriggerValueForKey", params);
         },
-        pauseInAppMessages: function() {
+        pauseInAppMessages: function (){
             addCommand("gonative://onesignal/iam/pauseInAppMessages?pause=true");
         },
-        resumeInAppMessages: function() {
+        resumeInAppMessages: function (){
             addCommand("gonative://onesignal/iam/pauseInAppMessages?pause=false");
         },
-        setInAppMessageClickHandler: function(params) {
+        setInAppMessageClickHandler: function (params){
             addCommand("gonative://onesignal/iam/setInAppMessageClickHandler", params);
         }
     }
@@ -233,10 +256,10 @@ gonative.onesignal = {
 // facebook
 gonative.facebook = {
     events: {
-        send: function(params) {
+        send: function(params){
             addCommand("gonative://facebook/events/send", params);
         },
-        sendPurchase: function(params) {
+        sendPurchase: function(params){
             addCommand("gonative://facebook/events/sendPurchase", params);
         }
     }
@@ -249,37 +272,37 @@ gonative.facebook = {
 gonative.ios = {};
 
 gonative.ios.window = {
-    open: function(params) {
+    open: function (params){
         addCommand("gonative://window/open", params);
     }
 };
 
 gonative.ios.geoLocation = {
-    requestLocation: function() {
+    requestLocation: function (){
         addCommand("gonative://geolocationShim/requestLocation");
     },
-    startWatchingLocation: function() {
+    startWatchingLocation: function (){
         addCommand("gonative://geolocationShim/startWatchingLocation");
     },
-    stopWatchingLocation: function() {
+    stopWatchingLocation: function (){
         addCommand("gonative://geolocationShim/stopWatchingLocation");
     }
 };
 
 gonative.ios.attconsent = {
-    request: function(params) {
-        addCommand("gonative://ios/attconsent/request", params);
+    request: function (params){
+        return addCommandCallback("gonative://ios/attconsent/request", params);
     },
-    status: function(params) {
-        addCommand("gonative://ios/attconsent/status", params);
+    status: function (params){
+        return addCommandCallback("gonative://ios/attconsent/status", params);
     }
 };
 
 gonative.ios.backgroundAudio = {
-    start: function() {
+    start: function(){
         addCommand("gonative://backgroundAudio/start");
     },
-    end: function() {
+    end: function(){
         addCommand("gonative://backgroundAudio/end");
     }
 };
@@ -291,22 +314,22 @@ gonative.ios.backgroundAudio = {
 gonative.android = {};
 
 gonative.android.geoLocation = {
-    promptAndroidLocationServices: function() {
+    promptAndroidLocationServices: function(){
         addCommand("gonative://geoLocation/promptAndroidLocationServices");
     }
 };
 
 gonative.android.screen = {
-    fullscreen: function() {
+    fullscreen: function(){
         addCommand("gonative://screen/fullscreen");
     },
-    normal: function() {
+    normal: function(){
         addCommand("gonative://screen/normal");
     },
-    keepScreenOn: function() {
+    keepScreenOn: function(){
         addCommand("gonative://screen/keepScreenOn");
     },
-    keepScreenNormal: function() {
+    keepScreenNormal: function(){
         addCommand("gonative://screen/keepScreenNormal");
     }
 };

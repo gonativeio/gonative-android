@@ -772,16 +772,6 @@ public class UrlNavigation {
             }
         }
         
-        if (appConfig.googleSignInEnabled && uri.toString().contains(SocialLoginManager.GOOGLE_LOGIN_URL)) {
-            Log.d(TAG, "Google login URL found. Will do mobile Google SignIn instead.");
-            if (mainActivity.getSocialLoginManager().googleSignIn(mainActivity, uri)) return false;
-        }
-        
-        if (appConfig.facebookEnabled && appConfig.facebookLogin && SocialLoginManager.FACEBOOK_LOGIN_URL_REGEX.matcher(uri.toString()).matches()) {
-            Log.d(TAG, "Facebook login URL found. Will perform Facebook's SDK login instead.");
-            if (mainActivity.getSocialLoginManager().loginViaFacebookSdk(mainActivity, uri)) return true;
-        }
-        
         if (!isInternalUri(uri)){
             if (noAction) return true;
             

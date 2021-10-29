@@ -182,13 +182,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private String connectivityOnceCallback;
     private PhoneStateListener phoneStateListener;
     private SignalStrength latestSignalStrength;
-    private SocialLoginManager socialLoginManager;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
-        socialLoginManager = new SocialLoginManager();
 
         setScreenOrientationPreference();
         if(appConfig.androidFullScreen){
@@ -515,10 +513,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.webviewLimitReachedReceiver,
                 new IntentFilter(BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
-    
-        if (appConfig.googleSignInEnabled) {
-            socialLoginManager.initGoogleSignIn(this, appConfig.googleClientID);
-        }
 
         setupAppTheme();
     }
@@ -1089,9 +1083,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @TargetApi(21)
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (socialLoginManager != null) {
-            socialLoginManager.onActivityResult(this, requestCode, resultCode, data);
-        }
         super.onActivityResult(requestCode, resultCode, data);
         
         if (data != null && data.getBooleanExtra("exit", false))
@@ -2138,10 +2129,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         setDrawerEnabled(enabled);
     }
     
-    public SocialLoginManager getSocialLoginManager(){
-        return socialLoginManager;
-    }
-
     public void setupAppTheme() {
         WebSettings settings = this.mWebview.getSettings();
 

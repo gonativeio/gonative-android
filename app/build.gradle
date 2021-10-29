@@ -15,6 +15,9 @@ task parseAppConfig {
     if (parsedJson.services.facebook && parsedJson.services.facebook.appId) {
         fbAppId = parsedJson.services.facebook.appId
     }
+    if (parsedJson.services.socialLogin && parsedJson.services.socialLogin.facebookLogin && parsedJson.services.socialLogin.facebookLogin.appId) {
+        fbAppId = parsedJson.services.socialLogin.facebookLogin.appId
+    }
     if (parsedJson.services.oneSignal && parsedJson.services.oneSignal.applicationId) {
         onesignalAppId = parsedJson.services.oneSignal.applicationId
     }
@@ -109,7 +112,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.gms:play-services-gcm:17.0.0'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
-    implementation 'com.google.android.gms:play-services-auth:19.2.0'
     /**** end google ****/
 
     /**** local dependencies ****/
