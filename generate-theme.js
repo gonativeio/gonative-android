@@ -78,12 +78,12 @@ if (theme === 'light') {
     // default theme, no change necessary
 } else if (theme === 'dark') {
     console.log('Setting dark theme');
-    replaceStringInFile(styleFile, '<style name="GoNativeTheme.WithActionBar" parent="GN.Light">',
-        '<style name="GoNativeTheme.WithActionBar" parent="GN.Dark">');
+    replaceStringInFile(styleFile, '<style name="GoNativeTheme.NoActionBar" parent="GN.Light">',
+        '<style name="GoNativeTheme.NoActionBar" parent="GN.Dark">');
 } else if (theme === 'light.darkactionbar') {
     console.log('Setting light with dark actionbar theme');
-    replaceStringInFile(styleFile, '<style name="GoNativeTheme.WithActionBar" parent="GN.Light">',
-            '<style name="GoNativeTheme.WithActionBar" parent="GN.LightWithDarkActionBar">');
+    replaceStringInFile(styleFile, '<style name="GoNativeTheme.NoActionBar" parent="GN.Light">',
+            '<style name="GoNativeTheme.NoActionBar" parent="GN.LightWithDarkActionBar">');
 }
 
 // set actionbar background color

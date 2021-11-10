@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu_item"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="horizontal">
@@ -8,14 +9,14 @@
         android:id="@+id/menu_item_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingTop="15dp"
-        android:paddingBottom="15dp"
-        android:paddingLeft="25dp"
-        android:paddingRight="5dp"
-        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:paddingTop="13dp"
+        android:paddingBottom="13dp"
+        android:paddingLeft="22dp"
+        android:paddingRight="22dp"
+        android:paddingStart="22dp"
+        android:paddingEnd="22dp"
+        android:fontFamily="sans-serif-medium"
         android:textColor="?android:textColorPrimary"
-        android:layout_centerVertical="true"
-        android:paddingEnd="5dp"
-        android:paddingStart="25dp" />
+        android:layout_centerVertical="true"/>
 
 </RelativeLayout>

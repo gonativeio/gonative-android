@@ -4,9 +4,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -15,10 +16,13 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.mikepenz.iconics.IconicsDrawable;
+import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -38,10 +42,18 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     private boolean groupsHaveIcons = false;
     private boolean childrenHaveIcons = false;
     private String status;
+    private int selectedIndex;
+    private ExpandableListView expandableListView;
+    private Integer highlightColor;
 
-    JsonMenuAdapter(MainActivity activity) {
+    JsonMenuAdapter(MainActivity activity, ExpandableListView expandableListView) {
         this.mainActivity = activity;
+        this.expandableListView = expandableListView;
         menuItems = null;
+        this.highlightColor = AppConfig.getInstance(mainActivity).sidebarHighlightColor;
+        if (this.highlightColor == null) {
+            this.highlightColor = Color.parseColor("#442f79fe");
+        }
 
         // broadcast messages
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -55,9 +67,10 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         LocalBroadcastManager.getInstance(this.mainActivity)
                 .registerReceiver(broadcastReceiver,
                         new IntentFilter(AppConfig.PROCESSED_MENU_MESSAGE));
+
     }
 
-    private synchronized void update (){
+    private synchronized void update() {
         update(this.status);
     }
 
@@ -101,7 +114,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     private String itemString(String s, int groupPosition) {
         String value = null;
         try {
-            JSONObject section = (JSONObject)menuItems.get(groupPosition);
+            JSONObject section = (JSONObject) menuItems.get(groupPosition);
             if (!section.isNull(s))
                 value = section.getString(s).trim();
         } catch (Exception e) {
@@ -114,7 +127,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     private String itemString(String s, int groupPosition, int childPosition) {
         String value = null;
         try {
-            JSONObject section = (JSONObject)menuItems.get(groupPosition);
+            JSONObject section = (JSONObject) menuItems.get(groupPosition);
             JSONObject sublink = section.getJSONArray("subLinks").getJSONObject(childPosition);
             if (!sublink.isNull(s))
                 value = sublink.getString(s).trim();
@@ -133,13 +146,13 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         return itemString("label", groupPosition, childPosition);
     }
 
-    private Pair<String,String> getUrlAndJavascript(int groupPosition) {
+    private Pair<String, String> getUrlAndJavascript(int groupPosition) {
         String url = itemString("url", groupPosition);
         String js = itemString("javascript", groupPosition);
         return new Pair<>(url, js);
     }
 
-    private Pair<String,String> getUrlAndJavascript(int groupPosition, int childPosition) {
+    private Pair<String, String> getUrlAndJavascript(int groupPosition, int childPosition) {
         String url = itemString("url", groupPosition, childPosition);
         String js = itemString("javascript", groupPosition, childPosition);
         return new Pair<>(url, js);
@@ -147,7 +160,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
     private boolean isGrouping(int groupPosition) {
         try {
-            JSONObject section = (JSONObject)menuItems.get(groupPosition);
+            JSONObject section = (JSONObject) menuItems.get(groupPosition);
             return section.optBoolean("isGrouping", false);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
@@ -164,7 +177,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     public int getChildrenCount(int groupPosition) {
         int count = 0;
         try {
-            JSONObject section = (JSONObject)menuItems.get(groupPosition);
+            JSONObject section = (JSONObject) menuItems.get(groupPosition);
             if (section.optBoolean("isGrouping", false)) {
                 count = section.getJSONArray("subLinks").length();
             } else {
@@ -215,6 +228,13 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
             }
         }
+        RelativeLayout menuItem = convertView.findViewById(R.id.menu_item);
+        GradientDrawable shape = getHighlightDrawable();
+        StateListDrawable stateListDrawable = new StateListDrawable();
+        stateListDrawable.addState(new int[]{android.R.attr.state_activated}, shape);
+        stateListDrawable.addState(new int[]{android.R.attr.state_selected}, shape);
+
+        menuItem.setBackground(stateListDrawable);
 
         // expand/collapse indicator
         ImageView indicator = convertView.findViewById(R.id.menu_group_indicator);
@@ -225,32 +245,41 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             else
                 iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.faw_angle_down);
 
-            iconDrawable.setSizeXPx(32);
-            iconDrawable.setSizeYPx(32);
-            if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+            iconDrawable.setSizeXPx(R.dimen.sidebar_expand_indicator_size);
+            iconDrawable.setSizeYPx(R.dimen.sidebar_expand_indicator_size);
+            if (groupPosition == this.selectedIndex) {
+                iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+            } else if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                 iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
             }
+
             indicator.setImageDrawable(iconDrawable);
             indicator.setVisibility(View.VISIBLE);
         } else {
             indicator.setVisibility(View.GONE);
         }
 
-
         //set the title
         TextView title = convertView.findViewById(R.id.menu_item_title);
         title.setText(getTitle(groupPosition));
+        if (this.selectedIndex == groupPosition) {
+            title.setTextColor(this.highlightColor);
+        } else {
+            title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
+        }
 
         // set icon
         String icon = itemString("icon", groupPosition);
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
-            icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
+            icon = "faw_" + icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
             try {
                 IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable.setSizeXPx(20);
-                iconDrawable.setSizeYPx(20);
-                if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+                if (groupPosition == this.selectedIndex) {
+                    iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+                } else {
                     iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
                 }
                 imageView.setImageDrawable(iconDrawable);
@@ -285,21 +314,35 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             }
         }
 
+        RelativeLayout menuItem = convertView.findViewById(R.id.menu_item);
+        GradientDrawable shape = getHighlightDrawable();
+        StateListDrawable stateListDrawable = new StateListDrawable();
+        stateListDrawable.addState(new int[]{android.R.attr.state_activated}, shape);
+        stateListDrawable.addState(new int[]{android.R.attr.state_selected}, shape);
+
+        menuItem.setBackground(stateListDrawable);
+
         // set title
         TextView title = convertView.findViewById(R.id.menu_item_title);
         title.setText(getTitle(groupPosition, childPosition));
-
+        if (this.selectedIndex == (groupPosition + childPosition) + 1) {
+            title.setTextColor(this.highlightColor);
+        } else {
+            title.setTextColor(AppConfig.getInstance(mainActivity).sidebarForegroundColor);
+        }
 
         // set icon
         String icon = itemString("icon", groupPosition, childPosition);
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
-            icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
+            icon = "faw_" + icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
             try {
                 IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable.setSizeXPx(20);
-                iconDrawable.setSizeYPx(20);
-                if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
+                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+                if (this.selectedIndex == (groupPosition + childPosition) + 1) {
+                    iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+                } else {
                     iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
                 }
                 imageView.setImageDrawable(iconDrawable);
@@ -341,7 +384,10 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
     @Override
     public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        Pair<String,String> urlAndJavascript = getUrlAndJavascript(groupPosition, childPosition);
+        int index = parent.getFlatListPosition(ExpandableListView.getPackedPositionForChild(groupPosition, childPosition));
+        parent.setItemChecked(index, true);
+        this.selectedIndex = index;
+        Pair<String, String> urlAndJavascript = getUrlAndJavascript(groupPosition, childPosition);
         loadUrlAndJavascript(urlAndJavascript.first, urlAndJavascript.second);
         return true;
     }
@@ -356,6 +402,32 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         else mainActivity.loadUrlAndJavascript(url, javascript);
 
         mainActivity.closeDrawers();
+    }
+
+    public void autoSelectItem(String url) {
+        String formattedUrl = url.replaceAll("/$", "");
+        if (menuItems == null) return;
+
+        for (int i = 0; i < menuItems.length(); i++) {
+            if (formattedUrl.equals(menuItems.optJSONObject(i).optString("url").replaceAll("/$", ""))) {
+                expandableListView.setItemChecked(i, true);
+                selectedIndex = i;
+                return;
+            }
+        }
+    }
+
+    private GradientDrawable getHighlightDrawable() {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setCornerRadius(10);
+        if (this.highlightColor == null) {
+            shape.setColor(Color.parseColor("#442f79fe"));
+        } else {
+            shape.setColor(this.highlightColor);
+        }
+        shape.setAlpha(30);
+
+        return shape;
     }
 
     @Override

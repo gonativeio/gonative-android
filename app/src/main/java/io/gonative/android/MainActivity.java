@@ -45,6 +45,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -53,6 +54,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
@@ -334,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
 		// to save webview cookies to permanent storage
 		CookieSyncManager.createInstance(getApplicationContext());
-		
+
 		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
         CookieHandler.setDefault(new WebkitCookieManagerProxy());
 
@@ -350,8 +352,29 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         hideTabs();
 
-        if (!appConfig.showActionBar && getSupportActionBar() != null) {
-            getSupportActionBar().hide();
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        if (appConfig.showActionBar && getSupportActionBar() == null) {
+            // Set Material Toolbar as Action Bar.
+            setSupportActionBar(toolbar);
+        } else if(toolbar != null) {
+            toolbar.setVisibility(View.GONE);
+        }
+
+        if (!appConfig.showLogoInSideBar && !appConfig.showAppNameInSideBar) {
+            findViewById(R.id.header_layout).setVisibility(View.GONE);
+        }
+
+        if (!appConfig.showLogoInSideBar) {
+            ImageView appIcon = findViewById(R.id.app_logo);
+            appIcon.setVisibility(View.GONE);
+        }
+        TextView appName = findViewById(R.id.app_name);
+        if (appName != null) {
+            if(appConfig.showAppNameInSideBar) {
+                appName.setText(appConfig.appName);
+            } else {
+                appName.setVisibility(View.INVISIBLE);
+            }
         }
 
         // actions in action bar
@@ -704,18 +727,18 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         this.mWebview.goBack();
     }
-    
+
     private boolean canGoForward() {
         return this.mWebview.canGoForward();
     }
-    
+
     private void goForward() {
         if (LeanWebView.isCrosswalk()) {
             // not safe to do for non-crosswalk, as we may never get a page finished callback
             // for single-page apps
             hideWebview();
         }
-        
+
         this.mWebview.goForward();
     }
 
@@ -826,7 +849,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         JsResultBridge.jsResult = "";
         return jsResult;
     }
-    	
+
 	public boolean isDisconnected(){
 		NetworkInfo ni = cm.getActiveNetworkInfo();
         return ni == null || !ni.isConnected();
@@ -1046,9 +1069,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
             actionBar.setDisplayHomeAsUpEnabled(enabled);
         }
     }
-	
+
 	private void setupMenu(){
-        menuAdapter = new JsonMenuAdapter(this);
+        menuAdapter = new JsonMenuAdapter(this, mDrawerList);
         try {
             menuAdapter.update("default");
             mDrawerList.setAdapter(menuAdapter);
@@ -1059,8 +1082,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         mDrawerList.setOnGroupClickListener(menuAdapter);
         mDrawerList.setOnChildClickListener(menuAdapter);
 	}
-	
-	
+
+
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
@@ -1068,7 +1091,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (mDrawerToggle != null)
 		    mDrawerToggle.syncState();
 	}
-	
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -1078,13 +1101,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
 //        if (swipeRefreshLayout != null)
 //       TODO     swipeRefreshLayout.onConfigurationChanged(newConfig);
     }
-	
+
 	@Override
     @TargetApi(21)
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        
+
         if (data != null && data.getBooleanExtra("exit", false))
             finish();
 
@@ -1447,7 +1470,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 return true;
             }
         }
-        
+
         // handle other items
         switch (item.getItemId()){
             case android.R.id.home:
@@ -1517,7 +1540,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 String userId = null;
                 String pushToken = null;
                 boolean subscribed = false;
-    
+
                 OSDeviceState state = OneSignal.getDeviceState();
                 if (state != null) {
                     userId = state.getUserId();
@@ -1563,6 +1586,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
             this.registrationManager.checkUrl(url);
         }
 
+        if (this.menuAdapter != null) {
+            this.menuAdapter.autoSelectItem(url);
+        }
+
         sendOneSignalInfo();
     }
 
@@ -1570,6 +1597,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public void checkPreNavigationForPage(String url) {
         if (this.tabManager != null) {
             this.tabManager.autoSelectTab(url);
+        }
+
+        if (this.menuAdapter != null) {
+            this.menuAdapter.autoSelectItem(url);
         }
 
         AppConfig appConfig = AppConfig.getInstance(this);
@@ -2123,12 +2154,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public int getWebViewCount(){
         return webViewCount;
     }
-    
+
     public void setSidebarNavigationEnabled(boolean enabled){
         sidebarNavigationEnabled = enabled;
         setDrawerEnabled(enabled);
     }
-    
+
     public void setupAppTheme() {
         WebSettings settings = this.mWebview.getSettings();
 

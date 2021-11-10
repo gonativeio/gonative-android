@@ -1,5 +1,4 @@
 package com.gonative.testFiles;
-import android.os.SystemClock;
 import android.webkit.WebView;
 import androidx.test.espresso.NoMatchingViewException;
 import androidx.test.espresso.PerformException;

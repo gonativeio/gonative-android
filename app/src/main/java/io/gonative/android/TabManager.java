@@ -66,6 +66,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         if (appConfig.tabBarTextColor != null) {
             this.bottomNavigationView.setInactiveColor(appConfig.tabBarTextColor);
         }
+        this.bottomNavigationView.setTitleTextSizeInSp(12, 12);
 
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -175,8 +176,8 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             if(appConfig.tabBarTextColor != null){
                 iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
             }
-            iconDrawable.setSizeXPx(24);
-            iconDrawable.setSizeYPx(24);
+            iconDrawable.setSizeXPx(R.dimen.tabbar_icon_size);
+            iconDrawable.setSizeYPx(R.dimen.tabbar_icon_size);
 
             AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, iconDrawable);
             bottomNavigationView.addItem(navigationItem);
