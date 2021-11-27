@@ -249,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
-        if (isRoot && AppConfig.getInstance(this).showNavigationMenu)
+        if (AppConfig.getInstance(this).showNavigationMenu)
 	    	setContentView(R.layout.activity_gonative);
         else
             setContentView(R.layout.activity_gonative_nonav);
