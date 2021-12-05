@@ -1,8 +1,8 @@
 import groovy.json.JsonSlurper
 
+apply plugin: "com.onesignal.androidsdk.onesignal-gradle-plugin"
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: "com.onesignal.androidsdk.onesignal-gradle-plugin"
 
 ext {
     fbAppId = ""

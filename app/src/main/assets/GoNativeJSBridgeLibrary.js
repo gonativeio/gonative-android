@@ -193,11 +193,15 @@ gonative.connectivity = {
 };
 
 gonative.run = {
-    deviceInfo: function(){
-        addCommand("gonative://run/gonative_device_info");
+    deviceInfo: function(params){
+        if (params.callback) {
+            return addCommandCallback("gonative://run/gonative_device_info", params);
+        } else addCommand("gonative://run/gonative_device_info");
     },
-    onesignalInfo: function(){
-        addCommand("gonative://run/gonative_onesignal_info");
+    onesignalInfo: function(params){
+        if (params.callback) {
+            return addCommandCallback("gonative://run/gonative_onesignal_info", params);
+        } else addCommand("gonative://run/gonative_onesignal_info");
     }
 };
 

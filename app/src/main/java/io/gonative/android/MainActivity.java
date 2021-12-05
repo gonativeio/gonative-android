@@ -353,9 +353,16 @@ public class MainActivity extends AppCompatActivity implements Observer,
         hideTabs();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-        if (appConfig.showActionBar && getSupportActionBar() == null) {
+        // Add action bar if getSupportActionBar() is null
+        // regardless of appConfig.showActionBar value to setup drawers, sidenav
+        if (getSupportActionBar() == null) {
             // Set Material Toolbar as Action Bar.
             setSupportActionBar(toolbar);
+
+            // Hide action bar if showActionBar is FALSE
+            if(!appConfig.showActionBar){
+                toolbar.setVisibility(View.GONE);
+            }
         } else if(toolbar != null) {
             toolbar.setVisibility(View.GONE);
         }
@@ -1062,6 +1069,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (mDrawerLayout != null) {
             mDrawerLayout.setDrawerLockMode(enabled ? GoNativeDrawerLayout.LOCK_MODE_UNLOCKED :
                     GoNativeDrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        }
+
+        if(sidebarNavigationEnabled && appConfig.showActionBar && enabled){
+            Toolbar toolbar = findViewById(R.id.toolbar);
+
+            toolbar.setVisibility(View.VISIBLE);
         }
 
         ActionBar actionBar = getSupportActionBar();
