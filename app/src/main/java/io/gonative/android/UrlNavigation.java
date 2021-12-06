@@ -448,8 +448,6 @@ public class UrlNavigation {
                         try {
                             Object items = new JSONTokener(itemsString).nextValue();
                             AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
-                            // Set showActionBar to true to display
-                            AppConfig.getInstance(this.mainActivity).showActionBar = true;
                         } catch (JSONException e) {
                             Log.d(TAG, "Gonative registration error: customData is not JSON object");
                         }
