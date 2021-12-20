@@ -7,3 +7,4 @@ app/build/
 build/
 captures/
 .DS_Store
+plugins/

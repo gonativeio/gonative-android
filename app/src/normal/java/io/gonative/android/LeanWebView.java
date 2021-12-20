@@ -8,19 +8,19 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.JsonReader;
 import android.util.JsonToken;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.webkit.ValueCallback;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
 import android.webkit.WebHistoryItem;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.io.IOException;
 import java.io.StringReader;
+
+import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**
  * Pass calls WebViewClient.shouldOverrideUrlLoading when loadUrl, reload, or goBack are called.

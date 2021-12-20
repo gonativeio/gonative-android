@@ -13,6 +13,7 @@ import java.io.File;
 import java.util.Map;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**
  * Created by weiyin on 9/8/15.

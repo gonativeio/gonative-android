@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.LeanUtils;
 
 /**
  * Created by weiyin on 6/24/14.

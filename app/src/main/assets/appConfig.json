@@ -234,5 +234,8 @@
     ]
   },
   "services": {
+    "facebook": {
+      "pluginName": ""
+    }
   }
 }

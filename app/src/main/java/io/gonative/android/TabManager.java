@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.LeanUtils;
 
 /**
  * Created by Weiyin He on 9/22/14.

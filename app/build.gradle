@@ -75,6 +75,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             zipAlignEnabled true
+            matchingFallbacks = ['release']
             signingConfig signingConfigs.upload
         }
     }
@@ -95,11 +96,11 @@ dependencies {
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
     implementation "com.mikepenz:iconics-core:5.3.0-b01"
     implementation 'com.mikepenz:fontawesome-typeface:5.13.3.0-kotlin@aar'
-    implementation 'com.facebook.android:facebook-android-sdk:9.1.1'
     implementation 'com.squareup:seismic:1.0.2'
     implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'
-    implementation 'com.facebook.android:facebook-login:[8.1)'
     implementation 'androidx.webkit:webkit:1.4.0'
+    implementation "io.gonative.android:library:+"
+    implementation project(path: ':gonative-core')
     /**** end all apps ****/
 
     /**** add-on module dependencies ****/
@@ -121,3 +122,5 @@ dependencies {
     implementation fileTree(dir: 'libs', include: '*.aar')
     /**** end local ****/
 }
+
+apply from: file("../plugins.gradle"); applyNativeModulesAppBuildGradle(project)

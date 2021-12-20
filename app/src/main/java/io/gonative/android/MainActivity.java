@@ -24,7 +24,6 @@ import android.os.Handler;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -52,7 +51,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -64,7 +62,6 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
-import com.facebook.applinks.AppLinkData;
 import com.onesignal.OSDeviceState;
 import com.onesignal.OneSignal;
 import com.squareup.seismic.ShakeDetector;
@@ -92,8 +89,12 @@ import io.gonative.android.library.AppConfig;
 import io.gonative.android.widget.GoNativeDrawerLayout;
 import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
 import io.gonative.android.widget.SwipeHistoryNavigationLayout;
+import io.gonative.gonative_core.GoNativeActivity;
+import io.gonative.gonative_core.GoNativeWebviewInterface;
+import io.gonative.gonative_core.LeanUtils;
 
 public class MainActivity extends AppCompatActivity implements Observer,
+        GoNativeActivity,
         GoNativeSwipeRefreshLayout.OnRefreshListener,
         ShakeDetector.Listener,
         ShakeDialogFragment.ShakeDialogListener {
@@ -203,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onCreate(savedInstanceState);
 
         isRoot = getIntent().getBooleanExtra("isRoot", true);
+        application.mBridge.onActivityCreate(this, isRoot);
         parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
         webViewCount++;
 
@@ -397,38 +399,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // no worries, loadUrl will be called when this new web view is passed back to the message
         } else {
             Log.e(TAG, "No url specified for MainActivity");
-        }
-
-        if (isRoot && appConfig.facebookEnabled) {
-            AppLinkData.fetchDeferredAppLinkData(this, new AppLinkData.CompletionHandler() {
-                @Override
-                public void onDeferredAppLinkDataFetched(AppLinkData appLinkData) {
-                    if (appLinkData == null) return;
-                    Uri uri = appLinkData.getTargetUri();
-                    if (uri == null) return;
-                    String url;
-                    if (uri.getScheme().endsWith(".http") || uri.getScheme().endsWith(".https")) {
-                        Uri.Builder builder = uri.buildUpon();
-                        if (uri.getScheme().endsWith(".https")) {
-                            builder.scheme("https");
-                        } else if (uri.getScheme().endsWith(".http")) {
-                            builder.scheme("http");
-                        }
-                        url = builder.build().toString();
-                    } else {
-                        url = uri.toString();
-                    }
-                    if (url != null) {
-                        final String finalUrl = url;
-                        new Handler(MainActivity.this.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mWebview.loadUrl(finalUrl);
-                            }
-                        });
-                    }
-                }
-            });
         }
 
         if (isRoot && appConfig.showNavigationMenu) {
@@ -1884,6 +1854,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     public RelativeLayout getFullScreenLayout() {
         return fullScreenLayout;
+    }
+
+    @Override
+    public GoNativeWebviewInterface getWebView() {
+        return mWebview;
     }
 
     public class StatusCheckerBridge {

@@ -12,13 +12,14 @@ import org.json.JSONObject;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import io.gonative.gonative_core.LeanUtils;
 
 /**
  * Created by weiyin on 10/4/15.

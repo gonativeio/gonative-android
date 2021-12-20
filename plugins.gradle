@@ -1,0 +1,150 @@
+import groovy.json.JsonSlurper
+import org.gradle.initialization.DefaultSettings
+import org.apache.tools.ant.taskdefs.condition.Os
+
+def generatedFileName = "PackageList.java"
+def generatedFilePackage = "io.gonative.android"
+def generatedFileContentsTemplate = """
+package $generatedFilePackage;
+
+import android.app.Application;
+import android.content.Context;
+import android.content.res.Resources;
+
+import io.gonative.gonative_core.BridgeModule;
+import java.util.Arrays;
+import java.util.ArrayList;
+
+{{ packageImports }}
+
+public class PackageList {
+  private Application application;
+
+  public PackageList(Application application) {
+    this.application = application;
+  }
+
+  private Resources getResources() {
+    return this.getApplication().getResources();
+  }
+
+  private Application getApplication() {
+    return this.application;
+  }
+
+  private Context getApplicationContext() {
+    return this.getApplication().getApplicationContext();
+  }
+
+  public ArrayList<BridgeModule> getPackages() {
+    return new ArrayList<>(Arrays.<BridgeModule>asList(
+      {{ packageClassInstances }}
+    ));
+  }
+}
+"""
+
+class GoNativeModules {
+    private Logger logger
+    private ArrayList<HashMap<String, String>> modulesMetadata
+
+    private packageName = "io.gonative.android"
+
+    GoNativeModules(Logger logger) {
+        this.logger = logger
+        this.modulesMetadata = this.getModulesMetadata()
+    }
+
+    ArrayList<HashMap<String, String>> getModulesMetadata() {
+        if (this.modulesMetadata != null) return this.modulesMetadata
+
+        ArrayList<HashMap<String, String>> modulesMetadata = new ArrayList<HashMap<String, String>>()
+
+        def finder = new FileNameFinder()
+        def files = finder.getFileNames(System.getProperty("user.dir"), 'plugins/**/plugin-metadata.json')
+        files.each { fileName ->
+            def jsonFile = new File(fileName)
+            def parsedJson = new JsonSlurper().parseText(jsonFile.text).plugin
+            parsedJson["sourceDir"] = fileName.tokenize('/')[-3..-2].join('/')
+            modulesMetadata.push(parsedJson)
+        }
+
+        return modulesMetadata
+    }
+
+    void addModuleProjects(DefaultSettings defaultSettings) {
+        modulesMetadata.forEach { module ->
+            String pluginName = module["pluginName"]
+            String sourceDir = module["sourceDir"]
+            this.logger.warn(sourceDir)
+            defaultSettings.include(":${pluginName}")
+            defaultSettings.project(":${pluginName}").projectDir = new File(defaultSettings.rootProject.projectDir, "./${sourceDir}")
+        }
+    }
+
+    void addModuleDependencies(Project appProject) {
+        modulesMetadata.forEach { module ->
+            String pluginName = module["pluginName"]
+            appProject.dependencies {
+                implementation project(path: ":${pluginName}")
+            }
+        }
+    }
+
+    void generatePackagesFile(File outputDir, String generatedFileName, String generatedFileContentsTemplate) {
+        ArrayList<HashMap<String, String>>[] packages = this.modulesMetadata
+        String packageName = this.packageName
+
+        String packageImports = ""
+        String packageClassInstances = ""
+
+        if (packages.size() > 0) {
+            packageImports = "import ${packageName}.BuildConfig;\nimport ${packageName}.R;\n\n"
+            packageImports = packageImports + packages.collect {
+                "// ${it.name}\nimport ${it.packageName}.${it.classInstance};"
+            }.join('\n')
+            packageClassInstances = packages.collect { "new ${it.classInstance}()" }.join(",\n      ")
+        }
+
+        String generatedFileContents = generatedFileContentsTemplate
+                .replace("{{ packageImports }}", packageImports)
+                .replace("{{ packageClassInstances }}", packageClassInstances)
+
+        outputDir.mkdirs()
+        final FileTreeBuilder treeBuilder = new FileTreeBuilder(outputDir)
+        treeBuilder.file(generatedFileName).newWriter().withWriter { w ->
+            w << generatedFileContents
+        }
+    }
+}
+
+def gonativeModules = new GoNativeModules(logger)
+
+ext.applyModulesSettingsGradle = { DefaultSettings defaultSettings ->
+    gonativeModules.addModuleProjects(defaultSettings)
+}
+
+ext.applyNativeModulesAppBuildGradle = { Project project ->
+    gonativeModules.addModuleDependencies(project)
+
+    def generatedSrcDir = new File(buildDir, "generated/gncli/src/main/java")
+    def generatedCodeDir = new File(generatedSrcDir, generatedFilePackage.replace('.', '/'))
+
+    task generatePackageList {
+        doLast {
+            gonativeModules.generatePackagesFile(generatedCodeDir, generatedFileName, generatedFileContentsTemplate)
+        }
+    }
+
+    preBuild.dependsOn generatePackageList
+
+    android {
+        sourceSets {
+            main {
+                java {
+                    srcDirs += generatedSrcDir
+                }
+            }
+        }
+    }
+}

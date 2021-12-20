@@ -1,7 +1,6 @@
 package io.gonative.android;
 
 import java.io.IOException;
-import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.CookieStore;
 import java.net.HttpCookie;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.LeanUtils;
 
 // this syncs cookies between webkit (webview) and java.net classes
 public class WebkitCookieManagerProxy extends java.net.CookieManager {

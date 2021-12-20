@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**
  * Created by Weiyin He on 9/3/14.

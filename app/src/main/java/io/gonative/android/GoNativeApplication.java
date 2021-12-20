@@ -2,27 +2,28 @@ package io.gonative.android;
 
 import android.content.Intent;
 import android.os.Message;
+import android.util.Log;
+import android.webkit.ValueCallback;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.multidex.MultiDexApplication;
 
-import android.util.Log;
-import android.webkit.ValueCallback;
-import android.widget.Toast;
-
-import com.facebook.FacebookSdk;
 import com.onesignal.OSDeviceState;
 import com.onesignal.OSSubscriptionObserver;
 import com.onesignal.OSSubscriptionState;
 import com.onesignal.OSSubscriptionStateChanges;
 import com.onesignal.OneSignal;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.Bridge;
+import io.gonative.gonative_core.BridgeModule;
 
 /**
  * Created by weiyin on 9/2/15.
@@ -40,12 +41,20 @@ public class GoNativeApplication extends MultiDexApplication {
     private int numOneSignalChecks = 0;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final static String TAG = GoNativeApplication.class.getSimpleName();
+    public final Bridge mBridge = new Bridge(this) {
+        @Override
+        protected List<BridgeModule> getPlugins() {
+            return new PackageList(GoNativeApplication.this).getPackages();
+        }
+    };
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
+
+        mBridge.onApplicationCreate();
 
         AppConfig appConfig = AppConfig.getInstance(this);
         if (appConfig.configError != null) {
@@ -58,12 +67,6 @@ public class GoNativeApplication extends MultiDexApplication {
             OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
             OneSignal.setAppId(appConfig.oneSignalAppId);
             OneSignal.setNotificationOpenedHandler(new OneSignalNotificationHandler(this));
-        }
-
-        if (appConfig.facebookEnabled) {
-            Log.d(TAG, "Facebook is enabled with  App ID: " + FacebookSdk.getApplicationId());
-            FacebookSdk.setAutoLogAppEventsEnabled(appConfig.facebookAutoLogging);
-            FacebookSdk.setAdvertiserIDCollectionEnabled(true);
         }
 
         this.loginManager = new LoginManager(this);

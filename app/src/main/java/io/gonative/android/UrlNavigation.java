@@ -17,7 +17,6 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -28,7 +27,6 @@ import android.provider.Settings;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -45,7 +43,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.facebook.appevents.AppEventsLogger;
 import com.onesignal.OneSignal;
 
 import org.json.JSONArray;
@@ -57,12 +54,10 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,6 +68,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.GoNativeWebviewInterface;
+import io.gonative.gonative_core.LeanUtils;
 
 enum WebviewLoadState {
     STATE_UNKNOWN,
@@ -233,6 +230,11 @@ public class UrlNavigation {
         }
 
         if ("gonative".equals(uri.getScheme())) {
+
+            if (((GoNativeApplication) mainActivity.getApplication()).mBridge.shouldOverrideUrlLoading(mainActivity, uri)) {
+                return true;
+            }
+
             if ("nativebridge".equals(uri.getHost())) {
                 if ("/multi".equals(uri.getPath())) {
                     String data = uri.getQueryParameter("data");
@@ -495,56 +497,6 @@ public class UrlNavigation {
                     String tabsJson = uri.getQueryParameter("tabs");
                     if (tabsJson != null && !tabsJson.isEmpty()) {
                         tabManager.setTabsWithJson(tabsJson);
-                    }
-                }
-
-                return true;
-            }
-
-            if ("facebook".equals(uri.getHost())) {
-                if (!appConfig.facebookEnabled) return true;
-
-                boolean isPurchase = "/events/sendPurchase".equals(uri.getPath());
-                if (isPurchase || "/events/send".equals(uri.getPath())) {
-                    String dataString = uri.getQueryParameter("data");
-                    if (dataString == null || dataString.isEmpty()) return true;
-
-                    try {
-                        JSONObject data = new JSONObject(dataString);
-
-                        Bundle params = null;
-                        JSONObject parameters = data.optJSONObject("parameters");
-                        if (parameters != null) {
-                            params = LeanUtils.jsonObjectToBundle(parameters);
-                        }
-
-                        if (!isPurchase) {
-                            String eventName = LeanUtils.optString(data, "event");
-                            if (eventName == null) return true;
-
-                            double valueToSum = data.optDouble("valueToSum");
-
-                            AppEventsLogger logger = AppEventsLogger.newLogger(mainActivity);
-                            if (Double.isNaN(valueToSum)) {
-                                logger.logEvent(eventName, params);
-                            } else {
-                                logger.logEvent(eventName, valueToSum, params);
-                            }
-                        } else {
-                            // isPurchase
-                            double purchaseAmount = data.optDouble("purchaseAmount");
-                            if (Double.isNaN(purchaseAmount)) return true;
-                            String currencyString = LeanUtils.optString(data, "currency");
-                            if (currencyString == null) return true;
-                            Currency currency = Currency.getInstance(currencyString);
-
-                            AppEventsLogger logger = AppEventsLogger.newLogger(mainActivity);
-                            logger.logPurchase(BigDecimal.valueOf(purchaseAmount), currency, params);
-                        }
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error parsing json for facebook event", e);
-                    } catch (IllegalArgumentException e) {
-                        Log.e(TAG, "Error creating facebook app event", e);
                     }
                 }
 
@@ -1071,6 +1023,7 @@ public class UrlNavigation {
                 JSBridgeScript = baos.toString();
             }
             mainActivity.runJavascript(JSBridgeScript);
+            ((GoNativeApplication) mainActivity.getApplication()).mBridge.injectJSLibraries(mainActivity);
             // call the user created function that needs library access on page finished.
             mainActivity.runJavascript(LeanUtils.createJsForCallback("gonative_library_ready", null));
         } catch (Exception e) {

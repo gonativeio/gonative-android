@@ -1,4 +1,4 @@
-package io.gonative.android;
+package io.gonative.gonative_core;
 
 
 import android.content.Context;
@@ -7,8 +7,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.URLUtil;
-
-import com.onesignal.OneSignal;
 
 import org.json.JSONArray;
 import org.json.JSONException;

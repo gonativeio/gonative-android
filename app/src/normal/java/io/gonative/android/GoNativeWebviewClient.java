@@ -16,6 +16,8 @@ import android.webkit.WebViewClient;
 
 import androidx.annotation.RequiresApi;
 
+import io.gonative.gonative_core.GoNativeWebviewInterface;
+
 /**
  * Created by weiyin on 9/9/15.
  */

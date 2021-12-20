@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.LeanUtils;
 
 public class FileWriterSharer {
     private static final String TAG = FileWriterSharer.class.getSimpleName();

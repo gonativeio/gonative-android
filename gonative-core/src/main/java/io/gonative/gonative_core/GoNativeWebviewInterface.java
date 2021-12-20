@@ -1,14 +1,10 @@
-package io.gonative.android;
+package io.gonative.gonative_core;
 
 import android.os.Bundle;
-import android.view.View;
 import android.view.ViewParent;
 import android.view.ViewPropertyAnimator;
-import android.webkit.WebSettings;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
-
-import androidx.annotation.NonNull;
 
 /**
  * Created by weiyin on 9/8/15.
@@ -53,15 +49,6 @@ public interface GoNativeWebviewInterface {
 
     void saveStateToBundle(Bundle outBundle);
     void restoreStateFromBundle(Bundle inBundle);
-    
-    /**
-     * @deprecated use GoNativeEdgeSwipeLayout in place of LeanWebView's swipe listener.
-     */
-    LeanWebView.OnSwipeListener getOnSwipeListener();
-    /**
-     * @deprecated use GoNativeEdgeSwipeLayout in place of LeanWebView's swipe listener.
-     */
-    void setOnSwipeListener(LeanWebView.OnSwipeListener listener);
 
     WebSettings getSettings();
     void evaluateJavascript(String script, ValueCallback<String> resultCallback);
