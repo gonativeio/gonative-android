@@ -1077,6 +1077,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onActivityResult(this, requestCode, resultCode, data);
 
         if (data != null && data.getBooleanExtra("exit", false))
             finish();

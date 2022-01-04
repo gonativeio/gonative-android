@@ -1,7 +1,8 @@
 package io.gonative.gonative_core;
 
 import android.app.Activity;
-import android.app.Application;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 
 import java.io.BufferedInputStream;
@@ -14,16 +15,16 @@ import java.util.List;
 import io.gonative.android.library.IOUtils;
 
 public abstract class Bridge {
-    private final Application mApplication;
+    private final GoNativeContext mContext;
     private ArrayList<String> jsFiles = null;
 
-    protected Bridge(Application application) {
-        mApplication = application;
+    protected Bridge(Context context) {
+        mContext = new GoNativeContext(context);
     }
 
     public void onApplicationCreate() {
         for (BridgeModule plugin: getPlugins()) {
-            plugin.onApplicationCreate(mApplication);
+            plugin.onApplicationCreate(mContext);
         }
     }
 
@@ -41,6 +42,12 @@ public abstract class Bridge {
         }
 
         return false;
+    }
+
+    public <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onActivityResult(activity, requestCode, resultCode, data);
+        }
     }
 
     public <T extends Activity & GoNativeActivity> void injectJSLibraries(T activity) {
