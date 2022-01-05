@@ -209,6 +209,21 @@ public class LeanUtils {
                 ");";
     }
 
+    public static JSONObject parseQueryParamsWithUri(Uri uri){
+        JSONObject params = new JSONObject();
+
+        if(uri == null) return null;
+        try {
+            for (String parameter : uri.getQueryParameterNames()) {
+                params.put(parameter, uri.getQueryParameter(parameter));
+            }
+        } catch (JSONException e){
+            Log.e(TAG, "GoNative JSONException:- " + e.getMessage());
+            return null;
+        }
+        return params;
+    }
+
     public static boolean checkNativeBridgeUrls(String url, Context context) {
         AppConfig appConfig = AppConfig.getInstance(context);
         if (appConfig.nativeBridgeUrls == null || appConfig.nativeBridgeUrls.isEmpty()) {
@@ -272,11 +287,11 @@ public class LeanUtils {
         return bundle;
     }
 
-    public static HashMap<String, Object> jsonStringToMap(String string) {
+    public static HashMap<String, Object> jsonToMap(Object json) {
         HashMap<String, Object> map = new HashMap<>();
-        JSONObject jObject = null;
+        JSONObject jObject;
         try {
-            jObject = new JSONObject(string);
+            jObject = json instanceof String ? new JSONObject((String) json) : (JSONObject) json;
             Iterator<?> keys = jObject.keys();
 
             while (keys.hasNext()) {

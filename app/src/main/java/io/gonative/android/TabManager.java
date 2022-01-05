@@ -282,20 +282,15 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         return false;
     }
 
-    public void setTabsWithJson(String tabsJson) {
-        JSONObject tabsConfig;
-        try {
-            tabsConfig = new JSONObject(tabsJson);
-        } catch (JSONException e) {
-            return;
-        }
+    public void setTabsWithJson(JSONObject tabsJson) {
+        if(tabsJson == null) return;
 
         this.useJavascript = true;
 
-        JSONArray tabs = tabsConfig.optJSONArray("items");
+        JSONArray tabs = tabsJson.optJSONArray("items");
         if (tabs != null) setTabs(tabs);
 
-        Object enabled = tabsConfig.opt("enabled");
+        Object enabled = tabsJson.opt("enabled");
         if (enabled instanceof Boolean) {
             if ((Boolean)enabled) {
                 this.showTabs();

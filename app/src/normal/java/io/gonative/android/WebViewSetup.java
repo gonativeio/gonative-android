@@ -55,6 +55,12 @@ public class WebViewSetup {
         wv.removeJavascriptInterface("gonative_file_writer_sharer");
         wv.addJavascriptInterface(activity.getFileWriterSharer().getJavascriptBridge(), "gonative_file_writer_sharer");
 
+        // pass urlNavigation object for the interface to access handleJSBridgeFunctions()
+        activity.getJsBridgeInterface().setUrlNavigation(urlNavigation);
+
+        wv.removeJavascriptInterface("JSBridge");
+        wv.addJavascriptInterface(activity.getJsBridgeInterface().getJavascriptBridge(), "JSBridge");
+
         if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
             // send to other webview
             Message resultMsg = ((GoNativeApplication)activity.getApplication()).getWebviewMessage();

@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
+import org.json.JSONObject;
+
 public class ConfigPreferences {
     private static final String INITIAL_URL_KEY = "io.gonative.android.initialUrl";
 
@@ -40,12 +42,12 @@ public class ConfigPreferences {
         }
     }
 
-    public void handleUrl(Uri uri) {
+    public void handleUrl(Uri uri, JSONObject jsonData) {
         if (!"gonative".equals(uri.getScheme()) || !"config".equals(uri.getHost())) return;
 
         if ("/set".equals(uri.getPath())) {
-            String initialUrl = uri.getQueryParameter("initialUrl");
-            if (initialUrl != null) {
+            String initialUrl = jsonData.optString("initialUrl");
+            if (!initialUrl.isEmpty()) {
                 setInitialUrl(initialUrl);
             }
         }

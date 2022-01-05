@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private ShakeDetector shakeDetector = new ShakeDetector(this);
     private FileDownloader fileDownloader = new FileDownloader(this);
     private FileWriterSharer fileWriterSharer;
+    private GNJSBridgeInterface jsBridgeInterface;
     private boolean startedLoading = false; // document readystate checker
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
@@ -245,6 +246,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.loginManager = application.getLoginManager();
 
         this.fileWriterSharer = new FileWriterSharer(this);
+        this.jsBridgeInterface = new GNJSBridgeInterface(this);
 
         // webview pools
         application.getWebViewPool().init(this);
@@ -1674,6 +1676,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     public FileWriterSharer getFileWriterSharer() {
         return fileWriterSharer;
+    }
+
+    public GNJSBridgeInterface getJsBridgeInterface() {
+        return jsBridgeInterface;
     }
 
     public StatusCheckerBridge getStatusCheckerBridge() {
