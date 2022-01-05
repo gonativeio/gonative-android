@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,9 +36,9 @@ public abstract class Bridge {
         }
     }
 
-    public <T extends Activity & GoNativeActivity> boolean shouldOverrideUrlLoading(T activity, Uri url) {
+    public <T extends Activity & GoNativeActivity> boolean shouldOverrideUrlLoading(T activity, Uri url, JSONObject params) {
         for (BridgeModule plugin: getPlugins()) {
-            if (plugin.shouldOverrideUrlLoading(activity, url)) {
+            if (plugin.shouldOverrideUrlLoading(activity, url, params)) {
                 return true;
             }
         }

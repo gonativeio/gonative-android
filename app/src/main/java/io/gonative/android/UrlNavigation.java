@@ -175,6 +175,10 @@ public class UrlNavigation {
             }
         }
 
+        if (((GoNativeApplication) mainActivity.getApplication()).mBridge.shouldOverrideUrlLoading(mainActivity, uri, jsonData)) {
+            return;
+        }
+
         if ("registration".equals(uri.getHost()) && "/send".equals(uri.getPath())) {
             RegistrationManager registrationManager = ((GoNativeApplication) mainActivity.getApplication()).getRegistrationManager();
             if(jsonData != null){

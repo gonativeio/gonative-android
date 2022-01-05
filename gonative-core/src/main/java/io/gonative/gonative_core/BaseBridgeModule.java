@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 
+import org.json.JSONObject;
+
 public class BaseBridgeModule implements BridgeModule{
     @Override
     public void onApplicationCreate(GoNativeContext context) { }
@@ -12,7 +14,7 @@ public class BaseBridgeModule implements BridgeModule{
     public <T extends Activity & GoNativeActivity> void onActivityCreate(T activity, boolean isRoot) { }
 
     @Override
-    public <T extends Activity & GoNativeActivity> boolean shouldOverrideUrlLoading(T activity, Uri url) {
+    public <T extends Activity & GoNativeActivity> boolean shouldOverrideUrlLoading(T activity, Uri url, JSONObject params) {
         return false;
     }
 
