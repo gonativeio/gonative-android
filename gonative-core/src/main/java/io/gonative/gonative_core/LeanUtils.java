@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.URLUtil;
 
@@ -306,7 +307,30 @@ public class LeanUtils {
         }
         return map;
     }
-    
+
+    // tries to return JSON.decode(params.data) if params.data is a string. Otherwise,
+    // returns params.data if params.data is an object. Otherwise returns defaultValue
+    public static JSONObject getDataObject(JSONObject params, JSONObject defaultValue) {
+        if (params == null) return defaultValue;
+
+        Object data = null;
+        try {
+            data = params.get("data");
+        } catch (JSONException e) {
+            return defaultValue;
+        }
+        if (data instanceof JSONObject) {
+            return (JSONObject)data;
+        }
+        if (data instanceof String) {
+            try {
+                return new JSONObject((String) data);
+            } catch (JSONException err) {
+            }
+        }
+        return defaultValue;
+    }
+
 //    public static void initOneSignal(Context context, AppConfig appConfig) {
 //        if (appConfig.oneSignalEnabled) {
 //            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
