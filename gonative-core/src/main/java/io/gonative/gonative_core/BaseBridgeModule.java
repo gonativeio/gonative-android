@@ -19,5 +19,17 @@ public class BaseBridgeModule implements BridgeModule{
     }
 
     @Override
+    public <T extends Activity & GoNativeActivity> void onActivityResume(T activity) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onActivityPause(T activity) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onActivityStart(T activity) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onActivityDestroy(T activity) { }
+
+    @Override
     public <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data) { }
 }

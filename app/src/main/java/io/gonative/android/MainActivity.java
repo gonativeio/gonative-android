@@ -540,6 +540,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     protected void onPause() {
         super.onPause();
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onActivityPause(this);
         stopCheckingReadyStatus();
         this.mWebview.onPause();
 
@@ -558,6 +560,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     protected void onStart() {
         super.onStart();
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onActivityStart(this);
         if (AppConfig.getInstance(this).oneSignalEnabled) {
             OneSignal.clearOneSignalNotifications();
         }
@@ -569,6 +573,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     protected void onResume() {
         super.onResume();
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onActivityResume(this);
         this.mWebview.onResume();
 
         retryFailedPage();
@@ -601,6 +607,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onActivityDestroy(this);
         webViewCount--;
 
         // destroy webview
@@ -1776,6 +1784,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case REQUEST_PERMISSION_READ_EXTERNAL_STORAGE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

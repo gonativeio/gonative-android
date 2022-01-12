@@ -10,5 +10,9 @@ public interface BridgeModule {
     void onApplicationCreate(GoNativeContext context);
     <T extends Activity & GoNativeActivity> void onActivityCreate(T activity, boolean isRoot);
     <T extends Activity & GoNativeActivity> boolean shouldOverrideUrlLoading(T activity, Uri url, JSONObject params);
+    <T extends Activity & GoNativeActivity> void onActivityResume(T activity);
+    <T extends Activity & GoNativeActivity> void onActivityPause(T activity);
+    <T extends Activity & GoNativeActivity> void onActivityStart(T activity);
+    <T extends Activity & GoNativeActivity> void onActivityDestroy(T activity);
     <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data);
 }

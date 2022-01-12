@@ -45,6 +45,29 @@ public abstract class Bridge {
 
         return false;
     }
+    public <T extends Activity & GoNativeActivity> void onActivityResume(T activity) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onActivityResume(activity);
+        }
+    }
+
+    public <T extends Activity & GoNativeActivity> void onActivityPause(T activity) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onActivityPause(activity);
+        }
+    }
+
+    public <T extends Activity & GoNativeActivity> void onActivityStart(T activity) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onActivityStart(activity);
+        }
+    }
+
+    public <T extends Activity & GoNativeActivity> void onActivityDestroy(T activity) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onActivityDestroy(activity);
+        }
+    }
 
     public <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data) {
         for (BridgeModule plugin: getPlugins()) {
