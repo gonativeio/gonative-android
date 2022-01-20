@@ -405,9 +405,7 @@ public class UrlNavigation {
                     }
                 }
                 AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
-
-                boolean enabled = jsonData.optBoolean("enabled");
-                this.mainActivity.setSidebarNavigationEnabled(enabled);
+                this.mainActivity.setSidebarNavigationEnabled(true);
             }
             return;
         }
