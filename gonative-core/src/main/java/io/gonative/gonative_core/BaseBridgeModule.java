@@ -3,6 +3,7 @@ package io.gonative.gonative_core;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.view.KeyEvent;
 
 import org.json.JSONObject;
 
@@ -32,4 +33,18 @@ public class BaseBridgeModule implements BridgeModule{
 
     @Override
     public <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data) { }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return false;
+    }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onPageFinish(T activity, boolean doNativeBridge) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onConfigurationChange(T activity) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onHideWebview(T activity) { }
 }

@@ -7,6 +7,7 @@ apply plugin: 'kotlin-android'
 ext {
     fbAppId = ""
     onesignalAppId = ""
+    adMobAppId = ""
 }
 
 task parseAppConfig {
@@ -20,6 +21,9 @@ task parseAppConfig {
     }
     if (parsedJson.services.oneSignal && parsedJson.services.oneSignal.applicationId) {
         onesignalAppId = parsedJson.services.oneSignal.applicationId
+    }
+    if (parsedJson.services.admobAndroid && parsedJson.services.admobAndroid.applicationId) {
+        adMobAppId = parsedJson.services.admobAndroid.applicationId
     }
 }
 build.dependsOn parseAppConfig
@@ -38,6 +42,7 @@ android {
         manifestPlaceholders = [manifestApplicationId: "${applicationId}",
                                 onesignal_app_id: onesignalAppId,
                                 onesignal_google_project_number: "",
+                                admob_app_id: adMobAppId,
                                 facebook_app_id: fbAppId ]
     }
 

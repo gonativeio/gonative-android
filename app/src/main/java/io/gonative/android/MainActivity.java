@@ -357,10 +357,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
         hideTabs();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-        if (appConfig.showActionBar && getSupportActionBar() == null) {
+        // Add action bar if getSupportActionBar() is null
+        // regardless of appConfig.showActionBar value to setup drawers, sidenav
+        if (getSupportActionBar() == null) {
             // Set Material Toolbar as Action Bar.
             setSupportActionBar(toolbar);
-        } else if(toolbar != null) {
+        }
+        // Hide action bar if showActionBar is FALSE
+        if (!appConfig.showActionBar && toolbar != null) {
             toolbar.setVisibility(View.GONE);
         }
 
@@ -878,6 +882,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void hideWebview() {
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onHideWebview(this);
+
         if (AppConfig.getInstance(this).disableAnimations) return;
 
         this.webviewIsHidden = true;
@@ -1044,6 +1051,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     GoNativeDrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         }
 
+        if((sidebarNavigationEnabled || appConfig.showActionBar ) && enabled){
+            Toolbar toolbar = findViewById(R.id.toolbar);
+            if (toolbar != null) {
+                toolbar.setVisibility(View.VISIBLE);
+            }
+        }
+
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(enabled);
@@ -1075,11 +1089,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        GoNativeApplication application = (GoNativeApplication)getApplication();
      // Pass any configuration change to the drawer toggles
         if (mDrawerToggle != null)
             mDrawerToggle.onConfigurationChanged(newConfig);
 //        if (swipeRefreshLayout != null)
 //       TODO     swipeRefreshLayout.onConfigurationChanged(newConfig);
+        application.mBridge.onConfigurationChange(this);
     }
 
 	@Override
@@ -1213,6 +1229,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // Should not reach here.
             cancelFileUpload();
         }
+
+        ((GoNativeApplication) getApplication()).mBridge.onActivityResult(this, requestCode, resultCode, data);
     }
 
     public void cancelFileUpload() {
@@ -1266,6 +1284,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 return true;
             }
 		}
+
+        ((GoNativeApplication) getApplication()).mBridge.onKeyDown(keyCode, event);
 
 		return super.onKeyDown(keyCode, event);
 	}

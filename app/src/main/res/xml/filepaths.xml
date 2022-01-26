@@ -3,4 +3,5 @@
 
     <cache-path path="downloads" name="downloads" />
     <external-path name="external_download" path="Download"/>
+    <external-files-path name="files_pictures" path="Pictures"/>
 </paths>

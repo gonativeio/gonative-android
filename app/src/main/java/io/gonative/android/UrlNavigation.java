@@ -1023,6 +1023,8 @@ public class UrlNavigation {
             runGonativeDeviceInfo();
         }
         injectJSBridgeLibrary();
+
+        ((GoNativeApplication) mainActivity.getApplication()).mBridge.onPageFinish(mainActivity, doNativeBridge);
     }
 
     private void injectJSBridgeLibrary(){

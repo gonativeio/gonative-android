@@ -2,8 +2,10 @@ package io.gonative.gonative_core;
 
 import android.app.Activity;
 import android.content.Context;
+import android.app.Application;
 import android.content.Intent;
 import android.net.Uri;
+import android.view.KeyEvent;
 
 import org.json.JSONObject;
 
@@ -94,7 +96,37 @@ public abstract class Bridge {
         }
 
         for (String jsContent: jsFiles) {
-            activity.runJavascript(jsContent);
+            if(activity instanceof GoNativeActivity){
+                ((GoNativeActivity) activity).runJavascript(jsContent);
+            }
+        }
+    }
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        for (BridgeModule plugin: getPlugins()) {
+            if (plugin.onKeyDown(keyCode, event)) {
+                return true;
+            }
+        }
+
+        return true;
+    }
+
+    public <T extends Activity & GoNativeActivity> void onPageFinish(T activity, boolean doNativeBridge) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onPageFinish(activity, doNativeBridge);
+        }
+    }
+
+    public <T extends Activity & GoNativeActivity> void onConfigurationChange(T activity) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onConfigurationChange(activity);
+        }
+    }
+
+    public <T extends Activity & GoNativeActivity> void onHideWebview(T activity) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onHideWebview(activity);
         }
     }
 

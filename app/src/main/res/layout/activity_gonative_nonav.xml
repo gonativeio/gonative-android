@@ -1,5 +1,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/no_nav_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -7,7 +8,8 @@
     <io.gonative.android.MySwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/pluginView">
 
         <io.gonative.android.widget.SwipeHistoryNavigationLayout
             android:id="@+id/swipe_history_nav"
@@ -34,6 +36,15 @@
 
         </io.gonative.android.widget.SwipeHistoryNavigationLayout>
     </io.gonative.android.MySwipeRefreshLayout>
+
+    <RelativeLayout
+        android:id="@+id/pluginView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottom_navigation"
+        android:layout_alignWithParentIfMissing="true"
+        android:background="@android:color/black"
+        android:visibility="gone"/>
 
     <ProgressBar
         android:id="@+id/progress"
