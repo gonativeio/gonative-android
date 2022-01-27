@@ -716,6 +716,7 @@ public class UrlNavigation {
 
         if("gonative".equals(uri.getScheme())){
             handleJSBridgeFunctions(uri);
+            return true;
         }
 
         // check redirects
