@@ -65,7 +65,7 @@ class GoNativeModules {
         files.each { fileName ->
             def jsonFile = new File(fileName)
             def parsedJson = new JsonSlurper().parseText(jsonFile.text).plugin
-            parsedJson["sourceDir"] = fileName.tokenize('/')[-3..-2].join('/')
+            parsedJson["sourceDir"] = fileName.tokenize(File.separator)[-3..-2].join(File.separator)
             modulesMetadata.push(parsedJson)
         }
 
