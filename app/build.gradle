@@ -29,10 +29,10 @@ task parseAppConfig {
 build.dependsOn parseAppConfig
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 30
         applicationId "io.gonative.android"
         versionCode 1

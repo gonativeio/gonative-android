@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.view.KeyEvent;
 
+import androidx.annotation.NonNull;
+
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -127,6 +129,11 @@ public abstract class Bridge {
     public <T extends Activity & GoNativeActivity> void onHideWebview(T activity) {
         for (BridgeModule plugin: getPlugins()) {
             plugin.onHideWebview(activity);
+        }
+    }
+    public <T extends Activity & GoNativeActivity> void onRequestPermissionsResult(T activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onRequestPermissionsResult(activity, requestCode, permissions, grantResults);
         }
     }
 

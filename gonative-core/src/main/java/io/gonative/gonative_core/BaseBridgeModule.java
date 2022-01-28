@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.view.KeyEvent;
 
+import androidx.annotation.NonNull;
+
 import org.json.JSONObject;
 
 public class BaseBridgeModule implements BridgeModule{
@@ -44,7 +46,10 @@ public class BaseBridgeModule implements BridgeModule{
 
     @Override
     public <T extends Activity & GoNativeActivity> void onConfigurationChange(T activity) { }
-
+    
     @Override
     public <T extends Activity & GoNativeActivity> void onHideWebview(T activity) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void  onRequestPermissionsResult(T activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) { }
 }

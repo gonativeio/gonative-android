@@ -192,10 +192,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
 
-        setScreenOrientationPreference();
         if(appConfig.androidFullScreen){
             toggleFullscreen(true);
         }
+        // must be done AFTER toggleFullScreen to force screen orientation
+        setScreenOrientationPreference();
+
         if (appConfig.keepScreenOn) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
@@ -1805,6 +1807,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        ((GoNativeApplication) getApplication()).mBridge.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
         switch (requestCode) {
             case REQUEST_PERMISSION_READ_EXTERNAL_STORAGE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -1999,6 +2002,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         switch (appConfig.forceScreenOrientation) {
             case UNSPECIFIED:
+                if(appConfig.androidFullScreen) return;
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 break;
             case PORTRAIT:

@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.view.KeyEvent;
 
+import androidx.annotation.NonNull;
+
 import org.json.JSONObject;
 
 public interface BridgeModule {
@@ -21,4 +23,5 @@ public interface BridgeModule {
     <T extends Activity & GoNativeActivity> void onPageFinish(T activity, boolean doNativeBridge);
     <T extends Activity & GoNativeActivity> void onConfigurationChange(T activity);
     <T extends Activity & GoNativeActivity> void onHideWebview(T activity);
+    <T extends Activity & GoNativeActivity> void onRequestPermissionsResult(T activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults);
 }
