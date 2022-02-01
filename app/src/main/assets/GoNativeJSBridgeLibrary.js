@@ -34,7 +34,6 @@ function addCallbackFunction(callbackFunction){
         callbackName = '_gonative_temp_' + Math.random().toString(36).slice(2);
         window[callbackName] = function(...args) {
             callbackFunction.apply(null, args);
-            delete window[callbackName];
         }
     }
     return callbackName;
@@ -46,6 +45,12 @@ function addCommand(command, params){
         var commandObject = {};
         if(params.callback && typeof params.callback === 'function'){
             params.callback = addCallbackFunction(params.callback);
+        }
+        if(params.callbackFunction && typeof params.callbackFunction === 'function'){
+            params.callbackFunction = addCallbackFunction(params.callbackFunction);
+        }
+        if(params.statuscallback && typeof params.statuscallback === 'function'){
+            params.statuscallback = addCallbackFunction(params.statuscallback);
         }
         commandObject.gonativeCommand = command;
         commandObject.data = params;
