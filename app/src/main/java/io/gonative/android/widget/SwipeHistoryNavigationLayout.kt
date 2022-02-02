@@ -242,7 +242,12 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     private fun isRightEdge(x: Float) = x >= rightEdgeWidth
 
     private fun isTouchedEdge(ev: MotionEvent?): Boolean {
-        return ev?.action == MotionEvent.ACTION_DOWN && (isLeftEdge(ev.x) || isRightEdge(ev.x))
+        // Do not intercept the edges when edge swiping is disabled
+
+        return ev?.action == MotionEvent.ACTION_DOWN && (
+                (isLeftEdge(ev.x) && swipeNavListener.canSwipeLeftEdge())
+                        || (isRightEdge(ev.x) && swipeNavListener.canSwipeRightEdge()))
+                && swipeNavListener.isSwipeEnabled()
     }
 
     private fun moveLeftHandle() {

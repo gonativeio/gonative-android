@@ -54,7 +54,7 @@ public class GoNativeApplication extends MultiDexApplication {
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
-        mBridge.onApplicationCreate();
+        mBridge.onApplicationCreate(this);
 
         AppConfig appConfig = AppConfig.getInstance(this);
         if (appConfig.configError != null) {

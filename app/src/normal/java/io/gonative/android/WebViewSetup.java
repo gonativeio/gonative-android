@@ -61,6 +61,8 @@ public class WebViewSetup {
         wv.removeJavascriptInterface("JSBridge");
         wv.addJavascriptInterface(activity.getJsBridgeInterface().getJavascriptBridge(), "JSBridge");
 
+        ((GoNativeApplication) activity.getApplication()).mBridge.onWebviewSetUp(activity, wv);
+
         if (activity.getIntent().getBooleanExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
             // send to other webview
             Message resultMsg = ((GoNativeApplication)activity.getApplication()).getWebviewMessage();

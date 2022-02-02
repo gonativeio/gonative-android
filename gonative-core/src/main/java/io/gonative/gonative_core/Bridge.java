@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.KeyEvent;
+import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 
@@ -27,10 +28,17 @@ public abstract class Bridge {
     protected Bridge(Context context) {
         mContext = new GoNativeContext(context);
     }
-
+    
     public void onApplicationCreate() {
         for (BridgeModule plugin: getPlugins()) {
             plugin.onApplicationCreate(mContext);
+        }
+    }
+    
+    public void onApplicationCreate(Application application) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onApplicationCreate(mContext);
+            plugin.onApplicationCreate(application, mContext);
         }
     }
 
@@ -131,6 +139,13 @@ public abstract class Bridge {
             plugin.onHideWebview(activity);
         }
     }
+    
+    public <T extends Activity & GoNativeActivity> void onWebviewSetUp(T activity, WebView webView) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onWebviewSetUp(activity, webView);
+        }
+    }
+
     public <T extends Activity & GoNativeActivity> void onRequestPermissionsResult(T activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         for (BridgeModule plugin: getPlugins()) {
             plugin.onRequestPermissionsResult(activity, requestCode, permissions, grantResults);
