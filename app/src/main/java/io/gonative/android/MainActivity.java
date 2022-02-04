@@ -56,6 +56,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.webkit.WebSettingsCompat;
@@ -255,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
-        if (AppConfig.getInstance(this).showNavigationMenu)
+        if (appConfig.showActionBar || appConfig.showNavigationMenu)
 	    	setContentView(R.layout.activity_gonative);
         else
             setContentView(R.layout.activity_gonative_nonav);
@@ -332,7 +333,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         setupWebview(this.mWebview);
 
         // profile picker
-        if (isRoot && AppConfig.getInstance(this).showNavigationMenu) {
+        if (isRoot && (appConfig.showActionBar || appConfig.showNavigationMenu)) {
             Spinner profileSpinner = findViewById(R.id.profile_picker);
             profilePicker = new ProfilePicker(this, profileSpinner);
 
@@ -365,8 +366,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // Set Material Toolbar as Action Bar.
             setSupportActionBar(toolbar);
         }
-        // Hide action bar if showActionBar is FALSE
-        if (!appConfig.showActionBar && toolbar != null) {
+        // Hide action bar if showActionBar is FALSE and showNavigationMenu is FALSE
+        if (!appConfig.showActionBar && !appConfig.showNavigationMenu && toolbar != null) {
             toolbar.setVisibility(View.GONE);
         }
 
