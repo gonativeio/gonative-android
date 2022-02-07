@@ -199,8 +199,9 @@ public class UrlNavigation {
 
         if ("nativebridge".equals(uri.getHost())) {
             if ("/multi".equals(uri.getPath())) {
-                String data = uri.getQueryParameter("data");
-                if (data == null) return;
+                if(jsonData == null) return;
+                String data = jsonData.optString("data");
+                if (data.isEmpty()) return;
                 try {
                     JSONObject json = new JSONObject(data);
                     JSONArray urls = json.getJSONArray("urls");
