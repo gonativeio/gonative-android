@@ -1208,8 +1208,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // Should not reach here.
             cancelFileUpload();
         }
-
-        ((GoNativeApplication) getApplication()).mBridge.onActivityResult(this, requestCode, resultCode, data);
     }
 
     public void cancelFileUpload() {
