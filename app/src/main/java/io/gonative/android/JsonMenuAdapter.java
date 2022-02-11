@@ -241,9 +241,9 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         if (isGrouping(groupPosition)) {
             IconicsDrawable iconDrawable;
             if (isExpanded)
-                iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.faw_angle_up);
+                iconDrawable = mainActivity.getFontAwesomeIcon("faw_angle_up");
             else
-                iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.faw_angle_down);
+                iconDrawable = mainActivity.getFontAwesomeIcon("faw_angle_down");
 
             iconDrawable.setSizeXPx(R.dimen.sidebar_expand_indicator_size);
             iconDrawable.setSizeYPx(R.dimen.sidebar_expand_indicator_size);
@@ -272,23 +272,16 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         String icon = itemString("icon", groupPosition);
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
-            icon = "faw_" + icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
-            try {
-                IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
-                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
-                if (groupPosition == this.selectedIndex) {
-                    iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
-                } else {
-                    iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
-                }
-                imageView.setImageDrawable(iconDrawable);
-                imageView.setVisibility(View.VISIBLE);
-            } catch (IllegalArgumentException e) {
-                // icon was not found in IconValue enum
-                Log.e(TAG, e.getMessage(), e);
-                imageView.setVisibility(View.INVISIBLE);
+            IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
+            iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
+            iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+            if (groupPosition == this.selectedIndex) {
+                iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+            } else {
+                iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
             }
+            imageView.setImageDrawable(iconDrawable);
+            imageView.setVisibility(View.VISIBLE);
         } else if (imageView != null) {
             imageView.setVisibility(View.INVISIBLE);
         }
@@ -335,23 +328,16 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         String icon = itemString("icon", groupPosition, childPosition);
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
-            icon = "faw_" + icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
-            try {
-                IconicsDrawable iconDrawable = new IconicsDrawable(mainActivity, FontAwesome.Icon.valueOf(icon));
-                iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
-                iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
-                if (this.selectedIndex == (groupPosition + childPosition) + 1) {
-                    iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
-                } else {
-                    iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
-                }
-                imageView.setImageDrawable(iconDrawable);
-                imageView.setVisibility(View.VISIBLE);
-            } catch (IllegalArgumentException e) {
-                // icon was not found in IconValue enum
-                Log.e(TAG, e.getMessage(), e);
-                imageView.setVisibility(View.INVISIBLE);
+            IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
+            iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
+            iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+            if (this.selectedIndex == (groupPosition + childPosition) + 1) {
+                iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+            } else {
+                iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
             }
+            imageView.setImageDrawable(iconDrawable);
+            imageView.setVisibility(View.VISIBLE);
         } else if (imageView != null) {
             imageView.setVisibility(View.INVISIBLE);
         }

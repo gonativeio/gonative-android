@@ -3,13 +3,11 @@ package io.gonative.android;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import androidx.appcompat.widget.SearchView;
 
-import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
@@ -31,6 +29,10 @@ public class ActionManager {
     private MainActivity activity;
     private String currentMenuID;
     private HashMap<MenuItem, String>itemToUrl;
+
+    // needs to be integers declared here
+    private final int action_button_size_XPx = 64;
+    private final int action_button_size_YPx = 64;
 
     ActionManager(MainActivity activity) {
         this.activity = activity;
@@ -107,20 +109,13 @@ public class ActionManager {
 
                     IconicsDrawable iconDrawable = null;
                     if (icon != null) {
-                        icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
-                        try {
-                            iconDrawable = new IconicsDrawable(this.activity, FontAwesome.Icon.valueOf(icon));
-                            if(appConfig.actionbarForegroundColor != null){
-                                iconDrawable.setColorList(ColorStateList.valueOf(appConfig.actionbarForegroundColor));
-                            }
-                            iconDrawable.setSizeXPx(64);
-                            iconDrawable.setSizeYPx(64);
-                        } catch (IllegalArgumentException e) {
-                            // icon was not found in IconValue enum
-                            Log.e(TAG, e.getMessage(), e);
+                        iconDrawable = activity.getFontAwesomeIcon(icon);
+                        if(appConfig.actionbarForegroundColor != null){
+                            iconDrawable.setColorList(ColorStateList.valueOf(appConfig.actionbarForegroundColor));
                         }
+                        iconDrawable.setSizeXPx(action_button_size_XPx);
+                        iconDrawable.setSizeYPx(action_button_size_YPx);
                     }
-
                     MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
                             .setIcon(iconDrawable)
                             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);

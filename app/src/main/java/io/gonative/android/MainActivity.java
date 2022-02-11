@@ -63,6 +63,10 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
+import com.mikepenz.iconics.IconicsDrawable;
+import com.mikepenz.iconics.typeface.IIcon;
+import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
+import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesomeBrand;
 import com.onesignal.OSDeviceState;
 import com.onesignal.OneSignal;
 import com.squareup.seismic.ShakeDetector;
@@ -1987,6 +1991,33 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                 break;
         }
+    }
+
+    public IconicsDrawable getFontAwesomeIcon(String icon){
+
+        IconicsDrawable iconDrawable;
+        try {
+            // if exact icon name is provided (ex: faw_angle_up)
+            if(icon.contains("_")){
+                return new IconicsDrawable(this, FontAwesomeBrand.Icon.valueOf(icon));
+            }
+
+            // if icon name provided from appConfig (Ex: fas fa-home)
+            String iconName = icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
+            if(icon.startsWith("fab")) {
+                icon = "fab_" + iconName;
+                iconDrawable = new IconicsDrawable(this, FontAwesomeBrand.Icon.valueOf(icon));
+            } else {
+                icon = "faw_" + iconName;
+                iconDrawable = new IconicsDrawable(this, FontAwesome.Icon.valueOf(icon));
+            }
+        } catch (IllegalArgumentException e) {
+            // icon was not found in IconValue enum
+            icon = "faw_question";
+            iconDrawable = new IconicsDrawable(this, FontAwesome.Icon.valueOf(icon));
+            Log.e(TAG, e.getMessage(), e);
+        }
+        return iconDrawable;
     }
 
     public TabManager getTabManager() {

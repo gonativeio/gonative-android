@@ -12,7 +12,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
-import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
@@ -158,20 +157,10 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             if (icon.isEmpty()) {
                 icon = "faw_question";
                 Log.e(TAG, "All tabs must have icons.");
-            } else {
-                icon = "faw_" + icon.substring(icon.indexOf("-")+1).replaceAll("-", "_");
             }
 
             // create drawable from icon string
-            IconicsDrawable iconDrawable;
-            try {
-                iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon));
-            } catch (IllegalArgumentException e) {
-                // icon was not found in IconValue enum
-                icon = "faw_question";
-                iconDrawable = new IconicsDrawable(this.mainActivity, FontAwesome.Icon.valueOf(icon));
-                Log.e(TAG, e.getMessage(), e);
-            }
+            IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
 
             // set icon color and size
             if(appConfig.tabBarTextColor != null){
