@@ -38,6 +38,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
     private String currentMenuId;
     private String currentUrl;
     private JSONArray tabs;
+    private final int maxTabs = 5;
     private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
     private boolean useJavascript; // do not use tabs from config
     AppConfig appConfig;
@@ -142,6 +143,11 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         bottomNavigationView.removeAllItems();
         if(tabs == null) return;
         for (int i = 0; i < tabs.length(); i++) {
+            if(i > (maxTabs-1)){
+                Log.e(TAG, "Tab menu items list should not have more than 5 items");
+                break;
+            }
+
             JSONObject item = tabs.optJSONObject(i);
             if (item == null) continue;
 
