@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 import android.view.KeyEvent;
 import android.webkit.WebView;
 
@@ -20,6 +21,9 @@ public class BaseBridgeModule implements BridgeModule{
 
     @Override
     public <T extends Activity & GoNativeActivity> void onActivityCreate(T activity, boolean isRoot) { }
+
+    @Override
+    public <T extends Activity & GoNativeActivity> void onPostCreate(T activity, Bundle savedInstanceState, boolean isRoot) {}
 
     @Override
     public <T extends Activity & GoNativeActivity> boolean shouldOverrideUrlLoading(T activity, Uri url, JSONObject params) {
@@ -60,4 +64,9 @@ public class BaseBridgeModule implements BridgeModule{
 
     @Override
     public <T extends Activity & GoNativeActivity> void  onRequestPermissionsResult(T activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) { }
+    
+    @Override
+    public boolean pauseWebViewOnActivityPause() {
+        return true;
+    }
 }

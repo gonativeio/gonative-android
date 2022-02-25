@@ -5,6 +5,7 @@ import android.content.Context;
 import android.app.Application;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 import android.view.KeyEvent;
 import android.webkit.WebView;
 
@@ -45,6 +46,12 @@ public abstract class Bridge {
     public <T extends Activity & GoNativeActivity> void onActivityCreate(T activity, boolean isRoot) {
         for (BridgeModule plugin: getPlugins()) {
             plugin.onActivityCreate(activity, isRoot);
+        }
+    }
+
+    public <T extends Activity & GoNativeActivity> void onPostCreate(T activity, Bundle savedInstanceState, boolean isRoot) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onPostCreate(activity, savedInstanceState, isRoot);
         }
     }
 
@@ -119,7 +126,7 @@ public abstract class Bridge {
             }
         }
 
-        return true;
+        return false;
     }
 
     public <T extends Activity & GoNativeActivity> void onPageFinish(T activity, boolean doNativeBridge) {
@@ -150,6 +157,16 @@ public abstract class Bridge {
         for (BridgeModule plugin: getPlugins()) {
             plugin.onRequestPermissionsResult(activity, requestCode, permissions, grantResults);
         }
+    }
+    
+    /**
+     * @return false if at least one plugin returns false
+     */
+    public boolean pauseWebViewOnActivityPause() {
+        for (BridgeModule plugin: getPlugins()) {
+            if (!plugin.pauseWebViewOnActivityPause()) return false;
+        }
+        return true;
     }
 
     protected abstract List<BridgeModule> getPlugins();

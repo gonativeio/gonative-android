@@ -554,7 +554,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onActivityPause(this);
         stopCheckingReadyStatus();
-        this.mWebview.onPause();
+    
+        if (application.mBridge.pauseWebViewOnActivityPause()) {
+            this.mWebview.onPause();
+        }
 
         // unregister connectivity
         if (this.connectivityReceiver != null) {
@@ -705,11 +708,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
         Toast.makeText(this, R.string.cleared_cache, Toast.LENGTH_SHORT).show();
     }
 
-    private boolean canGoBack() {
+    public boolean canGoBack() {
+        if (this.mWebview == null) return false;
         return this.mWebview.canGoBack();
     }
 
-    private void goBack() {
+    public void goBack() {
+        if (this.mWebview == null) return;
         if (LeanWebView.isCrosswalk()) {
             // not safe to do for non-crosswalk, as we may never get a page finished callback
             // for single-page apps
@@ -1064,6 +1069,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onPostCreate(this, savedInstanceState, isRoot);
+
 		// Sync the toggle state after onRestoreInstanceState has occurred.
         if (mDrawerToggle != null)
 		    mDrawerToggle.syncState();
@@ -1266,7 +1274,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
 		}
 
-        ((GoNativeApplication) getApplication()).mBridge.onKeyDown(keyCode, event);
+        if (((GoNativeApplication) getApplication()).mBridge.onKeyDown(keyCode, event)) {
+            return true;
+        }
 
 		return super.onKeyDown(keyCode, event);
 	}
