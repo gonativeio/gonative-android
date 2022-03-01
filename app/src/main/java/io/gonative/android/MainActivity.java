@@ -56,7 +56,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.webkit.WebSettingsCompat;
@@ -64,7 +63,6 @@ import androidx.webkit.WebViewFeature;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.mikepenz.iconics.IconicsDrawable;
-import com.mikepenz.iconics.typeface.IIcon;
 import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesomeBrand;
 import com.onesignal.OSDeviceState;
@@ -86,7 +84,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -466,7 +463,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (GoNativeApplication.ONESIGNAL_STATUS_CHANGED_MESSAGE.equals(intent.getAction())) {
-                    sendOneSignalInfo();
+                    sendOneSignalInfo("gonative_onesignal_info");
                 }
             }
         };
@@ -1520,7 +1517,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-    public void sendOneSignalInfo() {
+    public void sendOneSignalInfo(String callback) {
         boolean doNativeBridge = true;
         String currentUrl = this.mWebview.getUrl();
         if (currentUrl != null) {
@@ -1528,7 +1525,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         // onesignal javsacript callback
-        if (AppConfig.getInstance(this).oneSignalEnabled && doNativeBridge) {
+        if (!AppConfig.getInstance(this).oneSignalEnabled && doNativeBridge) {
             try {
                 String userId = null;
                 String pushToken = null;
@@ -1554,7 +1551,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 }
                 jsonObject.put("oneSignalSubscribed", subscribed);
                 jsonObject.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
-                String js = LeanUtils.createJsForCallback("gonative_onesignal_info", jsonObject);
+                String js = LeanUtils.createJsForCallback(callback, jsonObject);
                 runJavascript(js);
             } catch (Exception e) {
                 Log.e(TAG, "Error with onesignal javscript callback", e);
@@ -1583,7 +1580,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             this.menuAdapter.autoSelectItem(url);
         }
 
-        sendOneSignalInfo();
+        sendOneSignalInfo("gonative_onesignal_info");
     }
 
     // onPageStarted
@@ -2007,14 +2004,19 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         IconicsDrawable iconDrawable;
         try {
+            // Get icon name
+            String iconName;
             // if exact icon name is provided (ex: faw_angle_up)
             if(icon.contains("_")){
-                return new IconicsDrawable(this, FontAwesomeBrand.Icon.valueOf(icon));
+                iconName = icon.substring(icon.indexOf("_") + 1);
+            }
+            // if icon name provided from appConfig (Ex: fas fa-home)
+            else {
+                iconName = icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
             }
 
-            // if icon name provided from appConfig (Ex: fas fa-home)
-            String iconName = icon.substring(icon.indexOf("-") + 1).replaceAll("-", "_");
-            if(icon.startsWith("fab")) {
+            // Get FontAwesome Icon from the iconName categorized by fab (Brand) and faw (Solid)
+            if (icon.startsWith("fab")) {
                 icon = "fab_" + iconName;
                 iconDrawable = new IconicsDrawable(this, FontAwesomeBrand.Icon.valueOf(icon));
             } else {

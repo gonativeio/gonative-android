@@ -45,9 +45,11 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     private int selectedIndex;
     private ExpandableListView expandableListView;
     private Integer highlightColor;
+    private int sidebar_icon_size;
 
     JsonMenuAdapter(MainActivity activity, ExpandableListView expandableListView) {
         this.mainActivity = activity;
+        sidebar_icon_size = mainActivity.getResources().getInteger(R.integer.sidebar_icon_size);
         this.expandableListView = expandableListView;
         menuItems = null;
         this.highlightColor = AppConfig.getInstance(mainActivity).sidebarHighlightColor;
@@ -273,8 +275,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
             IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
-            iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
-            iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+            iconDrawable.setSizeXPx(sidebar_icon_size);
+            iconDrawable.setSizeYPx(sidebar_icon_size);
             if (groupPosition == this.selectedIndex) {
                 iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
             } else {
@@ -329,8 +331,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
             IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
-            iconDrawable.setSizeXPx(R.dimen.sidebar_icon_size);
-            iconDrawable.setSizeYPx(R.dimen.sidebar_icon_size);
+            iconDrawable.setSizeXPx(sidebar_icon_size);
+            iconDrawable.setSizeYPx(sidebar_icon_size);
             if (this.selectedIndex == (groupPosition + childPosition) + 1) {
                 iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
             } else {

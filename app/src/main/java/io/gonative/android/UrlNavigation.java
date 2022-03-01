@@ -269,9 +269,17 @@ public class UrlNavigation {
 
         if ("run".equals(uri.getHost())) {
             if ("/gonative_device_info".equals(uri.getPath())) {
-                runGonativeDeviceInfo();
+                String callback = "gonative_device_info";
+                if(jsonData != null){
+                    callback = jsonData.optString("callback", "gonative_device_info");
+                }
+                runGonativeDeviceInfo(callback);
             } else if ("/gonative_onesignal_info".equals(uri.getPath())) {
-                mainActivity.sendOneSignalInfo();
+                String callback = "gonative_onesignal_info";
+                if(jsonData != null){
+                    callback = jsonData.optString("callback", "gonative_onesignal_info");
+                }
+                mainActivity.sendOneSignalInfo(callback);
             }
         }
 
@@ -1022,7 +1030,7 @@ public class UrlNavigation {
 
         // send installation info
         if (doNativeBridge) {
-            runGonativeDeviceInfo();
+            runGonativeDeviceInfo("gonative_device_info");
         }
         injectJSBridgeLibrary();
 
@@ -1051,7 +1059,7 @@ public class UrlNavigation {
         resend.sendToTarget();
     }
 
-	private void runGonativeDeviceInfo() {
+	private void runGonativeDeviceInfo(String callback) {
         Map<String, Object> installationInfo = Installation.getInfo(mainActivity);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
         if (!sharedPreferences.getBoolean("hasLaunched", false)) {
@@ -1062,7 +1070,7 @@ public class UrlNavigation {
         }
 
         JSONObject jsonObject = new JSONObject(installationInfo);
-        String js = LeanUtils.createJsForCallback("gonative_device_info", jsonObject);
+        String js = LeanUtils.createJsForCallback(callback, jsonObject);
         mainActivity.runJavascript(js);
     }
 

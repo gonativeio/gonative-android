@@ -1,5 +1,5 @@
 // this function returns a promise and also supports callback as params.callback
-function addCommandCallback(command, params) {
+function addCommandCallback(command, params, persistCallback) {
     var tempFunctionName = '_gonative_temp_' + Math.random().toString(36).slice(2);
     var callback;
     if(params) callback = params.callback;
@@ -18,15 +18,16 @@ function addCommandCallback(command, params) {
                 typeof window[callback] === 'function'){
                 window[callback](data);
             }
-            // delete this temporary function when done
-            delete window[tempFunctionName];
+            if(!persistCallback){ // if callback is used just once
+                delete window[tempFunctionName];
+            }
         }
         // execute command
         addCommand(command, params);
     });
 }
 
-function addCallbackFunction(callbackFunction){
+function addCallbackFunction(callbackFunction, persistCallback){
     var callbackName;
     if(typeof callbackFunction === 'string'){
         callbackName = callbackFunction;
@@ -34,23 +35,26 @@ function addCallbackFunction(callbackFunction){
         callbackName = '_gonative_temp_' + Math.random().toString(36).slice(2);
         window[callbackName] = function(...args) {
             callbackFunction.apply(null, args);
+            if(!persistCallback){ // if callback is used just once
+                delete window[callbackName];
+            }
         }
     }
     return callbackName;
 }
 
-function addCommand(command, params){
+function addCommand(command, params, persistCallback){
     var data = undefined;
     if(params) {
         var commandObject = {};
         if(params.callback && typeof params.callback === 'function'){
-            params.callback = addCallbackFunction(params.callback);
+            params.callback = addCallbackFunction(params.callback, persistCallback);
         }
         if(params.callbackFunction && typeof params.callbackFunction === 'function'){
-            params.callbackFunction = addCallbackFunction(params.callbackFunction);
+            params.callbackFunction = addCallbackFunction(params.callbackFunction, persistCallback);
         }
         if(params.statuscallback && typeof params.statuscallback === 'function'){
-            params.statuscallback = addCallbackFunction(params.statuscallback);
+            params.statuscallback = addCallbackFunction(params.statuscallback, persistCallback);
         }
         commandObject.gonativeCommand = command;
         commandObject.data = params;
@@ -190,7 +194,7 @@ gonative.connectivity = {
         return addCommandCallback("gonative://connectivity/get", params);
     },
     subscribe: function (params){
-        return addCommandCallback("gonative://connectivity/subscribe", params);
+        return addCommandCallback("gonative://connectivity/subscribe", params, true);
     },
     unsubscribe: function (){
         addCommand("gonative://connectivity/unsubscribe");
@@ -198,20 +202,25 @@ gonative.connectivity = {
 }
 
 gonative.run = {
-    deviceInfo: function(params){
-        if (params && params.callback) {
-            return addCommandCallback("gonative://run/gonative_device_info", params);
-        } else addCommand("gonative://run/gonative_device_info");
-    },
-    onesignalInfo: function(params){
-        if (params && params.callback) {
-            return addCommandCallback("gonative://run/gonative_onesignal_info", params);
-        } else addCommand("gonative://run/gonative_onesignal_info");
+    deviceInfo: function(){
+        addCommand("gonative://run/gonative_device_info");
     }
+};
+
+gonative.deviceInfo = function(){
+    return addCommandCallback("gonative://run/gonative_device_info");
 };
 
 // onesignal
 gonative.onesignal = {
+    run: {
+        onesignalInfo: function(){
+            addCommand("gonative://run/gonative_onesignal_info");
+        }
+    },
+    onesignalInfo: function(){
+        return addCommandCallback("gonative://run/gonative_onesignal_info");
+    },
     register: function (){
         addCommand("gonative://onesignal/register");
     },
@@ -268,18 +277,6 @@ gonative.onesignal = {
         setInAppMessageClickHandler: function (handler){
             var params = {handler: handler};
             addCommand("gonative://onesignal/iam/setInAppMessageClickHandler", params);
-        }
-    }
-};
-
-// facebook
-gonative.facebook = {
-    events: {
-        send: function(params){
-            addCommand("gonative://facebook/events/send", params);
-        },
-        sendPurchase: function(params){
-            addCommand("gonative://facebook/events/sendPurchase", params);
         }
     }
 };

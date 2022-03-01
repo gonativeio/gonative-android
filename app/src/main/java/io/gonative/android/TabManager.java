@@ -39,6 +39,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
     private String currentUrl;
     private JSONArray tabs;
     private final int maxTabs = 5;
+    private int tabbar_icon_size;
     private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
     private boolean useJavascript; // do not use tabs from config
     AppConfig appConfig;
@@ -51,6 +52,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
     TabManager(MainActivity mainActivity, AHBottomNavigation bottomNavigationView) {
         this.mainActivity = mainActivity;
+        tabbar_icon_size = this.mainActivity.getResources().getInteger(R.integer.tabbar_icon_size);
         this.bottomNavigationView = bottomNavigationView;
         this.bottomNavigationView.setOnTabSelectedListener(this);
         this.appConfig = AppConfig.getInstance(this.mainActivity);
@@ -172,8 +174,8 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             if(appConfig.tabBarTextColor != null){
                 iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
             }
-            iconDrawable.setSizeXPx(R.dimen.tabbar_icon_size);
-            iconDrawable.setSizeYPx(R.dimen.tabbar_icon_size);
+            iconDrawable.setSizeXPx(tabbar_icon_size);
+            iconDrawable.setSizeYPx(tabbar_icon_size);
 
             AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, iconDrawable);
             bottomNavigationView.addItem(navigationItem);

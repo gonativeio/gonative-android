@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <integer name="round_corner_dips">15</integer>
+    <integer name="tabbar_icon_size">24</integer>
+    <integer name="sidebar_icon_size">22</integer>
+    <integer name="action_button_size">64</integer>
 </resources>

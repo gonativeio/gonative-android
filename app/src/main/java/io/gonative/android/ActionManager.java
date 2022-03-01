@@ -29,6 +29,7 @@ public class ActionManager {
     private MainActivity activity;
     private String currentMenuID;
     private HashMap<MenuItem, String>itemToUrl;
+    private int action_button_size;
 
     // needs to be integers declared here
     private final int action_button_size_XPx = 64;
@@ -37,6 +38,7 @@ public class ActionManager {
     ActionManager(MainActivity activity) {
         this.activity = activity;
         this.itemToUrl = new HashMap<>();
+        action_button_size = this.activity.getResources().getInteger(R.integer.action_button_size);
     }
 
     public void checkActions(String url) {
@@ -113,8 +115,8 @@ public class ActionManager {
                         if(appConfig.actionbarForegroundColor != null){
                             iconDrawable.setColorList(ColorStateList.valueOf(appConfig.actionbarForegroundColor));
                         }
-                        iconDrawable.setSizeXPx(action_button_size_XPx);
-                        iconDrawable.setSizeYPx(action_button_size_YPx);
+                        iconDrawable.setSizeXPx(action_button_size);
+                        iconDrawable.setSizeYPx(action_button_size);
                     }
                     MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
                             .setIcon(iconDrawable)

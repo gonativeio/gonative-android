@@ -6,7 +6,6 @@
     <dimen name="sidebar_icon_size">22dp</dimen>
     <dimen name="sidebar_expand_indicator_size">22dp</dimen>
     <dimen name="sidebar_icon_width">25dp</dimen>
-    <dimen name="tabbar_icon_size">24dp</dimen>
     <dimen name="bottom_navigation_margin_bottom">7dp</dimen>
     <dimen name="bottom_navigation_margin_top_active">7dp</dimen>
     <dimen name="bottom_navigation_margin_top_inactive">7dp</dimen>
