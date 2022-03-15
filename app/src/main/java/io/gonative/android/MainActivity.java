@@ -1525,7 +1525,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         // onesignal javsacript callback
-        if (!AppConfig.getInstance(this).oneSignalEnabled && doNativeBridge) {
+        if (AppConfig.getInstance(this).oneSignalEnabled && doNativeBridge) {
             try {
                 String userId = null;
                 String pushToken = null;
