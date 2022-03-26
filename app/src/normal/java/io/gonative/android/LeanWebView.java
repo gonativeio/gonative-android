@@ -117,6 +117,9 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     @Override
     public void loadUrl(String url) {
         if (url == null) return;
+        if (UrlNavigation.OFFLINE_PAGE_URL_RAW.equals(url)) {
+            url = UrlNavigation.OFFLINE_PAGE_URL;
+        }
 
         if (url.startsWith("javascript:"))
             runJavascript(url.substring("javascript:".length()));
