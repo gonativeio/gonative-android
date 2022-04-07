@@ -134,6 +134,12 @@ public abstract class Bridge {
             plugin.onPageFinish(activity, doNativeBridge);
         }
     }
+    
+    public <T extends Activity & GoNativeActivity> void onActivityNewIntent(T activity, Intent intent) {
+        for (BridgeModule plugin: getPlugins()) {
+            plugin.onActivityNewIntent(activity, intent);
+        }
+    }
 
     public <T extends Activity & GoNativeActivity> void onConfigurationChange(T activity) {
         for (BridgeModule plugin: getPlugins()) {

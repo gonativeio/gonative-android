@@ -1241,6 +1241,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             loadUrl(url);
         }
         Log.w(TAG, "Received intent without url");
+
+        ((GoNativeApplication) getApplication()).mBridge.onActivityNewIntent(this, intent);
     }
 
     @Override

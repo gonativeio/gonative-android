@@ -415,8 +415,14 @@ public class UrlNavigation {
                         }
                     }
                 }
-                AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
-                this.mainActivity.setSidebarNavigationEnabled(true);
+                boolean enabled = jsonData.optBoolean("enabled", true);
+                if (jsonData.has("persist")) {
+                    boolean persist = jsonData.optBoolean("persist", false);
+                    AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items, enabled, persist);
+                } else {
+                    AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
+                }
+                this.mainActivity.setSidebarNavigationEnabled(enabled);
             }
             return;
         }

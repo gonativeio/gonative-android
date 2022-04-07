@@ -24,6 +24,7 @@ public interface BridgeModule {
     <T extends Activity & GoNativeActivity> void onActivityStart(T activity);
     <T extends Activity & GoNativeActivity> void onActivityDestroy(T activity);
     <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data);
+    <T extends Activity & GoNativeActivity> void onActivityNewIntent(T activity, Intent intent);
     boolean onKeyDown(int keyCode, KeyEvent event);
     <T extends Activity & GoNativeActivity> void onPageFinish(T activity, boolean doNativeBridge);
     <T extends Activity & GoNativeActivity> void onConfigurationChange(T activity);

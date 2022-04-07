@@ -44,6 +44,9 @@ public class BaseBridgeModule implements BridgeModule{
 
     @Override
     public <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data) { }
+    
+    @Override
+    public <T extends Activity & GoNativeActivity> void onActivityNewIntent(T activity, Intent intent) { }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
