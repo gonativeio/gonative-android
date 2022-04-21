@@ -11,8 +11,8 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
@@ -24,6 +24,7 @@ import android.os.Handler;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -51,7 +52,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -114,7 +114,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int GOOGLE_SIGN_IN = 500;
-    private static final float ACTIONBAR_ELEVATION = 12.0f;
 
     private GoNativeWebviewInterface mWebview;
     private View webviewOverlay;
@@ -153,6 +152,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private int urlLevel = -1;
     private int parentUrlLevel = -1;
     private Handler handler = new Handler();
+    private ActionbarManager actionbarManager;
+    private Menu mOptionsMenu;
 
     private Runnable statusChecker = new Runnable() {
         @Override
@@ -391,6 +392,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         // actions in action bar
         this.actionManager = new ActionManager(this);
+        this.actionbarManager = new ActionbarManager(this, actionManager, isRoot);
 
         Intent intent = getIntent();
         // load url
@@ -450,7 +452,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 backArrow.setColorFilter(AppConfig.getInstance(this).actionbarForegroundColor, PorterDuff.Mode.SRC_ATOP);
                 getSupportActionBar().setHomeAsUpIndicator(backArrow);
             }
-
+            
+            this.actionbarManager.setupActionBar(mDrawerLayout, mDrawerToggle);
             showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
         }
 
@@ -970,6 +973,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public void showLogoInActionBar(boolean show) {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar == null) return;
+        if (this.actionbarManager == null) return;
 
         actionBar.setDisplayOptions(show ? 0 : ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
 
@@ -977,18 +981,29 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // disable text title
             actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
 
-            // why use a custom view and not setDisplayUseLogoEnabled and setLogo?
-            // Because logo doesn't work!
-            actionBar.setDisplayShowCustomEnabled(true);
             if (this.navigationTitleImage == null) {
                 this.navigationTitleImage = new ImageView(this);
                 this.navigationTitleImage.setImageResource(R.drawable.ic_actionbar);
             }
-            actionBar.setCustomView(this.navigationTitleImage);
+            this.actionbarManager.showTitleView(navigationTitleImage);
         } else {
-            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
-            actionBar.setDisplayShowCustomEnabled(false);
+            // Show Text
+            showTextActionBarTitle(getTitle());
         }
+    }
+
+    private void showTextActionBarTitle(CharSequence title) {
+        if (this.actionbarManager == null) return;
+
+        TextView textView = new TextView(this);
+        textView.setText(TextUtils.isEmpty(title) ? getTitle() : title);
+        textView.setTextSize(18);
+        textView.setTypeface(null, Typeface.BOLD);
+        textView.setMaxLines(1);
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+        // TODO [merge] : replace with getter method when merged with dark-theme branch
+        textView.setTextColor(AppConfig.getInstance(this).actionbarForegroundColor);
+        this.actionbarManager.showTitleView(textView);
     }
 
 	public void updatePageTitle() {
@@ -1077,6 +1092,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        this.actionbarManager.setupActionBarTitleDisplay();
+
         GoNativeApplication application = (GoNativeApplication)getApplication();
      // Pass any configuration change to the drawer toggles
         if (mDrawerToggle != null)
@@ -1336,96 +1353,37 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.topmenu, menu);
-
+        mOptionsMenu = menu;
         AppConfig appConfig = AppConfig.getInstance(this);
 
-        // search item in action bar
-		final MenuItem searchItem = menu.findItem(R.id.action_search);
-        if (appConfig.searchTemplateUrl != null) {
-            // make it visible
-            searchItem.setVisible(true);
-
-            final SearchView searchView = (SearchView) searchItem.getActionView();
-            if (searchView != null) {
-                SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
-                if (searchAutoComplete != null) {
-                    searchAutoComplete.setTextColor(appConfig.actionbarForegroundColor);
-                    int hintColor = appConfig.actionbarForegroundColor;
-                    hintColor = Color.argb(192, Color.red(hintColor), Color.green(hintColor),
-                            Color.blue(hintColor));
-                    searchAutoComplete.setHintTextColor(hintColor);
-                }
-
-                ImageView closeButtonImage = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
-                if (closeButtonImage != null) {
-                    closeButtonImage.setColorFilter(appConfig.actionbarForegroundColor);
-                }
-
-                searchView.setOnSearchClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        setMenuItemsVisible(menu, false, searchItem);
-                    }
-                });
-
-                searchView.setOnCloseListener(new SearchView.OnCloseListener() {
-                    @Override
-                    public boolean onClose() {
-                        setMenuItemsVisible(menu, true, searchItem);
-                        return false;
-                    }
-                });
-
-                // listener to process query
-                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                    @Override
-                    public boolean onQueryTextSubmit(String query) {
-                        searchItem.collapseActionView();
-
-                        try {
-                            String q = URLEncoder.encode(query, "UTF-8");
-                            loadUrl(AppConfig.getInstance(getApplicationContext()).searchTemplateUrl + q);
-                        } catch (UnsupportedEncodingException e) {
-                            return true;
-                        }
-
-                        return true;
-                    }
-
-                    @Override
-                    public boolean onQueryTextChange(String newText) {
-                        // do nothing
-                        return true;
-                    }
-                });
-
-                // listener to collapse action view when soft keyboard is closed
-                searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
-                    @Override
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        if (!hasFocus) {
-                            searchItem.collapseActionView();
-                            setMenuItemsVisible(menu, true, searchItem);
-                        }
-                    }
-                });
-            }
-        }
-
-        if (!appConfig.showRefreshButton) {
-            MenuItem refreshItem = menu.findItem(R.id.action_refresh);
-            if (refreshItem != null) {
+        MenuItem refreshItem = menu.findItem(R.id.action_refresh);
+        if (refreshItem != null) {
+            if (!appConfig.showRefreshButton) {
                 refreshItem.setVisible(false);
                 refreshItem.setEnabled(false);
+            } else {
+                Drawable drawable = refreshItem.getIcon();
+                // TODO [merge] : take current theme for dark support
+                drawable.setColorFilter(appConfig.actionbarForegroundColor, PorterDuff.Mode.SRC_ATOP);
+                refreshItem.setIcon(drawable);
             }
         }
 
         if (this.actionManager != null) {
             this.actionManager.addActions(menu);
+            this.actionbarManager.setupActionBarTitleDisplay();
         }
 
 		return true;
 	}
+
+    public Menu getOptionsMenu () {
+        return mOptionsMenu;
+    }
+
+	public void setMenuItemsVisible (boolean visible) {
+        setMenuItemsVisible(mOptionsMenu, visible, null);
+    }
 
 	private void setMenuItemsVisible(Menu menu, boolean visible, MenuItem exception) {
         MenuItem refreshItem = menu.findItem(R.id.action_refresh);
@@ -1466,10 +1424,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
         // handle other items
         switch (item.getItemId()){
             case android.R.id.home:
+                if (this.actionbarManager.isOnSearchMode()){
+                    this.actionbarManager.closeSearchView();
+                    this.actionbarManager.setOnSearchMode(false);
+                    return true;
+                }
                 finish();
                 return true;
-	        case R.id.action_search:
-	        	return true;
 	        case R.id.action_refresh:
                 onRefresh();
 	        	return true;
@@ -1503,7 +1464,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-    private void refreshPage() {
+    public void refreshPage() {
         String url = this.mWebview.getUrl();
         if (url != null && url.equals(UrlNavigation.OFFLINE_PAGE_URL)){
             if (this.mWebview.canGoBack()) {
@@ -1709,7 +1670,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.setTitle(title);
 
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(title);
+            showTextActionBarTitle(title);
         }
     }
 

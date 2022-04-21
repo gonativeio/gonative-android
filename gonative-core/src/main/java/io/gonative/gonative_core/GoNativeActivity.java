@@ -5,4 +5,6 @@ public interface GoNativeActivity {
     void runJavascript(String javascript);
     boolean canGoBack();
     void goBack();
+    void loadUrl(String url);
+    void refreshPage();
 }

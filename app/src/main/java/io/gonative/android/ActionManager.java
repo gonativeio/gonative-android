@@ -146,4 +146,8 @@ public class ActionManager {
             return false;
         }
     }
+    
+    public HashMap<MenuItem, String> getItemToUrl() {
+        return itemToUrl;
+    }
 }

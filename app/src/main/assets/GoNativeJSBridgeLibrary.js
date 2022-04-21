@@ -199,7 +199,7 @@ gonative.connectivity = {
     unsubscribe: function (){
         addCommand("gonative://connectivity/unsubscribe");
     }
-}
+};
 
 gonative.run = {
     deviceInfo: function(){
