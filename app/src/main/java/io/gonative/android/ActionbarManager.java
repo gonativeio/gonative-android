@@ -236,11 +236,11 @@ public class ActionbarManager {
     }
     
     private void styleActionBar(ActionBarDrawerToggle mDrawerToggle) {
-        // Action bar background color
         MaterialToolbar toolbar = mainActivity.findViewById(R.id.toolbar);
-        toolbar.setBackgroundColor(R.attr.colorPrimary);
+        // TODO [merge] : get actionbar color based on dark/light theme
+        toolbar.setBackgroundColor(appConfig.actionbarBackgroundColor);
         
-        // Toogle Button
+        // Toggle Button
         if (mDrawerToggle != null) {
             mDrawerToggle.getDrawerArrowDrawable().setColor(appConfig.actionbarForegroundColor);
         }
