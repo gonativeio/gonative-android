@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -220,7 +221,9 @@ public class ActionbarManager {
                 params.leftMargin = ACTIONBAR_ITEM_MARGIN * margin;
             }
         } else {
-            if (appConfig.searchTemplateUrl == null) {
+            if (titleContainer.getChildAt(0) != null
+                    && titleContainer.getChildAt(0) instanceof TextView
+                    && appConfig.searchTemplateUrl == null) {
                 titleContainer.setGravity(Gravity.CENTER_VERTICAL);
             } else {
                 leftItemsCount++;

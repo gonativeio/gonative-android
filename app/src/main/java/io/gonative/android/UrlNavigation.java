@@ -1318,7 +1318,94 @@ public class UrlNavigation {
             return false;
         }
     }
-
+    
+    
+    public boolean openDirectCamera(final String[] mimetypespec, final boolean multiple) {
+        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> openDirectCameraAfterPermission(mimetypespec, multiple));
+        return true;
+    }
+    
+    /*
+        Directly opens camera if the mime types are images. If not, run existing default process
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    private boolean openDirectCameraAfterPermission(String[] mimetypespec, boolean multiple) {
+        mainActivity.setDirectUploadImageUri(null);
+        
+        Set<String> mimeTypes = new HashSet<>();
+        for (String spec : mimetypespec) {
+            String[] splitSpec = spec.split("[,;\\s]");
+            for (String s : splitSpec) {
+                if (s.startsWith(".")) {
+                    String t = MimeTypeMap.getSingleton().getMimeTypeFromExtension(s.substring(1));
+                    if (t != null) mimeTypes.add(t);
+                } else if (s.contains("/")) {
+                    mimeTypes.add(s);
+                }
+            }
+        }
+        
+        // Checks if mimeTypes is empty. If true, redirect process to existing file chooser
+        if (mimeTypes.isEmpty()) {
+            return chooseFileUploadAfterPermission(mimetypespec, multiple);
+        }
+        
+        if (AppConfig.getInstance(mainActivity).directCameraUploads) {
+            for (String type : mimeTypes) {
+                if (type.equals("image/*") || type.equals("image/jpeg") || type.equals("image/jpg")) {
+                    // Filter types to be just images
+                } else {
+                    
+                    // Redirect process to existing file chooser
+                    return chooseFileUploadAfterPermission(mimetypespec, multiple);
+                }
+            }
+        }
+        
+        PackageManager packageManger = mainActivity.getPackageManager();
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        String imageFileName = "IMG_" + timeStamp + ".jpg";
+        
+        Uri captureUrl = null;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            ContentResolver resolver = mainActivity.getContentResolver();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName);
+            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/*");
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+            captureUrl = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+        } else {
+            File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+            File captureFile = new File(storageDir, imageFileName);
+            captureUrl = Uri.fromFile(captureFile);
+        }
+        
+        Intent captureIntent;
+        if (captureUrl != null) {
+            captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            List<ResolveInfo> resolveList = packageManger.queryIntentActivities(captureIntent, 0);
+            for (ResolveInfo resolve : resolveList) {
+                String packageName = resolve.activityInfo.packageName;
+                Intent intent = new Intent(captureIntent);
+                intent.setComponent(new ComponentName(resolve.activityInfo.packageName, resolve.activityInfo.name));
+                intent.setPackage(packageName);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUrl);
+                mainActivity.setDirectUploadImageUri(captureUrl);
+            }
+            
+            try {
+                // Directly open the camera intent with the same Request Result value value
+                mainActivity.startActivityForResult(captureIntent, MainActivity.REQUEST_SELECT_FILE);
+                return true;
+            } catch (ActivityNotFoundException e) {
+                mainActivity.cancelFileUpload();
+                Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
+            }
+        }
+        
+        return false;
+    }
+    
     public boolean createNewWindow(Message resultMsg) {
         ((GoNativeApplication)mainActivity.getApplication()).setWebviewMessage(resultMsg);
         return createNewWindow();

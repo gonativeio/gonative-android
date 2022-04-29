@@ -149,6 +149,12 @@ class GoNativeWebChromeClient extends WebChromeClient {
         }
 
         mainActivity.setUploadMessageLP(filePathCallback);
+    
+        // Checks web's input file params for "capture" attribute
+        if (fileChooserParams.isCaptureEnabled()) {
+            return urlNavigation.openDirectCamera(fileChooserParams.getAcceptTypes(), multiple);
+        }
+    
         return urlNavigation.chooseFileUpload(fileChooserParams.getAcceptTypes(), multiple);
     }
 
