@@ -65,18 +65,14 @@ import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.mikepenz.iconics.IconicsDrawable;
 import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
 import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesomeBrand;
-import com.onesignal.OSDeviceState;
-import com.onesignal.OneSignal;
 import com.squareup.seismic.ShakeDetector;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -175,7 +171,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
-    private BroadcastReceiver oneSignalStatusChangedReceiver;
     private BroadcastReceiver navigationTitlesChangedReceiver;
     private BroadcastReceiver navigationLevelsChangedReceiver;
     private BroadcastReceiver webviewLimitReachedReceiver;
@@ -462,17 +457,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
         }
 
-        this.oneSignalStatusChangedReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (GoNativeApplication.ONESIGNAL_STATUS_CHANGED_MESSAGE.equals(intent.getAction())) {
-                    sendOneSignalInfo("gonative_onesignal_info");
-                }
-            }
-        };
-        LocalBroadcastManager.getInstance(this).registerReceiver(this.oneSignalStatusChangedReceiver,
-                new IntentFilter(GoNativeApplication.ONESIGNAL_STATUS_CHANGED_MESSAGE));
-
         // respond to navigation titles processed
         this.navigationTitlesChangedReceiver = new BroadcastReceiver() {
             @Override
@@ -519,6 +503,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.webviewLimitReachedReceiver,
                 new IntentFilter(BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
+
+        application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
 
         setupAppTheme();
     }
@@ -576,9 +562,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onStart();
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onActivityStart(this);
-        if (AppConfig.getInstance(this).oneSignalEnabled) {
-            OneSignal.clearOneSignalNotifications();
-        }
         if (AppConfig.getInstance(this).enableWebRTCBluetoothAudio) {
             AudioUtils.initAudioFocusListener(this);
         }
@@ -638,9 +621,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         this.loginManager.deleteObserver(this);
 
-        if (this.oneSignalStatusChangedReceiver != null) {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(this.oneSignalStatusChangedReceiver);
-        }
         if (this.navigationTitlesChangedReceiver != null) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(this.navigationTitlesChangedReceiver);
         }
@@ -650,6 +630,28 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (this.webviewLimitReachedReceiver != null) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(this.webviewLimitReachedReceiver);
         }
+    }
+    
+    @Override
+    public void onSubscriptionChanged() {
+        if (registrationManager == null) return;
+        registrationManager.subscriptionInfoChanged();
+    }
+    
+    public Map<String, Object> getAnalyticsProviderInfo() {
+        GoNativeApplication application = (GoNativeApplication) getApplication();
+        return application.mBridge.getAnalyticsProviderInfo();
+    }
+    
+    @Override
+    public void launchNotificationActivity(String extra) {
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        mainIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (extra != null && !extra.isEmpty()) {
+            mainIntent.putExtra(INTENT_TARGET_URL, extra);
+        }
+        
+        startActivity(mainIntent);
     }
 
     private void retryFailedPage() {
@@ -1480,48 +1482,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-    public void sendOneSignalInfo(String callback) {
-        boolean doNativeBridge = true;
-        String currentUrl = this.mWebview.getUrl();
-        if (currentUrl != null) {
-            doNativeBridge = LeanUtils.checkNativeBridgeUrls(currentUrl, this);
-        }
-
-        // onesignal javsacript callback
-        if (AppConfig.getInstance(this).oneSignalEnabled && doNativeBridge) {
-            try {
-                String userId = null;
-                String pushToken = null;
-                boolean subscribed = false;
-
-                OSDeviceState state = OneSignal.getDeviceState();
-                if (state != null) {
-                    userId = state.getUserId();
-                    pushToken = state.getPushToken();
-                    subscribed = state.isSubscribed();
-                }
-
-                Map installationInfo = Installation.getInfo(this);
-
-                JSONObject jsonObject = new JSONObject(installationInfo);
-                if (userId != null) {
-                    jsonObject.put("oneSignalUserId", userId);
-                }
-                if (pushToken != null) {
-                    // registration id is old GCM name, but keep it for compatibility
-                    jsonObject.put("oneSignalregistrationId", pushToken);
-                    jsonObject.put("oneSignalPushToken", pushToken);
-                }
-                jsonObject.put("oneSignalSubscribed", subscribed);
-                jsonObject.put("oneSignalRequiresUserPrivacyConsent", !OneSignal.userProvidedPrivacyConsent());
-                String js = LeanUtils.createJsForCallback(callback, jsonObject);
-                runJavascript(js);
-            } catch (Exception e) {
-                Log.e(TAG, "Error with onesignal javscript callback", e);
-            }
-        }
-    }
-
     // onPageFinished
     public void checkNavigationForPage(String url) {
         // don't change anything on navigation if the url that just finished was a file download
@@ -1542,8 +1502,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (this.menuAdapter != null) {
             this.menuAdapter.autoSelectItem(url);
         }
-
-        sendOneSignalInfo("gonative_onesignal_info");
+    
+        GoNativeApplication application = (GoNativeApplication) getApplication();
+        application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
     }
 
     // onPageStarted

@@ -43,8 +43,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.onesignal.OneSignal;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -276,12 +274,6 @@ public class UrlNavigation {
                     callback = jsonData.optString("callback", "gonative_device_info");
                 }
                 runGonativeDeviceInfo(callback);
-            } else if ("/gonative_onesignal_info".equals(uri.getPath())) {
-                String callback = "gonative_onesignal_info";
-                if(jsonData != null){
-                    callback = jsonData.optString("callback", "gonative_onesignal_info");
-                }
-                mainActivity.sendOneSignalInfo(callback);
             }
         }
 
@@ -473,141 +465,6 @@ public class UrlNavigation {
             }
 
             return;
-        }
-
-        if ("onesignal".equals(uri.getHost())) {
-
-            if ("/tags/get".equals(uri.getPath()) && jsonData != null) {
-                final String callback = jsonData.optString("callback");
-                if (callback.isEmpty()) return;
-
-                OneSignal.getTags(new OneSignal.OSGetTagsHandler() {
-                    @Override
-                    public void tagsAvailable(JSONObject tags) {
-                        JSONObject results = new JSONObject();
-                        try {
-                            results.put("success", true);
-                            if (tags != null) {
-                                results.put("tags", tags);
-                            }
-                            final String js = LeanUtils.createJsForCallback(callback, results);
-                            // run on main thread
-                            Handler mainHandler = new Handler(mainActivity.getMainLooper());
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mainActivity.runJavascript(js);
-                                }
-                            });
-                        } catch (JSONException e) {
-                            Log.e(TAG, "Error json encoding tags", e);
-                        }
-                    }
-                });
-
-                return;
-            }
-
-            if ("/tags/set".equals(uri.getPath()) && jsonData != null) {
-                JSONObject tags = jsonData.optJSONObject("tags");
-                if(tags == null){
-                    try {
-                        tags = new JSONObject(jsonData.optString("tags"));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "GoNative OneSignal JSONException", e);
-                        return;
-                    }
-                }
-                OneSignal.sendTags(tags);
-                return;
-            }
-
-            if ("/promptLocation".equals(uri.getPath())) {
-                OneSignal.promptLocation();
-                return;
-            }
-
-            if ("/userPrivacyConsent/grant".equals(uri.getPath())) {
-                OneSignal.provideUserConsent(true);
-                return;
-            }
-
-            if ("/userPrivacyConsent/revoke".equals(uri.getPath())) {
-                OneSignal.provideUserConsent(false);
-                return;
-            }
-
-            if ("/showTagsUI".equals(uri.getPath())) {
-                Intent intent = new Intent(mainActivity, SubscriptionsActivity.class);
-                mainActivity.startActivity(intent);
-            }
-
-            if ("/iam/addTrigger".equals(uri.getPath()) && jsonData != null) {
-                String key = jsonData.optString("key");
-                if (TextUtils.isEmpty(key)) return;
-                String value = jsonData.optString("value");
-                if (TextUtils.isEmpty(value)) return;
-
-                OneSignal.addTrigger(key, value);
-                return;
-            }
-
-            if ("/iam/addTriggers".equals(uri.getPath()) && jsonData != null) {
-                Map<String, Object> mapObject;
-                Object json = jsonData.optString("map").isEmpty() ? jsonData : jsonData.optString("map");
-                mapObject = LeanUtils.jsonToMap(json);
-                OneSignal.addTriggers(mapObject);
-                return;
-            }
-
-            if ("/iam/removeTriggerForKey".equals(uri.getPath()) && jsonData != null) {
-                String key = jsonData.optString("key");
-                if (TextUtils.isEmpty(key)) return;
-
-                OneSignal.removeTriggerForKey(key);
-                return;
-            }
-
-            if ("/iam/getTriggerValueForKey".equals(uri.getPath()) && jsonData != null) {
-                String key = jsonData.optString("key");
-                if (TextUtils.isEmpty(key)) return;
-
-                String value = (String) OneSignal.getTriggerValueForKey(key);
-                HashMap<String, Object> params = new HashMap<>();
-                params.put("key", key);
-                params.put("value", value);
-
-                JSONObject jsonObject = new JSONObject(params);
-                String js = LeanUtils.createJsForCallback("gonative_iam_trigger_value", jsonObject);
-                mainActivity.runJavascript(js);
-                return;
-            }
-
-            if ("/iam/pauseInAppMessages".equals(uri.getPath())  && jsonData != null) {
-                boolean value = jsonData.optBoolean("pause");
-                OneSignal.pauseInAppMessages(value);
-                return;
-            }
-
-            if ("/iam/setInAppMessageClickHandler".equals(uri.getPath())  && jsonData != null) {
-                String handler = jsonData.optString("handler");
-                if (TextUtils.isEmpty(handler)) return;
-
-                OneSignal.setInAppMessageClickHandler(action -> {
-                    Log.d(TAG, "In-app message clicked");
-
-                    HashMap<String, Object> params = new HashMap<>();
-                    params.put("clickName", action.getClickName());
-                    params.put("clickUrl", action.getClickUrl());
-                    params.put("firstClick", action.isFirstClick());
-                    params.put("closesMessage", action.doesCloseMessage());
-
-                    JSONObject jsonObject = new JSONObject(params);
-                    String js = LeanUtils.createJsForCallback(handler, jsonObject);
-                    mainActivity.runJavascript(js);
-                });
-                return;
-            }
         }
 
         if ("connectivity".equals(uri.getHost())) {

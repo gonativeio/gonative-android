@@ -330,13 +330,4 @@ public class LeanUtils {
         }
         return defaultValue;
     }
-
-//    public static void initOneSignal(Context context, AppConfig appConfig) {
-//        if (appConfig.oneSignalEnabled) {
-//            OneSignal.setRequiresUserPrivacyConsent(appConfig.oneSignalRequiresUserPrivacyConsent);
-//            OneSignal.init(context, "REMOTE", appConfig.oneSignalAppId,
-//                    new OneSignalNotificationHandler(context));
-//            OneSignal.setInFocusDisplaying(OneSignal.OSInFocusDisplayOption.Notification);
-//        }
-//    }
 }

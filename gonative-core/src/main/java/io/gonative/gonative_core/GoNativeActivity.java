@@ -7,4 +7,6 @@ public interface GoNativeActivity {
     void goBack();
     void loadUrl(String url);
     void refreshPage();
+    void onSubscriptionChanged();
+    void launchNotificationActivity(String extra);
 }

@@ -2,7 +2,6 @@ package io.gonative.gonative_core;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,6 +11,8 @@ import android.webkit.WebView;
 import androidx.annotation.NonNull;
 
 import org.json.JSONObject;
+
+import java.util.Map;
 
 public interface BridgeModule {
     void onApplicationCreate(GoNativeContext context);
@@ -32,4 +33,6 @@ public interface BridgeModule {
     <T extends Activity & GoNativeActivity> void onWebviewSetUp(T activity, WebView webView);
     <T extends Activity & GoNativeActivity> void onRequestPermissionsResult(T activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults);
     boolean pauseWebViewOnActivityPause();
+    <T extends Activity & GoNativeActivity> void onSendInstallationInfo(T activity, Map info, String currentUrl);
+    Map<String, Object> getAnalyticsProviderInfo();
 }

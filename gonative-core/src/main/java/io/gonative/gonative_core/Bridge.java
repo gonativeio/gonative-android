@@ -1,8 +1,8 @@
 package io.gonative.gonative_core;
 
 import android.app.Activity;
-import android.content.Context;
 import android.app.Application;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import io.gonative.android.library.IOUtils;
 
@@ -174,6 +175,19 @@ public abstract class Bridge {
         }
         return true;
     }
-
+    
+    public <T extends Activity & GoNativeActivity> void onSendInstallationInfo(T activity, Map info, String currentUrl) {
+        for (BridgeModule plugin : getPlugins()) {
+            plugin.onSendInstallationInfo(activity, info, currentUrl);
+        }
+    }
+    
+    public Map<String, Object> getAnalyticsProviderInfo() {
+        for (BridgeModule plugin : getPlugins()) {
+            plugin.getAnalyticsProviderInfo();
+        }
+        return null;
+    }
+    
     protected abstract List<BridgeModule> getPlugins();
 }

@@ -12,6 +12,8 @@ import androidx.annotation.NonNull;
 
 import org.json.JSONObject;
 
+import java.util.Map;
+
 public class BaseBridgeModule implements BridgeModule{
     @Override
     public void onApplicationCreate(GoNativeContext context) { }
@@ -72,4 +74,13 @@ public class BaseBridgeModule implements BridgeModule{
     public boolean pauseWebViewOnActivityPause() {
         return true;
     }
+    
+    @Override
+    public <T extends Activity & GoNativeActivity> void onSendInstallationInfo(T activity, Map info, String currentUrl) { }
+    
+    @Override
+    public Map<String, Object> getAnalyticsProviderInfo() {
+        return null;
+    }
+    
 }

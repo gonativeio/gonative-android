@@ -1,6 +1,5 @@
 import groovy.json.JsonSlurper
 
-apply plugin: "com.onesignal.androidsdk.onesignal-gradle-plugin"
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
@@ -102,7 +101,6 @@ dependencies {
     implementation "com.mikepenz:iconics-core:5.3.3"
     implementation 'com.mikepenz:fontawesome-typeface:5.13.3.0-kotlin@aar'
     implementation 'com.squareup:seismic:1.0.2'
-    implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'
     implementation 'androidx.webkit:webkit:1.4.0'
     implementation "io.gonative.android:library:+"
     implementation project(path: ':gonative-core')
@@ -118,6 +116,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.3.0'
     implementation "androidx.drawerlayout:drawerlayout:1.1.1"
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'com.google.android.gms:play-services-gcm:17.0.0'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
     /**** end google ****/
