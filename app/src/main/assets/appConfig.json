@@ -141,10 +141,11 @@
       "medgo.fr",
       "www.hublo.com",
       "hublo.com",
+      "ng.hublo.com",
       "m.hublo.com",
       "app.hublo.com",
       "*.herokuapp.com",
-      "ng.hublo.com"
+      "*.hublo.com"
     ],
     "navigationLevels": {
       "levels": [{}]
