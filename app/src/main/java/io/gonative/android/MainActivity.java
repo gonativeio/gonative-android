@@ -1502,9 +1502,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (this.menuAdapter != null) {
             this.menuAdapter.autoSelectItem(url);
         }
-    
-        GoNativeApplication application = (GoNativeApplication) getApplication();
-        application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
     }
 
     // onPageStarted
@@ -1519,6 +1516,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         AppConfig appConfig = AppConfig.getInstance(this);
         setDrawerEnabled(appConfig.shouldShowSidebarForUrl(url) && sidebarNavigationEnabled);
+
+        // Calls a bridge function that sends provider info (OneSignal, XTremepush, etc.) to web page as callback
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
     }
 
     public int urlLevelForUrl(String url) {
