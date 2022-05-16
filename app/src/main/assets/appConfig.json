@@ -8,7 +8,7 @@
     "enableWindowOpen": true,
     "useCrosswalkWebView": false,
     "forceScreenOrientation": "portrait",
-    "initialUrl": "https://ng.hublo.com/front/worker/availabilities",
+    "initialUrl": "https://ng.hublo.com/front/mobile",
     "appName": "Hublo",
     "iosBundleId": "fr.medgo.medgo1",
     "androidPackageName": "fr.medgo.medgo1",
@@ -145,7 +145,7 @@
       "m.hublo.com",
       "app.hublo.com",
       "*.herokuapp.com",
-      "ng.hublo.com"
+      "ng.hublo.com/front"
     ],
     "navigationLevels": {
       "levels": [{}]

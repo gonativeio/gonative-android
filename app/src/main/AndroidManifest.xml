@@ -55,6 +55,7 @@
                 <data android:host="hublo.com" />
                 <data android:host="m.hublo.com" />
                 <data android:host="ng.hublo.com" />
+                <data android:host="ng.hublo.com/front" />
                 <data android:host="app.hublo.com" />
                 <data android:host="*.herokuapp.com" />
                 <data android:pathPrefix="/" />
