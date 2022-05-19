@@ -76,7 +76,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -636,11 +635,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public void onSubscriptionChanged() {
         if (registrationManager == null) return;
         registrationManager.subscriptionInfoChanged();
-    }
-    
-    public Map<String, Object> getAnalyticsProviderInfo() {
-        GoNativeApplication application = (GoNativeApplication) getApplication();
-        return application.mBridge.getAnalyticsProviderInfo();
     }
     
     @Override

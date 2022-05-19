@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.multidex.MultiDexApplication;
 
 import java.util.List;
+import java.util.Map;
 
 import io.gonative.android.library.AppConfig;
 import io.gonative.gonative_core.Bridge;
@@ -79,6 +80,10 @@ public class GoNativeApplication extends MultiDexApplication {
 
     public void setWebviewMessage(Message webviewMessage) {
         this.webviewMessage = webviewMessage;
+    }
+
+    public Map<String, Object> getAnalyticsProviderInfo() {
+        return mBridge.getAnalyticsProviderInfo();
     }
 
     // Needed for Crosswalk

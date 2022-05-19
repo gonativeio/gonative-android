@@ -123,8 +123,8 @@ public class RegistrationManager {
             toSend.putAll(Installation.getInfo(registrationManager.context));
 
             // Append provider info to Map toSend
-            if (((MainActivity) context).getAnalyticsProviderInfo() != null) {
-                toSend.putAll(((MainActivity) context).getAnalyticsProviderInfo());
+            if (((GoNativeApplication) context).getAnalyticsProviderInfo() != null) {
+                toSend.putAll(((GoNativeApplication) context).getAnalyticsProviderInfo());
             }
 
             if (registrationManager.customData != null) {
