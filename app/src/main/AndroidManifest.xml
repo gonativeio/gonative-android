@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.gonative.android"
-    android:versionName="1.6.0">
+    android:versionName="1.7.0">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!-- WebRTC Audio and Video -->
     <!--<uses-permission android:name="android.permission.RECORD_AUDIO"/>-->
@@ -53,6 +54,8 @@
                 <data android:host="www.hublo.com" />
                 <data android:host="hublo.com" />
                 <data android:host="m.hublo.com" />
+                <data android:host="ng.hublo.com" />
+                <data android:host="ng.hublo.com/front" />
                 <data android:host="app.hublo.com" />
                 <data android:host="*.herokuapp.com" />
                 <data android:pathPrefix="/" />
