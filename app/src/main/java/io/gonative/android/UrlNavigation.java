@@ -26,13 +26,12 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.ClientCertRequest;
-import android.webkit.CookieSyncManager;
+import android.webkit.CookieManager;
 import android.webkit.MimeTypeMap;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
@@ -853,7 +852,12 @@ public class UrlNavigation {
 
 		Uri uri = Uri.parse(url);
 		if (isInternalUri(uri)){
-            CookieSyncManager.getInstance().sync();
+            AsyncTask.THREAD_POOL_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    CookieManager.getInstance().flush();
+                }
+            });
 		}
 
         if (appConfig.loginDetectionUrl != null) {

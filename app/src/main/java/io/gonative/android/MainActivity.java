@@ -18,6 +18,7 @@ import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,7 +36,6 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -336,9 +336,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             Spinner segmentedSpinner = findViewById(R.id.segmented_control);
             new SegmentedController(this, segmentedSpinner);
         }
-
-		// to save webview cookies to permanent storage
-		CookieSyncManager.createInstance(getApplicationContext());
 
 		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
         CookieHandler.setDefault(new WebkitCookieManagerProxy());
@@ -766,9 +763,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         // log out by clearing all cookies and going to home page
         CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.removeAllCookie();
-        CookieSyncManager.getInstance().sync();
-
+        cookieManager.removeAllCookies(aBoolean -> Log.d(TAG, "removeAllCookies: onReceiveValue callback: " + aBoolean));
+        AsyncTask.THREAD_POOL_EXECUTOR.execute(() -> CookieManager.getInstance().flush());
+ 
         updateMenu(false);
         this.loginManager.checkLogin();
         this.mWebview.loadUrl(AppConfig.getInstance(this).initialUrl);

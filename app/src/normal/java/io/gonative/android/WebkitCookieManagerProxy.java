@@ -48,7 +48,7 @@ public class WebkitCookieManagerProxy extends java.net.CookieManager {
         for (String headerKey : responseHeaders.keySet()) 
         {
             // ignore headers which aren't cookie related
-            if ((headerKey == null) || !(headerKey.equalsIgnoreCase("Set-Cookie2") || headerKey.equalsIgnoreCase("Set-Cookie"))) continue;
+            if ((headerKey == null) || !headerKey.equalsIgnoreCase("Set-Cookie")) continue;
 
             // process each of the headers
             for (String headerValue : responseHeaders.get(headerKey))
