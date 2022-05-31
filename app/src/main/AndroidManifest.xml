@@ -25,6 +25,11 @@
         android:protectionLevel="signature" />
     <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
 
+    <!-- permissions to block phone calls -->
+    <!--<uses-permission android:name="android.permission.READ_CONTACTS" />-->
+    <!--<uses-permission android:name="android.permission.READ_CALL_LOG" />-->
+    <!--<uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />-->
+
     <application
         android:name=".GoNativeApplication"
         android:allowBackup="true"
