@@ -92,6 +92,7 @@ public class Installation {
         info.put("model", Build.MANUFACTURER + " " + Build.MODEL);
         info.put("hardware", Build.FINGERPRINT);
         info.put("timeZone", TimeZone.getDefault().getID());
+        info.put("deviceName", getDeviceName());
 
         String carrier = null;
         try {
@@ -125,5 +126,17 @@ public class Installation {
         String id = UUID.randomUUID().toString();
         out.write(id.getBytes());
         out.close();
+    }
+
+    private static String getDeviceName() {
+        String manufacturer = Build.MANUFACTURER;
+        String model = Build.MODEL;
+        String name;
+        if (model.startsWith(manufacturer)) {
+            name = model;
+        } else {
+            name = manufacturer + " " + model;
+        }
+        return name;
     }
 }

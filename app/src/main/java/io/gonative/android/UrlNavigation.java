@@ -295,8 +295,12 @@ public class UrlNavigation {
         }
 
         if ("config".equals(uri.getHost()) && jsonData != null) {
-            ConfigPreferences configPreferences = new ConfigPreferences(this.mainActivity);
-            configPreferences.handleUrl(uri, jsonData);
+            if ("/set".equals(uri.getPath())) {
+                String initialUrl = jsonData.optString("initialUrl");
+                if (!initialUrl.isEmpty()) {
+                    appConfig.setInitialUrl(initialUrl, true);
+                }
+            }
             return;
         }
 
