@@ -1,6 +1,5 @@
 package io.gonative.android;
 
-import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.view.Menu;
@@ -8,7 +7,7 @@ import android.view.MenuItem;
 
 import androidx.appcompat.widget.SearchView;
 
-import com.mikepenz.iconics.IconicsDrawable;
+import io.gonative.android.icons.Icon;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -108,16 +107,9 @@ public class ActionManager {
                     String label = AppConfig.optString(entry, "label");
                     String icon = AppConfig.optString(entry, "icon");
                     String url = AppConfig.optString(entry, "url");
+                    
+                    Drawable iconDrawable = new Icon(activity, icon, action_button_size, appConfig.actionbarForegroundColor).getDrawable();
 
-                    IconicsDrawable iconDrawable = null;
-                    if (icon != null) {
-                        iconDrawable = activity.getFontAwesomeIcon(icon);
-                        if(appConfig.actionbarForegroundColor != null){
-                            iconDrawable.setColorList(ColorStateList.valueOf(appConfig.actionbarForegroundColor));
-                        }
-                        iconDrawable.setSizeXPx(action_button_size);
-                        iconDrawable.setSizeYPx(action_button_size);
-                    }
                     MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
                             .setIcon(iconDrawable)
                             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);

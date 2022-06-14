@@ -4,8 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.Log;
@@ -21,12 +21,10 @@ import android.widget.TextView;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.mikepenz.iconics.IconicsDrawable;
-import com.mikepenz.iconics.typeface.library.fontawesome.FontAwesome;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import io.gonative.android.icons.Icon;
 import io.gonative.android.library.AppConfig;
 
 /**
@@ -241,21 +239,21 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         // expand/collapse indicator
         ImageView indicator = convertView.findViewById(R.id.menu_group_indicator);
         if (isGrouping(groupPosition)) {
-            IconicsDrawable iconDrawable;
-            if (isExpanded)
-                iconDrawable = mainActivity.getFontAwesomeIcon("faw_angle_up");
-            else
-                iconDrawable = mainActivity.getFontAwesomeIcon("faw_angle_down");
-
-            iconDrawable.setSizeXPx(R.dimen.sidebar_expand_indicator_size);
-            iconDrawable.setSizeYPx(R.dimen.sidebar_expand_indicator_size);
-            if (groupPosition == this.selectedIndex) {
-                iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
-            } else if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
+            String iconName;
+            int color = Color.BLACK;
+            if (isExpanded) {
+                iconName = "fas fa-angle-up";
+            } else {
+                iconName = "fas fa-angle-down";
             }
-
-            indicator.setImageDrawable(iconDrawable);
+            
+            if (groupPosition == this.selectedIndex) {
+                color = this.highlightColor;
+            } else if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
+                color = AppConfig.getInstance(mainActivity).sidebarForegroundColor;
+            }
+            indicator.setImageDrawable(new Icon(mainActivity, iconName, R.dimen.sidebar_expand_indicator_size, color).getDrawable());
+            
             indicator.setVisibility(View.VISIBLE);
         } else {
             indicator.setVisibility(View.GONE);
@@ -274,14 +272,14 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         String icon = itemString("icon", groupPosition);
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
-            IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
-            iconDrawable.setSizeXPx(sidebar_icon_size);
-            iconDrawable.setSizeYPx(sidebar_icon_size);
+            int color;
             if (groupPosition == this.selectedIndex) {
-                iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+                color = this.highlightColor;
             } else {
-                iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
+                color = AppConfig.getInstance(mainActivity).sidebarForegroundColor;
             }
+            Drawable iconDrawable = new Icon(mainActivity, icon, sidebar_icon_size, color).getDrawable();
+    
             imageView.setImageDrawable(iconDrawable);
             imageView.setVisibility(View.VISIBLE);
         } else if (imageView != null) {
@@ -330,14 +328,14 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         String icon = itemString("icon", groupPosition, childPosition);
         ImageView imageView = convertView.findViewById(R.id.menu_item_icon);
         if (icon != null && !icon.isEmpty()) {
-            IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
-            iconDrawable.setSizeXPx(sidebar_icon_size);
-            iconDrawable.setSizeYPx(sidebar_icon_size);
+            int color;
             if (this.selectedIndex == (groupPosition + childPosition) + 1) {
-                iconDrawable.setColorList(ColorStateList.valueOf(this.highlightColor));
+                color = this.highlightColor;
             } else {
-                iconDrawable.setColorList(ColorStateList.valueOf(AppConfig.getInstance(mainActivity).sidebarForegroundColor));
+                color = AppConfig.getInstance(mainActivity).sidebarForegroundColor;
             }
+            Drawable iconDrawable = new Icon(mainActivity, icon, sidebar_icon_size, color).getDrawable();
+
             imageView.setImageDrawable(iconDrawable);
             imageView.setVisibility(View.VISIBLE);
         } else if (imageView != null) {

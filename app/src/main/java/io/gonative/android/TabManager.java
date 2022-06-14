@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.util.Log;
 
@@ -12,10 +11,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
-import com.mikepenz.iconics.IconicsDrawable;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -26,6 +23,7 @@ import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
+import io.gonative.android.icons.Icon;
 
 /**
  * Created by Weiyin He on 9/22/14.
@@ -168,18 +166,8 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
                 icon = "faw_question";
                 Log.e(TAG, "All tabs must have icons.");
             }
-
-            // create drawable from icon string
-            IconicsDrawable iconDrawable = mainActivity.getFontAwesomeIcon(icon);
-
-            // set icon color and size
-            if(appConfig.tabBarTextColor != null){
-                iconDrawable.setColorList(ColorStateList.valueOf(appConfig.tabBarTextColor));
-            }
-            iconDrawable.setSizeXPx(tabbar_icon_size);
-            iconDrawable.setSizeYPx(tabbar_icon_size);
-            iconDrawable.setPaddingPx(tabbar_icon_padding);
-            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, iconDrawable);
+            
+            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, new Icon(mainActivity.getApplicationContext(), icon, tabbar_icon_size, Color.BLACK).getDrawable());
             bottomNavigationView.addItem(navigationItem);
 
             if (item.optBoolean("selected")) {

@@ -98,11 +98,10 @@ dependencies {
     implementation "androidx.core:core-ktx:1.6.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
-    implementation "com.mikepenz:iconics-core:5.3.3"
-    implementation 'com.mikepenz:fontawesome-typeface:5.13.3.0-kotlin@aar'
     implementation 'com.squareup:seismic:1.0.2'
     implementation 'androidx.webkit:webkit:1.4.0'
     implementation "io.gonative.android:library:+"
+    implementation "io.gonative.android:icons:+"
     implementation project(path: ':gonative-core')
     /**** end all apps ****/
 
