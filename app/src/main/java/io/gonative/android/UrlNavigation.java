@@ -1360,4 +1360,11 @@ public class UrlNavigation {
         KeyChain.choosePrivateKeyAlias(mainActivity, callback, request.getKeyTypes(), request.getPrincipals(), request.getHost(),
                 request.getPort(), null);
     }
+    
+    // Cancels scheduled display of offline page after timeout
+    public void cancelLoadTimeout() {
+        if (startLoadTimeout == null && state != WebviewLoadState.STATE_START_LOAD) return;
+        startLoadTimeout.removeCallbacksAndMessages(null);
+        showWebViewImmediately();
+    }
 }
