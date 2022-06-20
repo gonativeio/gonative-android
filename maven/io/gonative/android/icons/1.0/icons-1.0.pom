@@ -18,17 +18,5 @@
       <version>1.6.10</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>androidx.core</groupId>
-      <artifactId>core-ktx</artifactId>
-      <version>1.7.0</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>androidx.appcompat</groupId>
-      <artifactId>appcompat</artifactId>
-      <version>1.4.1</version>
-      <scope>runtime</scope>
-    </dependency>
   </dependencies>
 </project>

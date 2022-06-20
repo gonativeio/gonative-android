@@ -35,11 +35,11 @@
         {
           "name": "icons-1.0.aar",
           "url": "icons-1.0.aar",
-          "size": 2135329,
-          "sha512": "356ec5bfb8f3b3d4262635e21e201eff595de151c965b170a1d3615703197e33a4f9fe66e3f3541e1a2b2bf5d9cbfcdb931d84d377ef74d4108642a25d0d8466",
-          "sha256": "54fa3124e76881ae0db4c8b9b027d78606364eb7c19d7646f42e6c5201ac6fad",
-          "sha1": "7cbc750b582a6a03b27b5f8debaedb5a6025a461",
-          "md5": "370f8b477e39685d85d9568ea5f16906"
+          "size": 2123510,
+          "sha512": "61dd44ba17c6ec1d258fc99ea06a223063a99983b0ece535feace258ba24e8d961d96921ad6eeb5912e1be0670e92a4cad99d63f20ba89c32041262231d2287e",
+          "sha256": "cae4fc98dd74cb790c3c4ab6e73e27427ee9cb5514f7b2000d879a9c6cd41e90",
+          "sha1": "c371c5720e0cbda506fc8beed1404140c2ab56ef",
+          "md5": "4b2b1558a83468af9beaf976c922880e"
         }
       ]
     },
@@ -58,31 +58,17 @@
           "version": {
             "requires": "1.6.10"
           }
-        },
-        {
-          "group": "androidx.core",
-          "module": "core-ktx",
-          "version": {
-            "requires": "1.7.0"
-          }
-        },
-        {
-          "group": "androidx.appcompat",
-          "module": "appcompat",
-          "version": {
-            "requires": "1.4.1"
-          }
         }
       ],
       "files": [
         {
           "name": "icons-1.0.aar",
           "url": "icons-1.0.aar",
-          "size": 2135329,
-          "sha512": "356ec5bfb8f3b3d4262635e21e201eff595de151c965b170a1d3615703197e33a4f9fe66e3f3541e1a2b2bf5d9cbfcdb931d84d377ef74d4108642a25d0d8466",
-          "sha256": "54fa3124e76881ae0db4c8b9b027d78606364eb7c19d7646f42e6c5201ac6fad",
-          "sha1": "7cbc750b582a6a03b27b5f8debaedb5a6025a461",
-          "md5": "370f8b477e39685d85d9568ea5f16906"
+          "size": 2123510,
+          "sha512": "61dd44ba17c6ec1d258fc99ea06a223063a99983b0ece535feace258ba24e8d961d96921ad6eeb5912e1be0670e92a4cad99d63f20ba89c32041262231d2287e",
+          "sha256": "cae4fc98dd74cb790c3c4ab6e73e27427ee9cb5514f7b2000d879a9c6cd41e90",
+          "sha1": "c371c5720e0cbda506fc8beed1404140c2ab56ef",
+          "md5": "4b2b1558a83468af9beaf976c922880e"
         }
       ]
     }

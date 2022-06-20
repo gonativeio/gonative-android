@@ -26,6 +26,7 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -529,7 +530,42 @@ public class UrlNavigation {
                             ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
                 }
             }
+            return;
         }
+    
+        if ("internalExternal".equals(uri.getHost())) {
+            if ("/set".equals(uri.getPath())) {
+                if (jsonData == null || jsonData.length() == 0) {
+                    // Reset
+                    appConfig.setRegexInternalExternal(null);
+                } else {
+                    try {
+                        JSONArray rules = jsonData.optJSONArray("rules");
+                        if (rules == null || rules.length() == 0) {
+                            appConfig.setRegexInternalExternal(null);
+                            return;
+                        }
+                        // Validate rules JSON structure
+                        for (int i = 0; i < rules.length(); i++) {
+                            JSONObject obj = rules.getJSONObject(i);
+                            // Check if object has "regex" field, return error if not
+                            if (TextUtils.isEmpty(obj.optString("regex"))) {
+                                Log.e(TAG, "handleJSBridgeFunctions: internalExternal/set format error, missing field");
+                                return;
+                            }
+                            // Check if object has "internal" field, will cause JSONException if field is missing or if value is not boolean
+                            obj.getBoolean("internal");
+                        }
+                        appConfig.setRegexInternalExternal(rules);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "handleJSBridgeFunctions: internalExternal/set parse error", e);
+                        return;
+                    }
+                }
+            }
+            return;
+        }
+
     }
 
     public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface view, String url) {

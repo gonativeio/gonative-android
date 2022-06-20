@@ -211,6 +211,12 @@ gonative.deviceInfo = function(params){
     return addCommandCallback("gonative://run/gonative_device_info", params, true);
 };
 
+gonative.internalExternal = {
+    set: function(rules){
+        addCommand("gonative://internalExternal/set", { rules });
+    }
+};
+
 ///////////////////////////////
 ////     iOS Exclusive     ////
 ///////////////////////////////

@@ -32,7 +32,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 31
         applicationId "io.gonative.android"
         versionCode 1
         multiDexEnabled true
