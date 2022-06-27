@@ -184,7 +184,7 @@ public abstract class Bridge {
     
     public Map<String, Object> getAnalyticsProviderInfo() {
         for (BridgeModule plugin : getPlugins()) {
-            plugin.getAnalyticsProviderInfo();
+            return plugin.getAnalyticsProviderInfo();
         }
         return null;
     }
