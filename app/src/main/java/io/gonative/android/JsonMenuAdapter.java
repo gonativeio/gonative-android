@@ -44,10 +44,12 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     private ExpandableListView expandableListView;
     private Integer highlightColor;
     private int sidebar_icon_size;
+    private int sidebar_expand_indicator_size;
 
     JsonMenuAdapter(MainActivity activity, ExpandableListView expandableListView) {
         this.mainActivity = activity;
         sidebar_icon_size = mainActivity.getResources().getInteger(R.integer.sidebar_icon_size);
+        sidebar_expand_indicator_size = mainActivity.getResources().getInteger(R.integer.sidebar_expand_indicator_size);
         this.expandableListView = expandableListView;
         menuItems = null;
         this.highlightColor = AppConfig.getInstance(mainActivity).sidebarHighlightColor;
@@ -252,7 +254,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             } else if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
                 color = AppConfig.getInstance(mainActivity).sidebarForegroundColor;
             }
-            indicator.setImageDrawable(new Icon(mainActivity, iconName, R.dimen.sidebar_expand_indicator_size, color).getDrawable());
+            indicator.setImageDrawable(new Icon(mainActivity, iconName, sidebar_expand_indicator_size, color).getDrawable());
             
             indicator.setVisibility(View.VISIBLE);
         } else {
