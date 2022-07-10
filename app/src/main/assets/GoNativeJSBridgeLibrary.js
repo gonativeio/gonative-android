@@ -106,6 +106,9 @@ gonative.share = {
     },
     downloadFile: function (params){
         addCommand("gonative://share/downloadFile", params);
+    },
+    downloadImage: function(params){
+        addCommand("gonative://share/downloadImage", params);
     }
 };
 

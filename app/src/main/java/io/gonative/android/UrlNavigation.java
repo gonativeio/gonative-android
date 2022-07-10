@@ -428,7 +428,9 @@ public class UrlNavigation {
             if ("/sharePage".equals(uri.getPath())) {
                 this.mainActivity.sharePage(urlString);
             } else if ("/downloadFile".equals(uri.getPath()) && !urlString.isEmpty()) {
-                this.mainActivity.getFileDownloader().onDownloadStart(urlString, null, null, null, -1);
+                this.mainActivity.getFileDownloader().downloadFile(urlString, false);
+            } else if ("/downloadImage".equals(uri.getPath()) && !urlString.isEmpty()){
+                this.mainActivity.getFileDownloader().downloadFile(urlString, true);
             }
 
             return;

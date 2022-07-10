@@ -1,31 +1,40 @@
 package io.gonative.android;
 
+import android.app.Activity;
 import android.app.DownloadManager;
-import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
-import androidx.core.content.FileProvider;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import androidx.multidex.BuildConfig;
+
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.gonative.android.library.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
@@ -42,10 +51,22 @@ public class FileDownloader implements DownloadListener {
     static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private MainActivity context;
     private UrlNavigation urlNavigation;
-    private ProgressDialog progressDialog;
     private String lastDownloadedUrl;
     private DownloadLocation defaultDownloadLocation;
     private Map<String, DownloadManager.Request> pendingExternalDownloads;
+    ActivityResultLauncher<Intent> directorySelectorActivityLauncher;
+    private ActivityResultLauncher<String> requestPermissionLauncher;
+    
+    private HttpURLConnection connection;
+    private URL url;
+    private String mimetype = "*/*";
+    private Uri saveUri;
+    private boolean shouldSaveToGallery;
+    private String filename = "download";
+    private static final int timeout = 5; // in seconds
+    
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    Handler handler = new Handler(Looper.getMainLooper());
 
     FileDownloader(MainActivity context) {
         this.context = context;
@@ -57,6 +78,8 @@ public class FileDownloader implements DownloadListener {
         } else {
             this.defaultDownloadLocation = DownloadLocation.PRIVATE_INTERNAL;
         }
+
+        initLauncher();
     }
 
     @Override
@@ -93,7 +116,7 @@ public class FileDownloader implements DownloadListener {
             if (extension != null && !extension.isEmpty()) {
                 String guessedMimeType = mimeTypeMap.getMimeTypeFromExtension(extension);
                 if (guessedMimeType != null) {
-                    mimetype = guessedMimeType;
+                    this.mimetype = guessedMimeType;
                 }
             }
         }
@@ -130,9 +153,7 @@ public class FileDownloader implements DownloadListener {
                 Log.w(TAG, "External storage is not mounted. Downloading internally.");
             }
         }
-
-        DownloadFileParams param = new DownloadFileParams(url, userAgent, mimetype, contentLength);
-        new DownloadFileTask(this).execute(param);
+        initializeDownload(url, userAgent);
     }
 
     private void enqueueBackgroundDownload(String url, DownloadManager.Request request) {
@@ -156,213 +177,226 @@ public class FileDownloader implements DownloadListener {
         }
     }
 
-    private class DownloadFileParams {
-        public String url;
-        public String userAgent;
-        public String mimetype;
-        public long contentLength;
-
-        private DownloadFileParams(String url, String userAgent, String mimetype, long contentLength) {
-            this.url = url;
-            this.userAgent = userAgent;
-            this.mimetype = mimetype;
-            this.contentLength = contentLength;
+    public void downloadFile(String url, boolean shouldSaveToGallery) {
+        if (TextUtils.isEmpty(url)) {
+            Log.d(TAG, "downloadFile: Url empty!");
+            return;
         }
+
+        this.shouldSaveToGallery = shouldSaveToGallery;
+        onDownloadStart(url, null, null, null, -1);
     }
 
-    private static class DownloadFileResult {
-        public File file;
-        public String mimetype;
-
-        private DownloadFileResult(File file, String mimetype) {
-            this.file = file;
-            this.mimetype = mimetype;
-        }
-    }
-
-    private static class DownloadFileTask extends AsyncTask<DownloadFileParams, Integer, DownloadFileResult> {
-        private WeakReference<FileDownloader> fileDownloaderReference;
-        private Exception exception;
-        private long contentLength;
-
-        DownloadFileTask(FileDownloader fileDownloader) {
-            this.fileDownloaderReference = new WeakReference<>(fileDownloader);
-            contentLength = -1;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            FileDownloader fileDownloader = fileDownloaderReference.get();
-            if (fileDownloader == null) return;
-
-            fileDownloader.progressDialog = new ProgressDialog(fileDownloader.context);
-            fileDownloader.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            fileDownloader.progressDialog.setTitle(R.string.download);
-            fileDownloader.progressDialog.setIndeterminate(true);
-            fileDownloader.progressDialog.setMax(10000);
-            fileDownloader.progressDialog.setProgressNumberFormat(null);
-            fileDownloader.progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                @Override
-                public void onCancel(DialogInterface dialog) {
-                    DownloadFileTask.this.cancel(true);
-                }
-            });
-            fileDownloader.progressDialog.show();
-        }
-
-        @Override
-        protected DownloadFileResult doInBackground(DownloadFileParams... params) {
-            FileDownloader fileDownloader = fileDownloaderReference.get();
-            if (fileDownloader == null) return null;
-
-            HttpURLConnection connection;
-            URL url;
-            DownloadFileParams param = params[0];
+    private void initializeDownload(String downloadUrl, String userAgent) {
+        executor.execute(() -> {
             try {
-                url = new URL(param.url);
-            } catch (MalformedURLException e) {
-                exception = e;
-                return null;
-            }
-
-            if (param.contentLength > 0) {
-                contentLength = param.contentLength;
-                publishProgress(0);
-            }
-
-            try {
+                url = new URL(downloadUrl);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setInstanceFollowRedirects(true);
-                connection.setRequestProperty("User-Agent", param.userAgent);
-
+                connection.setRequestProperty("User-Agent", userAgent);
+                connection.setConnectTimeout(timeout * 1000);
+                
+                Log.d(TAG, "initializeDownload: Connecting to download url ...");
                 connection.connect();
-                if (connection.getResponseCode() < 400) {
-                    File downloadDir = new File(fileDownloader.context.getCacheDir(), "downloads");
-                    if (!downloadDir.mkdirs()) {
-                        Log.v(TAG, "Download directory " + downloadDir.toString() + " exists");
-                    }
 
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        if (connection.getContentLengthLong() > 0) {
-                            contentLength = connection.getContentLengthLong();
-                        }
-                    } else {
-                        if (connection.getContentLength() > 0) {
-                            contentLength = connection.getContentLength();
-                        }
-                    }
-
+                int responseCode = connection.getResponseCode();
+                Log.d(TAG, "initializeDownload: Connected - response code: " + responseCode);
+                if (responseCode < 400) {
+                    
                     // guess file name and extension
                     String guessedName = LeanUtils.guessFileName(url.toString(),
                             connection.getHeaderField("Content-Disposition"),
-                            param.mimetype);
+                            this.mimetype);
                     int pos = guessedName.lastIndexOf('.');
-                    String filename;
-                    String extension;
+                    String fileName;
                     if (pos == -1) {
-                        filename = guessedName;
-                        extension = "";
+                        fileName = guessedName;
                     } else if (pos == 0) {
-                        filename = "download";
-                        extension = guessedName.substring(1);
+                        fileName = "download";
                     } else {
-                        filename = guessedName.substring(0, pos);
-                        extension = guessedName.substring(pos+1);
+                        fileName = guessedName.substring(0, pos);
                     }
-
-                    if (!extension.isEmpty()) extension = "." + extension;
-
-                    File downloadFile = File.createTempFile(filename, extension, downloadDir);
-
-                    if (!downloadFile.createNewFile() ){
-                        Log.e(TAG, "Error creating download file " + downloadFile.toString());
-                    }
-                    FileOutputStream os = new FileOutputStream(downloadFile);
-                    byte buffer[] = new byte[16 * 1024];
-
-                    InputStream is = connection.getInputStream();
-
-                    long totalLen = 0;
-                    int len1;
-                    while ((len1 = is.read(buffer)) > 0) {
-                        os.write(buffer, 0, len1);
-                        totalLen += len1;
-
-                        if (contentLength > 0){
-                            publishProgress((int) (totalLen * 10000 / contentLength));
+    
+                    if (shouldSaveToGallery) {
+                        // Check runtime permission for this android versions
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                            this.filename = fileName;
+                            handler.post(() -> createFileForImageWithPermission(fileName, mimetype));
+                            return;
                         }
-
-                        if (isCancelled()) break;
+    
+                        saveUri = createFileForImage(fileName, mimetype);
+                        if (saveUri == null) {
+                            Log.d(TAG, "initializeDownload: Cant create file, resetting download");
+                            resetDownload();
+                            return;
+                        }
+                        Log.d(TAG, "initializeDownload: Save path: " + saveUri.getPath());
+                        handler.post(() -> {
+                            startDownload();
+                        });
+                    } else {
+                        handler.post(() -> {
+                            openSafIntent(fileName, mimetype);
+                        });
                     }
-                    os.flush();
-                    os.close();
-
-                    return new DownloadFileResult(downloadFile, param.mimetype);
                 } else {
-                    return null;
+                    Log.d(TAG, "initializeDownload: Failed to connect to url. Response code: " + responseCode);
+                    handler.post(() -> {
+                        Toast.makeText(context, context.getString(R.string.download_disconnected), Toast.LENGTH_LONG).show();
+                    });
+                    resetDownload();
                 }
-
             } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
+                Log.e(TAG, "Error occurred while downloading file", e);
+                handler.post(() -> {
+                    Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                });
+                resetDownload();
             }
-
-            return null;
+        });
+    }
+    
+    private void startDownload() {
+        if (connection == null) {
+            Log.d(TAG, "continueDownloadFile: HttpConnection not created.");
+            return;
         }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            if (contentLength < 0) {
-                return;
-            }
-
-            FileDownloader fileDownloader = fileDownloaderReference.get();
-            if (fileDownloader != null) {
-                fileDownloader.progressDialog.setIndeterminate(false);
-                fileDownloader.progressDialog.setProgress(values[0]);
-            }
+        
+        if (saveUri == null) {
+            Log.d(TAG, "continueDownloadFile: File path not created");
+            return;
         }
-
-        @Override
-        protected void onPostExecute(DownloadFileResult result) {
-            FileDownloader fileDownloader = fileDownloaderReference.get();
-            if (fileDownloader == null) return;
-
-            fileDownloader.progressDialog.dismiss();
-
-            if (exception != null) {
-                Log.e(TAG, exception.getMessage(), exception);
-                Toast.makeText(fileDownloader.context, exception.getLocalizedMessage(), Toast.LENGTH_LONG).show();
-            }
-
-            if (result != null && result.file != null) {
-                Uri content;
-                try {
-                    content = FileProvider.getUriForFile(fileDownloader.context, AUTHORITY, result.file);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "Unable to get content url from FileProvider", e);
-                    return;
+        
+        Toast.makeText(context, R.string.starting_download, Toast.LENGTH_SHORT).show();
+        executor.execute(() -> {
+            try {
+                int count;
+                int lengthOfFile = connection.getContentLength();
+                InputStream input = new BufferedInputStream(url.openStream(), 8192);
+                OutputStream output = context.getContentResolver().openOutputStream(saveUri);
+                byte[] data = new byte[1024];
+                long total = 0;
+                
+                while ((count = input.read(data)) != -1) {
+                    total += count;
+                    Log.d(TAG, "startDownload: Progress: " + (int) ((total * 100) / lengthOfFile));
+                    output.write(data, 0, count);
                 }
-
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(content, result.mimetype);
-                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                try {
-                    fileDownloader.context.startActivity(intent);
-                } catch (ActivityNotFoundException e) {
-                    String message = fileDownloader.context.getResources().getString(R.string.file_handler_not_found);
-                    Toast.makeText(fileDownloader.context, message, Toast.LENGTH_LONG).show();
-                }
+                
+                output.flush();
+                output.close();
+                input.close();
+                Log.d(TAG, "startDownload: Download Done!");
+                
+                handler.post(() -> {
+                    Toast.makeText(context, R.string.download_complete, Toast.LENGTH_SHORT).show();
+                    viewFile(saveUri, mimetype);
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error occurred while downloading file", e);
+                handler.post(() -> {
+                    Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                });
+                
+                resetDownload();
             }
+        });
+    }
+    
+    private void createFileForImageWithPermission(String filename, String mimetype) {
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "createFileForImageWithPermission: Requesting permission");
+            requestPermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        } else {
+            Log.d(TAG, "createFileForImageWithPermission: Permission already granted, creating file");
+            this.saveUri = createFileForImage(filename, mimetype);
+            this.startDownload();
         }
+    }
+    
+    private Uri createFileForImage(String filename, String mimetype) {
+        ContentResolver resolver = context.getContentResolver();
+        ContentValues fileDetails = new ContentValues();
+        fileDetails.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
+        fileDetails.put(MediaStore.Video.Media.MIME_TYPE, mimetype);
+        return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, fileDetails);
+    }
 
-        @Override
-        protected void onCancelled(DownloadFileResult downloadFileResult) {
-            FileDownloader fileDownloader = fileDownloaderReference.get();
-            if (fileDownloader == null) return;
-
-            Toast.makeText(fileDownloader.context, R.string.download_canceled, Toast.LENGTH_SHORT).show();
+    private void openSafIntent(String fileName, String mimetype) {
+        // Let user pick/create the file
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mimetype);
+        intent.putExtra(Intent.EXTRA_TITLE, fileName);
+        
+        directorySelectorActivityLauncher.launch(intent);
+    }
+    
+    private void initLauncher() {
+        directorySelectorActivityLauncher = context.registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+                        if (data !=null) {
+                            saveUri = data.getData();
+                            startDownload();
+                        }
+                    }
+                });
+    
+        requestPermissionLauncher =
+                context.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                    if (isGranted) {
+                        Log.d(TAG, "initLauncher: Granted");
+                        saveUri = createFileForImage(this.filename, mimetype);
+                        startDownload();
+                    } else {
+                        Log.d(TAG, "initLauncher: Permission Denied");
+                    }
+                });
+    }
+    
+    private void resetDownload() {
+        this.mimetype = "*/*";
+        this.connection = null;
+        this.url = null;
+        
+        if (saveUri != null) {
+            deleteFile(new File(saveUri.getPath()));
+            saveUri = null;
         }
+    }
+    
+    private void deleteFile(File file) {
+        if (file == null) return;
+        if (file.exists()) {
+            if (file.delete()) Log.d(TAG, "deleteFile: File " + file.getPath() + " deleted.");
+        }
+    }
+    
+    private void viewFile(Uri uri, String mimeType) {
+        try {
+            if (shouldSaveToGallery) {
+                addFileToGallery(uri);
+            }
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, mimeType);
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            context.startActivity(intent);
+        } catch (Exception ex) {
+            Log.e(TAG, "viewFile: Exception: ", ex);
+        }
+    }
+    
+    private void addFileToGallery(Uri uri) {
+        Log.d(TAG, "addFileToGallery: Adding to Albums ...");
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        mediaScanIntent.setData(uri);
+        context.sendBroadcast(mediaScanIntent);
     }
 
     public String getLastDownloadedUrl() {
