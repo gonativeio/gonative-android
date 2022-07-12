@@ -21,8 +21,8 @@ task parseAppConfig {
     if (parsedJson.services.oneSignal && parsedJson.services.oneSignal.applicationId) {
         onesignalAppId = parsedJson.services.oneSignal.applicationId
     }
-    if (parsedJson.services.admobAndroid && parsedJson.services.admobAndroid.applicationId) {
-        adMobAppId = parsedJson.services.admobAndroid.applicationId
+    if (parsedJson.services.admob && parsedJson.services.admob.admobAndroid && parsedJson.services.admob.admobAndroid.applicationId) {
+        adMobAppId = parsedJson.services.admob.admobAndroid.applicationId
     }
 }
 build.dependsOn parseAppConfig
