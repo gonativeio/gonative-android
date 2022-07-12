@@ -585,7 +585,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     protected void onStop() {
         super.onStop();
-
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.onActivityStop(this);
         if (isRoot) {
             if (AppConfig.getInstance(this).clearCache) {
                 this.mWebview.clearCache(true);

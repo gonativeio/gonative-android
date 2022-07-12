@@ -82,6 +82,12 @@ public abstract class Bridge {
             plugin.onActivityStart(activity);
         }
     }
+ 
+    public <T extends Activity & GoNativeActivity> void onActivityStop(T activity) {
+        for (BridgeModule plugin : getPlugins()) {
+            plugin.onActivityStop(activity);
+        }
+    }
 
     public <T extends Activity & GoNativeActivity> void onActivityDestroy(T activity) {
         for (BridgeModule plugin: getPlugins()) {

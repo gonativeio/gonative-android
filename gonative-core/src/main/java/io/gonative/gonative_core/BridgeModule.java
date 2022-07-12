@@ -23,6 +23,7 @@ public interface BridgeModule {
     <T extends Activity & GoNativeActivity> void onActivityResume(T activity);
     <T extends Activity & GoNativeActivity> void onActivityPause(T activity);
     <T extends Activity & GoNativeActivity> void onActivityStart(T activity);
+    <T extends Activity & GoNativeActivity> void onActivityStop(T activity);
     <T extends Activity & GoNativeActivity> void onActivityDestroy(T activity);
     <T extends Activity & GoNativeActivity> void onActivityResult(T activity, int requestCode, int resultCode, Intent data);
     <T extends Activity & GoNativeActivity> void onActivityNewIntent(T activity, Intent intent);
