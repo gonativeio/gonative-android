@@ -2,6 +2,7 @@ package io.gonative.android;
 
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -23,10 +24,12 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.multidex.BuildConfig;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -47,7 +50,7 @@ public class FileDownloader implements DownloadListener {
         PUBLIC_DOWNLOADS, PRIVATE_INTERNAL
     }
 
-    private static final String TAG = DownloadListener.class.getName();
+    private static final String TAG = FileDownloader.class.getName();
     static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private MainActivity context;
     private UrlNavigation urlNavigation;
@@ -60,9 +63,13 @@ public class FileDownloader implements DownloadListener {
     private HttpURLConnection connection;
     private URL url;
     private String mimetype = "*/*";
+    
+    private String downloadUrl;
     private Uri saveUri;
     private boolean shouldSaveToGallery;
+    private boolean isDownloadFromWeb;
     private String filename = "download";
+    private String extension = "";
     private static final int timeout = 5; // in seconds
     
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -119,6 +126,8 @@ public class FileDownloader implements DownloadListener {
                     this.mimetype = guessedMimeType;
                 }
             }
+        } else {
+            this.mimetype = mimetype;
         }
 
         if (this.defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
@@ -153,6 +162,8 @@ public class FileDownloader implements DownloadListener {
                 Log.w(TAG, "External storage is not mounted. Downloading internally.");
             }
         }
+
+        this.isDownloadFromWeb = true;
         initializeDownload(url, userAgent);
     }
 
@@ -163,8 +174,6 @@ public class FileDownloader implements DownloadListener {
 
     public void gotExternalStoragePermissions(boolean granted) {
         if (granted) {
-            Toast.makeText(this.context, R.string.starting_download, Toast.LENGTH_SHORT).show();
-
             DownloadManager downloadManager = (DownloadManager) this.context.getSystemService(Context.DOWNLOAD_SERVICE);
             if (downloadManager == null) {
                 Log.e(TAG, "Error getting system download manager");
@@ -183,8 +192,26 @@ public class FileDownloader implements DownloadListener {
             return;
         }
 
+        this.downloadUrl = url;
         this.shouldSaveToGallery = shouldSaveToGallery;
-        onDownloadStart(url, null, null, null, -1);
+        this.isDownloadFromWeb = false;
+        
+        setupAppDownload();
+    }
+    
+    private void setupAppDownload() {
+        String userAgent = AppConfig.getInstance(context).userAgent;
+        
+        MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+        String extension = MimeTypeMap.getFileExtensionFromUrl(downloadUrl);
+        if (extension != null && !extension.isEmpty()) {
+            String guessedMimeType = mimeTypeMap.getMimeTypeFromExtension(extension);
+            if (guessedMimeType != null) {
+                this.mimetype = guessedMimeType;
+            }
+        }
+        
+        initializeDownload(downloadUrl, userAgent);
     }
 
     private void initializeDownload(String downloadUrl, String userAgent) {
@@ -211,47 +238,43 @@ public class FileDownloader implements DownloadListener {
                     String fileName;
                     if (pos == -1) {
                         fileName = guessedName;
+                        this.extension = "";
                     } else if (pos == 0) {
                         fileName = "download";
+                        this.extension = guessedName.substring(1);
                     } else {
                         fileName = guessedName.substring(0, pos);
+                        this.extension = guessedName.substring(pos + 1);
                     }
-    
-                    if (shouldSaveToGallery) {
+                    if (shouldSaveToGallery || isDownloadFromWeb) {
+
                         // Check runtime permission for this android versions
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                             this.filename = fileName;
                             handler.post(() -> createFileForImageWithPermission(fileName, mimetype));
                             return;
                         }
-    
-                        saveUri = createFileForImage(fileName, mimetype);
+
+                        saveUri = createFile(fileName, this.mimetype);
                         if (saveUri == null) {
                             Log.d(TAG, "initializeDownload: Cant create file, resetting download");
                             resetDownload();
                             return;
                         }
                         Log.d(TAG, "initializeDownload: Save path: " + saveUri.getPath());
-                        handler.post(() -> {
-                            startDownload();
-                        });
+                        handler.post(this::startDownload);
+ 
                     } else {
-                        handler.post(() -> {
-                            openSafIntent(fileName, mimetype);
-                        });
+                        handler.post(() -> openSafIntent(fileName, mimetype));
                     }
                 } else {
                     Log.d(TAG, "initializeDownload: Failed to connect to url. Response code: " + responseCode);
-                    handler.post(() -> {
-                        Toast.makeText(context, context.getString(R.string.download_disconnected), Toast.LENGTH_LONG).show();
-                    });
+                    handler.post(() -> Toast.makeText(context, context.getString(R.string.download_disconnected), Toast.LENGTH_LONG).show());
                     resetDownload();
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error occurred while downloading file", e);
-                handler.post(() -> {
-                    Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                });
+                handler.post(() -> Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show());
                 resetDownload();
             }
         });
@@ -268,11 +291,11 @@ public class FileDownloader implements DownloadListener {
             return;
         }
         
-        Toast.makeText(context, R.string.starting_download, Toast.LENGTH_SHORT).show();
         executor.execute(() -> {
             try {
                 int count;
                 int lengthOfFile = connection.getContentLength();
+
                 InputStream input = new BufferedInputStream(url.openStream(), 8192);
                 OutputStream output = context.getContentResolver().openOutputStream(saveUri);
                 byte[] data = new byte[1024];
@@ -281,6 +304,8 @@ public class FileDownloader implements DownloadListener {
                 while ((count = input.read(data)) != -1) {
                     total += count;
                     Log.d(TAG, "startDownload: Progress: " + (int) ((total * 100) / lengthOfFile));
+                    
+                    // writing data to file
                     output.write(data, 0, count);
                 }
                 
@@ -288,17 +313,14 @@ public class FileDownloader implements DownloadListener {
                 output.close();
                 input.close();
                 Log.d(TAG, "startDownload: Download Done!");
-                
                 handler.post(() -> {
-                    Toast.makeText(context, R.string.download_complete, Toast.LENGTH_SHORT).show();
+                    //Open File
                     viewFile(saveUri, mimetype);
                 });
                 
             } catch (Exception e) {
                 Log.e(TAG, "Error occurred while downloading file", e);
-                handler.post(() -> {
-                    Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                });
+                handler.post(() -> Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show());
                 
                 resetDownload();
             }
@@ -311,9 +333,21 @@ public class FileDownloader implements DownloadListener {
             requestPermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
         } else {
             Log.d(TAG, "createFileForImageWithPermission: Permission already granted, creating file");
-            this.saveUri = createFileForImage(filename, mimetype);
+            this.saveUri = createFile(filename, mimetype);
+            if (saveUri == null) {
+                Log.d(TAG, "initializeDownload: Cant create file, resetting download");
+                resetDownload();
+                return;
+            }
+            
             this.startDownload();
         }
+    }
+    
+    private Uri createFile(String filename, String mimetype) {
+        if (isDownloadFromWeb)
+            return createFileForWebDownload(filename, mimetype);
+        return createFileForImage(filename, mimetype);
     }
     
     private Uri createFileForImage(String filename, String mimetype) {
@@ -323,7 +357,31 @@ public class FileDownloader implements DownloadListener {
         fileDetails.put(MediaStore.Video.Media.MIME_TYPE, mimetype);
         return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, fileDetails);
     }
-
+    
+    private Uri createFileForWebDownload(String filename, String mimetype) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentResolver resolver = context.getContentResolver();
+            ContentValues fileDetails = new ContentValues();
+            fileDetails.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+            fileDetails.put(MediaStore.MediaColumns.MIME_TYPE, mimetype);
+            return resolver.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL), fileDetails);
+        } else {
+            try {
+                File downloadDir = new File(context.getCacheDir(), "downloads");
+                if (!downloadDir.mkdirs()) {
+                    Log.v(TAG, "Download directory " + downloadDir + " exists");
+                }
+                Log.d(TAG, "createFileForWebDownload: extension: " + extension);
+                
+                File file = File.createTempFile(filename, extension, downloadDir);
+                return FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".fileprovider", file);
+            } catch (IOException e) {
+                Log.e(TAG, "createFileForWebDownload:", e);
+                return null;
+            }
+        }
+    }
+    
     private void openSafIntent(String fileName, String mimetype) {
         // Let user pick/create the file
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -340,10 +398,13 @@ public class FileDownloader implements DownloadListener {
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent data = result.getData();
-                        if (data !=null) {
-                            saveUri = data.getData();
-                            startDownload();
+                        if (data == null) {
+                            Log.d(TAG, "initLauncher: File not created");
+                            resetDownload();
+                            return;
                         }
+                        saveUri = data.getData();
+                        startDownload();
                     }
                 });
     
@@ -351,7 +412,14 @@ public class FileDownloader implements DownloadListener {
                 context.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                     if (isGranted) {
                         Log.d(TAG, "initLauncher: Granted");
-                        saveUri = createFileForImage(this.filename, mimetype);
+                        saveUri = createFile(this.filename, mimetype);
+                        
+                        if (saveUri == null) {
+                            Log.d(TAG, "initializeDownload: Cant create file, resetting download");
+                            resetDownload();
+                            return;
+                        }
+                        
                         startDownload();
                     } else {
                         Log.d(TAG, "initLauncher: Permission Denied");
@@ -363,6 +431,8 @@ public class FileDownloader implements DownloadListener {
         this.mimetype = "*/*";
         this.connection = null;
         this.url = null;
+        this.filename = "download";
+        this.extension = "";
         
         if (saveUri != null) {
             deleteFile(new File(saveUri.getPath()));
@@ -373,7 +443,11 @@ public class FileDownloader implements DownloadListener {
     private void deleteFile(File file) {
         if (file == null) return;
         if (file.exists()) {
-            if (file.delete()) Log.d(TAG, "deleteFile: File " + file.getPath() + " deleted.");
+            if (file.delete()) {
+                Log.d(TAG, "deleteFile: File " + file.getPath() + " deleted.");
+            } else {
+                Log.d(TAG, "deleteFile: Unable to delete file " + file.getPath());
+            }
         }
     }
     
@@ -385,15 +459,18 @@ public class FileDownloader implements DownloadListener {
             
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uri, mimeType);
-            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             context.startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            String message = context.getResources().getString(R.string.file_handler_not_found);
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show();
         } catch (Exception ex) {
             Log.e(TAG, "viewFile: Exception: ", ex);
         }
     }
     
     private void addFileToGallery(Uri uri) {
-        Log.d(TAG, "addFileToGallery: Adding to Albums ...");
+        Log.d(TAG, "addFileToGallery: Adding to Albums . . .");
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         mediaScanIntent.setData(uri);
         context.sendBroadcast(mediaScanIntent);
