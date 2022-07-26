@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
+//[enabled by builder] apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-android'
 
 ext {
