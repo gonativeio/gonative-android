@@ -4,9 +4,12 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -568,6 +571,36 @@ public class UrlNavigation {
             return;
         }
 
+        if ("clipboard".equals(uri.getHost()) && jsonData != null) {
+            if ("/set".equals(uri.getPath())) {
+                String clipboardContent = jsonData.optString("data");
+                if (!clipboardContent.isEmpty()) {
+                    ClipboardManager clipboard = (ClipboardManager) mainActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipData clip = ClipData.newPlainText("copy", clipboardContent);
+                    clipboard.setPrimaryClip(clip);
+                }
+            } else if ("/get".equals(uri.getPath())) {
+                String callback = jsonData.optString("callback");
+                if(callback != null && !callback.isEmpty()) {
+                    Map<String, String> params = new HashMap<String, String>();
+                    ClipboardManager clipboard = (ClipboardManager) mainActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+                    CharSequence pasteData = "";
+                    if (clipboard.hasPrimaryClip()) {
+                        ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+                        pasteData = item.getText();
+                        if (pasteData != null)
+                            params.put("data", pasteData.toString());
+                        else
+                            params.put("error", "Clipboard item is not a string.");
+                    } else {
+                        params.put("error", "No Clipboard item available.");
+                    }
+                    JSONObject jsonObject = new JSONObject(params);
+                    mainActivity.runJavascript(LeanUtils.createJsForCallback(callback, jsonObject));
+                }
+            }
+            return;
+        }
     }
 
     public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface view, String url) {

@@ -220,6 +220,15 @@ gonative.internalExternal = {
     }
 };
 
+gonative.clipboard = {
+    set: function(params){
+        addCommand("gonative://clipboard/set", params);
+    },
+    get: function(params){
+        return addCommandCallback("gonative://clipboard/get", params);
+    }
+};
+
 ///////////////////////////////
 ////     iOS Exclusive     ////
 ///////////////////////////////
