@@ -1,30 +1,24 @@
-// this function returns a promise and also supports callback as params.callback
+// this function accepts a callback function as params.callback that will be called with the command results
+// if a callback is not provided it returns a promise that will resolve with the command results
 function addCommandCallback(command, params, persistCallback) {
-    var tempFunctionName = '_gonative_temp_' + Math.random().toString(36).slice(2);
-    var callback;
-    if(params) callback = params.callback;
-    else {
-        params = {
-            'callback': tempFunctionName
-        };
-    }
-    return new Promise(function(resolve, reject) {
-        // declare a temporary function
-        window[tempFunctionName] = function(data) {
-            resolve(data);
-            if (typeof callback === 'function') {
-                callback(data);
-            } else if (typeof callback === 'string' &&
-                typeof window[callback] === 'function'){
-                window[callback](data);
-            }
-            if(!persistCallback){ // if callback is used just once
+    if(params && params.callback){
+        // execute command with provided callback function
+        addCommand(command, params, persistCallback);
+    } else {
+        // create a temporary function and return a promise that executes command
+        var tempFunctionName = '_gonative_temp_' + Math.random().toString(36).slice(2);
+        if(!params) params = {};
+        params.callback = tempFunctionName;
+        return new Promise(function(resolve, reject) {
+            // declare a temporary function
+            window[tempFunctionName] = function(data) {
+                resolve(data);
                 delete window[tempFunctionName];
             }
-        }
-        // execute command
-        addCommand(command, params);
-    });
+            // execute command
+            addCommand(command, params);
+        });
+    }
 }
 
 function addCallbackFunction(callbackFunction, persistCallback){
@@ -175,6 +169,11 @@ gonative.screen = {
             params = {brightness: data};
         }
         addCommand("gonative://screen/setBrightness", params);
+    },
+    setMode: function(params) {
+        if (params.mode) {
+            addCommand("gonative://screen/setMode", params);
+        }
     }
 };
 
@@ -271,6 +270,28 @@ gonative.ios.backgroundAudio = {
         addCommand("gonative://backgroundAudio/end");
     }
 };
+
+
+//////////////////////////////////////
+////   Webpage Helper Functions   ////
+//////////////////////////////////////
+
+function gonative_match_statusbar_to_body_background_color() {
+    let rgb = window.getComputedStyle(document.body, null).getPropertyValue('background-color');
+    let sep = rgb.indexOf(",") > -1 ? "," : " ";
+    rgb = rgb.substring(rgb.indexOf('(')+1).split(")")[0].split(sep).map(function(x) { return x * 1; });
+    if(rgb.length === 4){
+        rgb = rgb.map(function(x){ return parseInt(x * rgb[3]); })
+    }
+    let hex = '#' + rgb[0].toString(16).padStart(2,'0') + rgb[1].toString(16).padStart(2,'0') + rgb[2].toString(16).padStart(2,'0');
+    let luma = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]; // per ITU-R BT.709
+    if(luma > 40){
+        gonative.statusbar.set({'style': 'dark', 'color': hex});
+    }
+    else{
+        gonative.statusbar.set({'style': 'light', 'color': hex});
+    }
+}
 
 ///////////////////////////////
 ////   Android Exclusive   ////

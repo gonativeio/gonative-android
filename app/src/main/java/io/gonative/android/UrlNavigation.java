@@ -346,6 +346,9 @@ public class UrlNavigation {
                 mainActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             } else if("/keepScreenNormal".equals(uri.getPath())){
                 mainActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else if("/setMode".equals(uri.getPath())) {
+                String mode = jsonData.optString("mode", "auto");
+                mainActivity.setupAppTheme(mode);
             }
             return;
         }

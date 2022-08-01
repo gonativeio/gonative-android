@@ -1,49 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="GoNativeTheme.NoActionBar" parent="GN.Light">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="GoNativeTheme.NoActionBar" parent="GN.DayNight.NoActionBar">
         <!--Remove action bar shadow. We are managing it ourselves with the tabs.-->
         <item name="android:windowContentOverlay">@null</item>
 
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
 
-        <!--GoNative placeholder: colorPrimary-->
-        <!--GoNative placeholder: colorPrimaryDark-->
-        <!--GoNative placeholder: titleTextColor-->
-        <!--GoNative placeholder: colorAccent-->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="titleTextColor">@color/titleTextColor</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:colorBackground">@color/colorBackground</item>
     </style>
 
     <style name="DrawerArrowStyle" parent="@style/Widget.AppCompat.DrawerArrowToggle">
         <item name="spinBars">true</item>
-        <!--GoNative placeholder: drawerArrowColor-->
+        <item name="color">@color/drawerArrow</item>
     </style>
 
     <attr name="ic_action_refresh" format="reference"/>
     <attr name="ic_action_search" format="reference"/>
     <attr name="ic_action_share" format="reference"/>
 
-    <style name="GN.Light" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="ic_action_refresh">@drawable/ic_refresh_black_24dp</item>
-        <item name="ic_action_search">@drawable/ic_search_black_24dp</item>
-        <item name="ic_action_share">@drawable/ic_share_black_24dp</item>
-    </style>
-
-    <style name="GN.LightWithDarkActionBar" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="ic_action_refresh">@drawable/ic_refresh_white_24dp</item>
-        <item name="ic_action_search">@drawable/ic_search_white_24dp</item>
-        <item name="ic_action_share">@drawable/ic_share_white_24dp</item>
-    </style>
-
-    <style name="GN.Dark" parent="Theme.AppCompat.NoActionBar">
-        <item name="ic_action_refresh">@drawable/ic_refresh_white_24dp</item>
-        <item name="ic_action_search">@drawable/ic_search_white_24dp</item>
-        <item name="ic_action_share">@drawable/ic_share_white_24dp</item>
-    </style>
-
     <style name="GN.DayNight" parent="Theme.AppCompat.DayNight">
         <!-- Can add custom styles -->
         <item name="ic_action_refresh">@drawable/ic_refresh_black_24dp</item>
         <item name="ic_action_search">@drawable/ic_search_black_24dp</item>
         <item name="ic_action_share">@drawable/ic_share_black_24dp</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+    </style>
+
+    <style name="GN.DayNight.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Can add custom styles -->
+        <item name="ic_action_refresh">@drawable/ic_refresh_black_24dp</item>
+        <item name="ic_action_search">@drawable/ic_search_black_24dp</item>
+        <item name="ic_action_share">@drawable/ic_share_black_24dp</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
     </style>
 
     <style name="LoginFormContainer">
@@ -54,7 +46,7 @@
 
     <style name="SplashScreen">
         <item name="android:padding">0dp</item>
-        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowBackground">?android:attr/colorBackground</item>
         <item name="android:windowFrame">@null</item>
     </style>
 

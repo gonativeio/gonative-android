@@ -89,6 +89,9 @@ public class ActionManager {
         JSONArray actions = appConfig.actions.get(currentMenuID);
         if (actions == null) return;
 
+        ConfigPreferences configPreferences = new ConfigPreferences(activity);
+        String currentAppTheme = configPreferences.getAppTheme();
+
         for (int itemID = 0; itemID < actions.length(); itemID++) {
             JSONObject entry = actions.optJSONObject(itemID);
             if (entry != null) {
@@ -108,8 +111,10 @@ public class ActionManager {
                     String icon = AppConfig.optString(entry, "icon");
                     String url = AppConfig.optString(entry, "url");
                     
-                    Drawable iconDrawable = new Icon(activity, icon, action_button_size, appConfig.actionbarForegroundColor).getDrawable();
-
+                    Drawable iconDrawable = null;
+                    if (icon != null) {
+                        iconDrawable = new Icon(activity, icon, action_button_size, appConfig.getActionbarForegroundColor(currentAppTheme)).getDrawable();
+                    }
                     MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
                             .setIcon(iconDrawable)
                             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);

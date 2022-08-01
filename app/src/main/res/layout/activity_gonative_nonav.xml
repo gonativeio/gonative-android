@@ -30,7 +30,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:alpha="0.0"
-                android:background="@android:color/white" />
+                android:background="?android:attr/colorBackground" />
 
             </RelativeLayout>
 
@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/bottom_navigation"
         android:layout_alignWithParentIfMissing="true"
-        android:background="@android:color/black"
+        android:background="?android:attr/colorBackground"
         android:visibility="gone"/>
 
     <ProgressBar
@@ -68,7 +68,7 @@
         android:id="@+id/fullscreen"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/black"
+        android:background="?android:attr/colorBackground"
         android:visibility="invisible" />
 
 </RelativeLayout>

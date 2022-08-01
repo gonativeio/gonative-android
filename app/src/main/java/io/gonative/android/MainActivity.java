@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -52,6 +53,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -185,6 +187,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	protected void onCreate(Bundle savedInstanceState) {
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
+        ConfigPreferences configPreferences = new ConfigPreferences(this);
+        String currentAppTheme = configPreferences.getAppTheme();
 
         if(appConfig.androidFullScreen){
             toggleFullscreen(true);
@@ -317,9 +321,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
         });
         
         if (appConfig.pullToRefreshColor != null) {
-            swipeRefreshLayout.setColorSchemeColors(appConfig.pullToRefreshColor);
-            swipeNavLayout.setActiveColor(appConfig.pullToRefreshColor);
+            swipeRefreshLayout.setColorSchemeColors(appConfig.getPullToRefreshColor(currentAppTheme));
+            swipeNavLayout.setActiveColor(appConfig.getPullToRefreshColor(currentAppTheme));
+        } else {
+            swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.swipe_nav_active));
+            swipeNavLayout.setActiveColor(getResources().getColor(R.color.swipe_nav_active));
         }
+        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(getResources().getColor(R.color.swipe_nav_background));
+        swipeNavLayout.setBackgroundColor(getResources().getColor(R.color.swipe_nav_background));
 
         this.webviewOverlay = findViewById(R.id.webviewOverlay);
         this.mWebview = findViewById(R.id.webview);
@@ -436,7 +445,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             if (!isRoot || appConfig.showNavigationMenu) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
-                backArrow.setColorFilter(AppConfig.getInstance(this).actionbarForegroundColor, PorterDuff.Mode.SRC_ATOP);
+                backArrow.setColorFilter(AppConfig.getInstance(this).getActionbarForegroundColor(currentAppTheme), PorterDuff.Mode.SRC_ATOP);
                 getSupportActionBar().setHomeAsUpIndicator(backArrow);
             }
             
@@ -446,7 +455,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         // style sidebar
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
-            mDrawerView.setBackgroundColor(AppConfig.getInstance(this).sidebarBackgroundColor);
+            mDrawerView.setBackgroundColor(AppConfig.getInstance(this).getSidebarBackgroundColor(currentAppTheme));
         }
 
         // respond to navigation titles processed
@@ -495,10 +504,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(this.webviewLimitReachedReceiver,
                 new IntentFilter(BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
+    
 
         application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
 
-        setupAppTheme();
+        setupAppTheme(null);
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -826,13 +836,18 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	}
 
     private void showSplashScreen(double maxTime, double forceTime) {
-        splashDialog = new Dialog(this, R.style.SplashScreen);
-        if (splashDialog.getWindow() != null) {
-            splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
+        try {
+            splashDialog = new Dialog(this, R.style.SplashScreen);
+            if (splashDialog.getWindow() != null) {
+                splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
+            }
+            splashDialog.setContentView(R.layout.splash_screen);
+            splashDialog.setCancelable(false);
+            splashDialog.show();
+        } catch (Exception e) {
+           Log.e(TAG, "Splash activity not launched. " + e);
+           splashDialog = null;
         }
-        splashDialog.setContentView(R.layout.splash_screen);
-        splashDialog.setCancelable(false);
-        splashDialog.show();
 
         double delay;
 
@@ -853,9 +868,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     private void hideSplashScreen(boolean isForce) {
-        if (splashDialog != null && (!splashDismissRequiresForce || isForce)) {
-            splashDialog.dismiss();
-            splashDialog = null;
+        try {
+            if (splashDialog != null && (!splashDismissRequiresForce || isForce)) {
+                splashDialog.dismiss();
+                splashDialog = null;
+            }
+        } catch (Exception e) {
+           Log.e(TAG, "Splash activity not launched. " + e);
+           splashDialog = null;
         }
     }
 
@@ -984,6 +1004,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     private void showTextActionBarTitle(CharSequence title) {
         if (this.actionbarManager == null) return;
+        ConfigPreferences configPreferences = new ConfigPreferences(this);
+        String currentAppTheme = configPreferences.getAppTheme();
 
         TextView textView = new TextView(this);
         textView.setText(TextUtils.isEmpty(title) ? getTitle() : title);
@@ -991,8 +1013,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         textView.setTypeface(null, Typeface.BOLD);
         textView.setMaxLines(1);
         textView.setEllipsize(TextUtils.TruncateAt.END);
-        // TODO [merge] : replace with getter method when merged with dark-theme branch
-        textView.setTextColor(AppConfig.getInstance(this).actionbarForegroundColor);
+        textView.setTextColor(AppConfig.getInstance(this).getActionbarForegroundColor(currentAppTheme));
         this.actionbarManager.showTitleView(textView);
     }
 
@@ -1345,6 +1366,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 		getMenuInflater().inflate(R.menu.topmenu, menu);
         mOptionsMenu = menu;
         AppConfig appConfig = AppConfig.getInstance(this);
+        ConfigPreferences configPreferences = new ConfigPreferences(this);
+        String currentAppTheme = configPreferences.getAppTheme();
+
 
         MenuItem refreshItem = menu.findItem(R.id.action_refresh);
         if (refreshItem != null) {
@@ -1353,8 +1377,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 refreshItem.setEnabled(false);
             } else {
                 Drawable drawable = refreshItem.getIcon();
-                // TODO [merge] : take current theme for dark support
-                drawable.setColorFilter(appConfig.actionbarForegroundColor, PorterDuff.Mode.SRC_ATOP);
+                drawable.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme), PorterDuff.Mode.SRC_ATOP);
                 refreshItem.setIcon(drawable);
             }
         }
@@ -2071,11 +2094,40 @@ public class MainActivity extends AppCompatActivity implements Observer,
         setDrawerEnabled(enabled);
     }
 
-    public void setupAppTheme() {
-        WebSettings settings = this.mWebview.getSettings();
-
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-
+    /**
+     * @param appTheme set to null if will use sharedPreferences
+     */
+    @SuppressLint("RequiresFeature")
+    public void setupAppTheme(String appTheme) {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+            Log.d(TAG, "Dark mode feature is not supported");
+            return;
+        }
+        ConfigPreferences configPreferences = new ConfigPreferences(this);
+        String currentAppTheme = configPreferences.getAppTheme();
+        if (TextUtils.isEmpty(appTheme)) {
+            appTheme = currentAppTheme; // null provided, take from preference
+        }
+        if (TextUtils.isEmpty(appTheme)) {
+            final AppConfig appConfig = AppConfig.getInstance(this);
+            if (appConfig.androidTheme != null) {
+                appTheme = appConfig.androidTheme;
+            } else {
+                appTheme = "light"; // default is 'light' to support apps with no night assets provided
+            }
+        }
+        Log.d(TAG, "use app theme = " + appTheme);
+        
+        configPreferences.setAppTheme(appTheme); //save preference before the asynchronous config change
+        
+        if ("dark".equals(appTheme)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_ON);
+        } else if ("light".equals(appTheme)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_OFF);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
             switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
                 case Configuration.UI_MODE_NIGHT_YES:
                     WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_ON);
@@ -2086,6 +2138,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     break;
             }
 
+            WebSettings settings = this.mWebview.getSettings();
             // Force dark on if supported, and only use theme from web
             if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
                 WebSettingsCompat.setForceDarkStrategy(

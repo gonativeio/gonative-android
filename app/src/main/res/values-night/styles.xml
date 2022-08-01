@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="GN.DayNight" parent="Theme.AppCompat.DayNight">
+        <item name="ic_action_refresh">@drawable/ic_refresh_white_24dp</item>
+        <item name="ic_action_search">@drawable/ic_search_white_24dp</item>
+        <item name="ic_action_share">@drawable/ic_share_white_24dp</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+    </style>
+
+    <style name="GN.DayNight.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="ic_action_refresh">@drawable/ic_refresh_white_24dp</item>
+        <item name="ic_action_search">@drawable/ic_search_white_24dp</item>
+        <item name="ic_action_share">@drawable/ic_share_white_24dp</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+    </style>
+
+    <style name="SplashScreen">
+        <item name="android:padding">0dp</item>
+        <item name="android:windowBackground">?android:attr/colorBackground</item>
+        <item name="android:windowFrame">@null</item>
+    </style>
+</resources>

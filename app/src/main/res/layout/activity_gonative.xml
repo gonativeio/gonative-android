@@ -51,7 +51,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:alpha="0.0"
-                        android:background="@android:color/white" />
+                        android:background="?android:attr/colorBackground" />
 
                 </RelativeLayout>
             </io.gonative.android.widget.SwipeHistoryNavigationLayout>
@@ -63,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_above="@id/bottom_navigation"
             android:layout_alignWithParentIfMissing="true"
-            android:background="@android:color/black"
+            android:background="?android:attr/colorBackground"
             android:visibility="gone"/>
 
         <ProgressBar
@@ -80,7 +80,7 @@
             android:id="@+id/fullscreen"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/black"
+            android:background="?android:attr/colorBackground"
             android:visibility="invisible" />
 
         <com.aurelhubert.ahbottomnavigation.AHBottomNavigation
@@ -104,6 +104,7 @@
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:background="?android:attr/colorBackground"
             android:paddingTop="11dp">
 
 
@@ -143,7 +144,7 @@
                     android:layout_centerHorizontal="true"
                     android:layout_marginTop="30dp"
                     android:contentDescription="@string/app_logo"
-                    android:src="@mipmap/ic_launcher" />
+                    android:src="@mipmap/ic_sidebar_logo" />
 
                 <TextView
                     android:id="@+id/app_name"
@@ -154,7 +155,7 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="15dp"
                     android:fontFamily="sans-serif-medium"
-                    android:textColor="@android:color/black"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="22sp" />
 
                 <View

@@ -19,18 +19,19 @@ LIGHT_DEFAULT_COLOR=000000
 BASEDIR=$(dirname $0)
 
 function showHelp {
-    echo "Usage: $0 (dark|light) tintColor"
-    echo "Example: $0 light 0000ff"
+    echo "Usage: $0 (dark|light) tintColor tintColorDark"
+    echo "Example: $0 light 0000ff ffffff"
     exit 1
 
 }
 
-if [[ $# -ne 2 ]]; then
+if [[ $# -ne 3 ]]; then
     showHelp
 fi
 
 theme=`echo $1 | tr '[:upper:]' '[:lower:]'`
 tintColor=`echo $2 | tr '[:upper:]' '[:lower:]'`
+tintColorDark=`echo $3 | tr '[:upper:]' '[:lower:]'`
 
 if [[ $theme = light ]]; then
     icons=("${LIGHT_ICONS[@]}")
@@ -57,6 +58,22 @@ for drawable in `ls -d $BASEDIR/app/src/main/res/drawable*`; do
         if [[ -s "$filePath" ]]; then
             echo Tinting $filePath
             convert $filePath -fill "#$tintColor" -colorize 100% $filePath
+            optipng $filePath
+        fi
+    done
+done
+
+
+if [[ ${#tintColorDark} -ne 6 ]]; then
+    exit
+fi
+
+for drawable in `ls -d $BASEDIR/app/src/main/res/drawable-night*`; do
+    for file in  "${icons[@]}"; do
+        filePath=$drawable/$file
+        if [[ -s "$filePath" ]]; then
+            echo Tinting $filePath
+            convert $filePath -fill "#$tintColorDark" -colorize 100% $filePath
             optipng $filePath
         fi
     done

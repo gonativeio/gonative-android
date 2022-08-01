@@ -56,18 +56,20 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         this.bottomNavigationView = bottomNavigationView;
         this.bottomNavigationView.setOnTabSelectedListener(this);
         this.appConfig = AppConfig.getInstance(this.mainActivity);
+        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
+        String currentAppTheme = configPreferences.getAppTheme();
 
         this.bottomNavigationView.setTitleState(AHBottomNavigation.TitleState.ALWAYS_SHOW);
         if (appConfig.tabBarBackgroundColor != null){
-            this.bottomNavigationView.setDefaultBackgroundColor(appConfig.tabBarBackgroundColor);
+            this.bottomNavigationView.setDefaultBackgroundColor(appConfig.getTabBarBackgroundColor(currentAppTheme));
         }
         if (appConfig.tabBarIndicatorColor != null) {
-            this.bottomNavigationView.setAccentColor(appConfig.tabBarIndicatorColor);
+            this.bottomNavigationView.setAccentColor(appConfig.getTabBarIndicatorColor(currentAppTheme));
         } else {
-            this.bottomNavigationView.setAccentColor(Color.parseColor("#2f79fe"));
+            this.bottomNavigationView.setAccentColor(mainActivity.getResources().getColor(R.color.tabBarIndicator));
         }
         if (appConfig.tabBarTextColor != null) {
-            this.bottomNavigationView.setInactiveColor(appConfig.tabBarTextColor);
+            this.bottomNavigationView.setInactiveColor(appConfig.getTabBarTextColor(currentAppTheme));
         }
         this.bottomNavigationView.setTitleTextSizeInSp(12, 12);
 
@@ -144,6 +146,10 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         int selectedNumber = -1;
         bottomNavigationView.removeAllItems();
         if(tabs == null) return;
+
+        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
+        String currentAppTheme = configPreferences.getAppTheme();
+    
         for (int i = 0; i < tabs.length(); i++) {
             if(i > (maxTabs-1)){
                 Log.e(TAG, "Tab menu items list should not have more than 5 items");
@@ -167,7 +173,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
                 Log.e(TAG, "All tabs must have icons.");
             }
             
-            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, new Icon(mainActivity.getApplicationContext(), icon, tabbar_icon_size, Color.BLACK).getDrawable());
+            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, new Icon(mainActivity.getApplicationContext(), icon, tabbar_icon_size, appConfig.getTabBarTextColor(currentAppTheme)).getDrawable());
             bottomNavigationView.addItem(navigationItem);
 
             if (item.optBoolean("selected")) {

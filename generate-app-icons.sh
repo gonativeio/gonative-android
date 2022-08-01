@@ -37,6 +37,49 @@ optipng $BASEDIR/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png 2>&1
 optipng $BASEDIR/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png 2>&1
 optipng $BASEDIR/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png 2>&1
 
+# sidebar logo
+SIDEBAR_LOGO=$BASEDIR/SidebarLogo
+if [[ -f "SIDEBAR_LOGO" ]]; then
+  sips -z 48 48 -s format png --out $BASEDIR/app/src/main/res/mipmap-mdpi/ic_sidebar_logo.png $BASEDIR/SidebarLogo 2>&1
+  sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/mipmap-hdpi/ic_sidebar_logo.png $BASEDIR/SidebarLogo 2>&1
+  sips -z 96 96 -s format png --out $BASEDIR/app/src/main/res/mipmap-xhdpi/ic_sidebar_logo.png $BASEDIR/SidebarLogo 2>&1
+  sips -z 144 144 -s format png --out $BASEDIR/app/src/main/res/mipmap-xxhdpi/ic_sidebar_logo.png $BASEDIR/SidebarLogo 2>&1
+  sips -z 192 192 -s format png --out $BASEDIR/app/src/main/res/mipmap-xxxhdpi/ic_sidebar_logo.png $BASEDIR/SidebarLogo 2>&1
+else
+  sips -z 48 48 -s format png --out $BASEDIR/app/src/main/res/mipmap-mdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/mipmap-hdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 96 96 -s format png --out $BASEDIR/app/src/main/res/mipmap-xhdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 144 144 -s format png --out $BASEDIR/app/src/main/res/mipmap-xxhdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 192 192 -s format png --out $BASEDIR/app/src/main/res/mipmap-xxxhdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+fi
+
+optipng $BASEDIR/app/src/main/res/mipmap-mdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-hdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-xhdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-xxhdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-xxxhdpi/ic_sidebar_logo.png 2>&1
+
+SIDEBAR_LOG_DARK=$BASEDIR/SideBarLogoDark
+if [[ -f "SIDEBAR_LOG_DARK" ]]; then
+  sips -z 48 48 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-mdpi/ic_sidebar_logo.png $BASEDIR/SideBarLogoDark 2>&1
+  sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-hdpi/ic_sidebar_logo.png $BASEDIR/SideBarLogoDark 2>&1
+  sips -z 96 96 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-xhdpi/ic_sidebar_logo.png $BASEDIR/SideBarLogoDark 2>&1
+  sips -z 144 144 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-xxhdpi/ic_sidebar_logo.png $BASEDIR/SideBarLogoDark 2>&1
+  sips -z 192 192 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-xxxhdpi/ic_sidebar_logo.png $BASEDIR/SideBarLogoDark 2>&1
+else
+  sips -z 48 48 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-mdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-hdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 96 96 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-xhdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 144 144 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-xxhdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+  sips -z 192 192 -s format png --out $BASEDIR/app/src/main/res/mipmap-night-xxxhdpi/ic_sidebar_logo.png $BASEDIR/AppIconRound.png 2>&1
+fi
+
+optipng $BASEDIR/app/src/main/res/mipmap-night-mdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-night-hdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-night-xhdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-night-xxhdpi/ic_sidebar_logo.png 2>&1
+optipng $BASEDIR/app/src/main/res/mipmap-night-xxxhdpi/ic_sidebar_logo.png 2>&1
+
 sips -z 36 36 -s format png --out $BASEDIR/app/src/main/res/drawable-mdpi/ic_actionbar.png $BASEDIR/AppIconRound.png 2>&1
 sips -z 54 54 -s format png --out $BASEDIR/app/src/main/res/drawable-hdpi/ic_actionbar.png $BASEDIR/AppIconRound.png 2>&1
 sips -z 72 72 -s format png --out $BASEDIR/app/src/main/res/drawable-xhdpi/ic_actionbar.png $BASEDIR/AppIconRound.png 2>&1

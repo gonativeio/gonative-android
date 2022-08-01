@@ -30,6 +30,7 @@ public class ActionbarManager {
     private final ActionManager actionManager;
     private final ActionBar actionBar;
     private final AppConfig appConfig;
+    private final ConfigPreferences configPreferences;
     private final boolean isRoot;
     private final LinearLayout header;
     private final RelativeLayout titleContainer;
@@ -41,6 +42,7 @@ public class ActionbarManager {
         this.actionManager = actionManager;
         actionBar = mainActivity.getSupportActionBar();
         appConfig = AppConfig.getInstance(mainActivity);
+        configPreferences = new ConfigPreferences(mainActivity);
         this.isRoot = isRoot;
         header = (LinearLayout) mainActivity.getLayoutInflater().inflate(R.layout.actionbar_title, null);
         titleContainer = header.findViewById(R.id.title_container);
@@ -71,8 +73,9 @@ public class ActionbarManager {
             // search item in action bar
             SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
             if (searchAutoComplete != null) {
-                searchAutoComplete.setTextColor(appConfig.actionbarForegroundColor);
-                int hintColor = appConfig.actionbarForegroundColor;
+                String currentAppTheme = configPreferences.getAppTheme();
+                searchAutoComplete.setTextColor(appConfig.getActionbarForegroundColor(currentAppTheme));
+                int hintColor = appConfig.getActionbarForegroundColor(currentAppTheme);
                 hintColor = Color.argb(192, Color.red(hintColor), Color.green(hintColor),
                         Color.blue(hintColor));
                 searchAutoComplete.setHintTextColor(hintColor);
@@ -239,24 +242,25 @@ public class ActionbarManager {
     }
     
     private void styleActionBar(ActionBarDrawerToggle mDrawerToggle) {
+        String currentAppTheme = configPreferences.getAppTheme();
+        
         MaterialToolbar toolbar = mainActivity.findViewById(R.id.toolbar);
-        // TODO [merge] : get actionbar color based on dark/light theme
-        toolbar.setBackgroundColor(appConfig.actionbarBackgroundColor);
+        toolbar.setBackgroundColor(appConfig.getActionbarBackgroundColor(currentAppTheme));
         
         // Toggle Button
         if (mDrawerToggle != null) {
-            mDrawerToggle.getDrawerArrowDrawable().setColor(appConfig.actionbarForegroundColor);
+            mDrawerToggle.getDrawerArrowDrawable().setColor(appConfig.getActionbarForegroundColor(currentAppTheme));
         }
         // Search view button foreground color
         ImageView searchIcon = searchView.findViewById(androidx.appcompat.R.id.search_button);
         if (searchIcon != null) {
-            searchIcon.setColorFilter(appConfig.actionbarForegroundColor);
+            searchIcon.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme));
         }
         
         //Search view close button foreground color
         ImageView closeButtonImage = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
         if (closeButtonImage != null) {
-            closeButtonImage.setColorFilter(appConfig.actionbarForegroundColor);
+            closeButtonImage.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme));
         }
     }
     
