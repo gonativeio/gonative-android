@@ -25,7 +25,7 @@ function showHelp {
 
 }
 
-if [[ $# -ne 3 ]]; then
+if [[ $# -lt 2 ]]; then
     showHelp
 fi
 
