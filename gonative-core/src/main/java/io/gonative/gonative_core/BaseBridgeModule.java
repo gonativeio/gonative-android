@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
@@ -86,4 +88,8 @@ public class BaseBridgeModule implements BridgeModule{
         return null;
     }
     
+    @Override
+    public <T extends Activity & GoNativeActivity> WebResourceResponse interceptHtml(T activity, WebResourceRequest request) {
+        return null;
+    }
 }

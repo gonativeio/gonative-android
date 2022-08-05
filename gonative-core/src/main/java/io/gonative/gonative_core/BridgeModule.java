@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
@@ -36,4 +38,5 @@ public interface BridgeModule {
     boolean pauseWebViewOnActivityPause();
     <T extends Activity & GoNativeActivity> void onSendInstallationInfo(T activity, Map info, String currentUrl);
     Map<String, Object> getAnalyticsProviderInfo();
+    <T extends Activity & GoNativeActivity> WebResourceResponse interceptHtml(T activity, WebResourceRequest request);
 }

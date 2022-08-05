@@ -96,6 +96,12 @@ public class GoNativeWebviewClient extends WebViewClient{
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+
+        WebResourceResponse wr = ((GoNativeApplication) context.getApplicationContext()).mBridge.interceptHtml((MainActivity) context, request);
+        if (wr != null) {
+            return wr;
+        }
+
         String method = request.getMethod();
         if (method == null || !method.equalsIgnoreCase("GET")) return null;
 
