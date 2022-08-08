@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private Handler handler = new Handler();
     private ActionbarManager actionbarManager;
     private Menu mOptionsMenu;
+    private boolean isSplashShown = false;
 
     private Runnable statusChecker = new Runnable() {
         @Override
@@ -217,8 +218,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
             boolean isFromRecents = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
             boolean noSplash = getIntent().getBooleanExtra("noSplash", false);
 
-            if (!noSplash && isFromLauncher && !isFromRecents) {
+            if (savedInstanceState != null) {
+                isSplashShown = savedInstanceState.getBoolean("isSplashShown", isSplashShown);
+            }
+            if (!noSplash && isFromLauncher && !isFromRecents && !isSplashShown) {
                 showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
+                isSplashShown = true;
             }
 
             // html5 app cache (manifest)
@@ -673,6 +678,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     protected void onSaveInstanceState (Bundle outState) {
         outState.putString("url", mWebview.getUrl());
         outState.putInt("urlLevel", urlLevel);
+        outState.putBoolean("isSplashShown", isSplashShown);
         super.onSaveInstanceState(outState);
     }
 
