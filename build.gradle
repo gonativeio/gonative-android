@@ -22,7 +22,15 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
         jcenter()
         maven { url("$rootDir/maven") }
+    }
+
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            substitute module("io.gonative.android:library") with module("com.github.gonativeio:gonative-android-library:1.1.1")
+            substitute project(":gonative-core") with module("com.github.gonativeio:gonative-android-core:1.2.5")
+        }
     }
 }
