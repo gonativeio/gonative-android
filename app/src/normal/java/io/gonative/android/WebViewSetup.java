@@ -113,9 +113,7 @@ public class WebViewSetup {
         }
 
         webSettings.setDomStorageEnabled(true);
-        File cachePath = new File(context.getCacheDir(), MainActivity.webviewCacheSubdir);
-        webSettings.setAppCachePath(cachePath.getAbsolutePath());
-        webSettings.setAppCacheEnabled(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setDatabaseEnabled(true);
 
         webSettings.setSaveFormData(false);

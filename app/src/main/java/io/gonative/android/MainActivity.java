@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         ShakeDetector.Listener,
         ShakeDialogFragment.ShakeDialogListener {
     public static final String BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED = "io.gonative.android.MainActivity.Extra.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED";
-    public static final String webviewCacheSubdir = "webviewAppCache";
     private static final String webviewDatabaseSubdir = "webviewDatabase";
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
@@ -226,11 +225,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 isSplashShown = true;
             }
 
-            // html5 app cache (manifest)
-            File cachePath = new File(getCacheDir(), webviewCacheSubdir);
-            if (!cachePath.mkdirs()) {
-                Log.v(TAG, "cachePath " + cachePath.toString() + " exists");
-            }
             File databasePath = new File(getCacheDir(), webviewDatabaseSubdir);
             if (databasePath.mkdirs()) {
                 Log.v(TAG, "databasePath " + databasePath.toString() + " exists");
