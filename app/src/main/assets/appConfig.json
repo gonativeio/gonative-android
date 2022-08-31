@@ -123,6 +123,10 @@
           "internal": false
         },
         {
+          "regex": "https?://hublohelp\\.zendesk\\.com/.*",
+          "internal": false
+        },
+        {
           "regex": ".*",
           "internal": true
         }
