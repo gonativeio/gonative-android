@@ -370,12 +370,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         if (!appConfig.showLogoInSideBar && !appConfig.showAppNameInSideBar) {
-            findViewById(R.id.header_layout).setVisibility(View.GONE);
+            RelativeLayout headerLayout = findViewById(R.id.header_layout);
+            if (headerLayout != null) {
+                headerLayout.setVisibility(View.GONE);
+            }
         }
 
         if (!appConfig.showLogoInSideBar) {
             ImageView appIcon = findViewById(R.id.app_logo);
-            appIcon.setVisibility(View.GONE);
+            if (appIcon != null) {
+                appIcon.setVisibility(View.GONE);
+            }
         }
         TextView appName = findViewById(R.id.app_name);
         if (appName != null) {

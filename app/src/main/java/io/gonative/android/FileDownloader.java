@@ -231,6 +231,8 @@ public class FileDownloader implements DownloadListener {
                 if (responseCode < 400) {
                     
                     // guess file name and extension
+                    if (connection.getHeaderField("Content-Type") != null)
+                        this.mimetype = connection.getHeaderField("Content-Type");
                     String guessedName = LeanUtils.guessFileName(url.toString(),
                             connection.getHeaderField("Content-Disposition"),
                             this.mimetype);
@@ -265,7 +267,7 @@ public class FileDownloader implements DownloadListener {
                         handler.post(this::startDownload);
  
                     } else {
-                        handler.post(() -> openSafIntent(fileName, mimetype));
+                        handler.post(() -> openStorageAccessFrameworkIntent(fileName, mimetype, extension));
                     }
                 } else {
                     Log.d(TAG, "initializeDownload: Failed to connect to url. Response code: " + responseCode);
@@ -382,12 +384,12 @@ public class FileDownloader implements DownloadListener {
         }
     }
     
-    private void openSafIntent(String fileName, String mimetype) {
+    private void openStorageAccessFrameworkIntent(String fileName, String mimetype, String extension) {
         // Let user pick/create the file
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimetype);
-        intent.putExtra(Intent.EXTRA_TITLE, fileName);
+        intent.putExtra(Intent.EXTRA_TITLE, fileName + "." + extension);
         
         directorySelectorActivityLauncher.launch(intent);
     }
