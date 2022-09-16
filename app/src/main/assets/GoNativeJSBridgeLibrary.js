@@ -88,6 +88,9 @@ gonative.tabNavigation = {
     selectTab: function (tabIndex){
         addCommand("gonative://tabs/select/" + tabIndex);
     },
+    deselect: function (){
+        addCommand("gonative://tabs/deselect");
+    },
     setTabs: function (tabsObject){
         var params = {tabs: tabsObject};
         addCommand("gonative://tabs/setTabs", params);
