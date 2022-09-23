@@ -6,6 +6,7 @@ apply plugin: 'kotlin-android'
 
 ext {
     fbAppId = ""
+    fbClientToken = ""
     onesignalAppId = ""
     adMobAppId = ""
 }
@@ -13,8 +14,13 @@ ext {
 task parseAppConfig {
     def jsonFile = file('src/main/assets/appConfig.json')
     def parsedJson = new JsonSlurper().parseText(jsonFile.text)
-    if (parsedJson.services.facebook && parsedJson.services.facebook.appId) {
-        fbAppId = parsedJson.services.facebook.appId
+    if (parsedJson.services.facebook) {
+        if (parsedJson.services.facebook.appId) {
+            fbAppId = parsedJson.services.facebook.appId
+        }
+        if (parsedJson.services.facebook.clientToken) {
+            fbClientToken = parsedJson.services.facebook.clientToken
+        }
     }
     if (parsedJson.services.socialLogin && parsedJson.services.socialLogin.facebookLogin && parsedJson.services.socialLogin.facebookLogin.appId) {
         fbAppId = parsedJson.services.socialLogin.facebookLogin.appId
@@ -43,7 +49,8 @@ android {
                                 onesignal_app_id: onesignalAppId,
                                 onesignal_google_project_number: "",
                                 admob_app_id: adMobAppId,
-                                facebook_app_id: fbAppId ]
+                                facebook_app_id: fbAppId,
+                                facebook_client_token: fbClientToken ]
     }
 
     compileOptions {
