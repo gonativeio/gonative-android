@@ -25,5 +25,6 @@ allprojects {
         maven { url 'https://jitpack.io' }
         jcenter()
         maven { url("$rootDir/maven") }
+        //[moxo-plugin: enabled by builder]
     }
 }
