@@ -22,8 +22,13 @@ task parseAppConfig {
             fbClientToken = parsedJson.services.facebook.clientToken
         }
     }
-    if (parsedJson.services.socialLogin && parsedJson.services.socialLogin.facebookLogin && parsedJson.services.socialLogin.facebookLogin.appId) {
-        fbAppId = parsedJson.services.socialLogin.facebookLogin.appId
+    if (parsedJson.services.socialLogin && parsedJson.services.socialLogin.facebookLogin) {
+        if (parsedJson.services.socialLogin.facebookLogin.appId) {
+            fbAppId = parsedJson.services.socialLogin.facebookLogin.appId
+        }
+        if (parsedJson.services.socialLogin.facebookLogin.clientToken) {
+            fbClientToken = parsedJson.services.socialLogin.facebookLogin.clientToken
+        }
     }
     if (parsedJson.services.oneSignal && parsedJson.services.oneSignal.applicationId) {
         onesignalAppId = parsedJson.services.oneSignal.applicationId
