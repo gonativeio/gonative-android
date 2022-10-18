@@ -9,6 +9,7 @@ ext {
     fbClientToken = ""
     onesignalAppId = ""
     adMobAppId = ""
+    googleServiceInvalid = "false"
 }
 
 task parseAppConfig {
@@ -37,7 +38,22 @@ task parseAppConfig {
         adMobAppId = parsedJson.services.admob.admobAndroid.applicationId
     }
 }
+
+task checkGoogleService {
+    plugins.withId("com.google.gms.google-services") {
+        def googleServiceJsonFile = file('google-services.json')
+        if (project.file(googleServiceJsonFile).exists()) {
+            if (googleServiceJsonFile.text.isEmpty()) {
+                googleServiceInvalid = "true"
+            }
+        } else {
+            googleServiceInvalid = "true"
+        }
+    }
+}
+
 build.dependsOn parseAppConfig
+build.dependsOn checkGoogleService
 
 android {
     compileSdkVersion 33
@@ -95,6 +111,9 @@ android {
             matchingFallbacks = ['release']
             signingConfig signingConfigs.upload
         }
+        buildTypes.each {
+            it.buildConfigField 'boolean', 'GOOGLE_SERVICE_INVALID', googleServiceInvalid
+        }
     }
 
     flavorDimensions "webview"
@@ -113,7 +132,7 @@ dependencies {
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
     implementation 'com.squareup:seismic:1.0.2'
     implementation 'androidx.webkit:webkit:1.5.0'
-    implementation 'com.github.gonativeio:gonative-android-library:1.1.6'
+    implementation 'com.github.gonativeio:gonative-android-library:1.1.7'
     implementation 'com.github.gonativeio:gonative-icons:1.1.1'
     implementation 'com.github.gonativeio:gonative-android-core:1.2.6'
     /**** end all apps ****/

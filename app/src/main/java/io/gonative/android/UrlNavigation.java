@@ -508,17 +508,7 @@ public class UrlNavigation {
         if ("statusbar".equals(uri.getHost())) {
             if ("/set".equals(uri.getPath()) && jsonData != null) {
                 String style = jsonData.optString("style");
-                if (!style.isEmpty() && Build.VERSION.SDK_INT >= 23) {
-                    if (style.equals("light")) {
-                        // light icons and text
-                        View decor = this.mainActivity.getWindow().getDecorView();
-                        decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-                    } else if (style.equals("dark")) {
-                        // dark icons and text
-                        View decor = this.mainActivity.getWindow().getDecorView();
-                        decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-                    }
-                }
+                this.mainActivity.updateStatusBarStyle(style);
 
                 String color = jsonData.optString("color");
                 Integer parsedColor = LeanUtils.parseColor(color);
@@ -527,16 +517,7 @@ public class UrlNavigation {
                 }
 
                 boolean overlay = jsonData.optBoolean("overlay");
-                View decor = this.mainActivity.getWindow().getDecorView();
-                if (overlay) {
-                    decor.setSystemUiVisibility(decor.getSystemUiVisibility() |
-                            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-                } else {
-                    decor.setSystemUiVisibility(decor.getSystemUiVisibility() &
-                            ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN &
-                            ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-                }
+                this.mainActivity.updateStatusBarOverlay(overlay);
             }
             return;
         }

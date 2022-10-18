@@ -52,9 +52,6 @@ public class Installation {
         if (publicKey == null) publicKey = "";
         info.put("publicKey", publicKey);
 
-        String deviceRegKey = AppConfig.getInstance(context).deviceRegKey;
-        if (deviceRegKey != null) info.put("deviceRegKey", deviceRegKey);
-
         String packageName = context.getPackageName();
         info.put("appId", packageName);
 

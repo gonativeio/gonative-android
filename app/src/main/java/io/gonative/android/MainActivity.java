@@ -457,6 +457,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
             showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
         }
 
+        updateStatusBarOverlay(appConfig.enableOverlayInStatusBar);
+        updateStatusBarStyle(appConfig.statusBarStyle);
+        
         // style sidebar
         if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
             mDrawerView.setBackgroundColor(AppConfig.getInstance(this).getSidebarBackgroundColor(currentAppTheme));
@@ -513,6 +516,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
 
         setupAppTheme(null);
+        validateGoogleService();
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -1577,37 +1581,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     if (entry.containsKey("title")) {
                         title = (String)entry.get("title");
                     }
-
-                    if (title == null && entry.containsKey("urlRegex")) {
-                        Pattern urlRegex = (Pattern)entry.get("urlRegex");
-                        Matcher match = urlRegex.matcher(url);
-                        if (match.find() && match.groupCount() >= 1) {
-                            String temp = match.group(1);
-                            // dashes to spaces, capitalize
-                            temp = temp.replace("-", " ");
-                            temp = LeanUtils.capitalizeWords(temp);
-
-                            title = temp;
-                        }
-
-                        // remove words from end of title
-                        if (title != null && entry.containsKey("urlChompWords") &&
-                                (Integer)entry.get("urlChompWords") > 0) {
-                            int chompWords = (Integer)entry.get("urlChompWords");
-                            String[] words = title.split("\\s+");
-                            StringBuilder sb = new StringBuilder();
-                            for (int i = 0; i < words.length - chompWords - 1; i++){
-                                sb.append(words[i]);
-                                sb.append(" ");
-                            }
-                            if (words.length > chompWords) {
-                                sb.append(words[words.length - chompWords - 1]);
-                            }
-                            title = sb.toString();
-                        }
-                    }
-
-                    break;
                 }
             }
         }
@@ -2166,6 +2139,45 @@ public class MainActivity extends AppCompatActivity implements Observer,
                         settings,
                         WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY
                 );
+            }
+        }
+    }
+
+    private void validateGoogleService() {
+        try {
+            if (BuildConfig.GOOGLE_SERVICE_INVALID) {
+                Toast.makeText(this, R.string.google_service_required, Toast.LENGTH_LONG).show();
+                Log.w(TAG, "validateGoogleService: " + R.string.google_service_required);
+            }
+        } catch (NullPointerException ex) {
+            Log.w(TAG, "validateGoogleService: " + ex.getMessage());
+        }
+    }
+
+
+    public void updateStatusBarOverlay(boolean isOverlayEnabled) {
+        View decor = getWindow().getDecorView();
+        if (isOverlayEnabled) {
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility() |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        } else {
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility() &
+                    ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN &
+                    ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        }
+    }
+
+    public void updateStatusBarStyle(String statusBarStyle) {
+        if (statusBarStyle != null && !statusBarStyle.isEmpty() && Build.VERSION.SDK_INT >= 23) {
+            if (statusBarStyle.equals("light")) {
+                // light icons and text
+                View decor = getWindow().getDecorView();
+                decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            } else if (statusBarStyle.equals("dark")) {
+                // dark icons and text
+                View decor = getWindow().getDecorView();
+                decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
             }
         }
     }
