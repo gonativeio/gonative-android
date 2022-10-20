@@ -107,3 +107,10 @@ optipng $BASEDIR/app/src/main/res/drawable-hdpi/ic_notification.png 2>&1
 optipng $BASEDIR/app/src/main/res/drawable-xhdpi/ic_notification.png 2>&1
 optipng $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_notification.png 2>&1
 optipng $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_notification.png 2>&1
+
+# intercom notification icon
+cp $BASEDIR/app/src/main/res/drawable-mdpi/ic_notification.png $BASEDIR/app/src/main/res/drawable-mdpi/intercom_push_icon.png
+cp $BASEDIR/app/src/main/res/drawable-hdpi/ic_notification.png $BASEDIR/app/src/main/res/drawable-hdpi/intercom_push_icon.png
+cp $BASEDIR/app/src/main/res/drawable-xhdpi/ic_notification.png $BASEDIR/app/src/main/res/drawable-xhdpi/intercom_push_icon.png
+cp $BASEDIR/app/src/main/res/drawable-xxhdpi/ic_notification.png $BASEDIR/app/src/main/res/drawable-xxhdpi/intercom_push_icon.png
+cp $BASEDIR/app/src/main/res/drawable-xxxhdpi/ic_notification.png $BASEDIR/app/src/main/res/drawable-xxxhdpi/intercom_push_icon.png

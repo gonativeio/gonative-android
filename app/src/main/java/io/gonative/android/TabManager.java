@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.util.Log;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -36,6 +35,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
     private String currentMenuId;
     private String currentUrl;
     private JSONArray tabs;
+    private Map<String, TabMenu> tabMenus;
     private final int maxTabs = 5;
     private int tabbar_icon_size;
     private int tabbar_icon_padding;
@@ -78,6 +78,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction() != null && intent.getAction().equals(AppConfig.PROCESSED_TAB_NAVIGATION_MESSAGE)) {
                     currentMenuId = null;
+                    initializeTabMenus();
                     checkTabs(currentUrl);
                 }
             }
@@ -85,6 +86,31 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         LocalBroadcastManager.getInstance(this.mainActivity)
                 .registerReceiver(broadcastReceiver,
                         new IntentFilter(AppConfig.PROCESSED_TAB_NAVIGATION_MESSAGE));
+
+        initializeTabMenus();
+    }
+
+    private void initializeTabMenus(){
+        ArrayList<Pattern> regexes = appConfig.tabMenuRegexes;
+        ArrayList<String> ids = appConfig.tabMenuIDs;
+
+        if (regexes == null || ids == null) {
+            return;
+        }
+
+        tabMenus = new HashMap<>();
+        Map<String, Pattern> tabSelectionConfig = new HashMap<>();
+
+        for (int i = 0; i < ids.size(); i++) {
+            tabSelectionConfig.put(ids.get(i), regexes.get(i));
+        }
+
+        for (Map.Entry<String, JSONArray> tabMenu : appConfig.tabMenus.entrySet()) {
+            TabMenu item = new TabMenu();
+            item.tabs = tabMenu.getValue();
+            item.urlRegex = tabSelectionConfig.get(tabMenu.getKey());
+            tabMenus.put(tabMenu.getKey(), item);
+        }
     }
 
     public void checkTabs(String url) {
@@ -275,13 +301,19 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         return false;
     }
 
-    public void setTabsWithJson(JSONObject tabsJson) {
+    public void setTabsWithJson(JSONObject tabsJson, int tabMenuId) {
         if(tabsJson == null) return;
 
         this.useJavascript = true;
 
         JSONArray tabs = tabsJson.optJSONArray("items");
         if (tabs != null) setTabs(tabs);
+
+        if(tabMenuId != -1){
+            TabMenu tabMenu = tabMenus.get(Integer.toString(tabMenuId));
+            if(tabMenu == null || tabs != null) return;
+            setTabs(tabMenu.tabs);
+        }
 
         Object enabled = tabsJson.opt("enabled");
         if (enabled instanceof Boolean) {
@@ -315,5 +347,10 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             }
         }
         return true;
+    }
+
+    private class TabMenu {
+        Pattern urlRegex;
+        JSONArray tabs;
     }
 }

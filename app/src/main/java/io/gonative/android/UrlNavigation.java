@@ -465,6 +465,7 @@ public class UrlNavigation {
                 mainActivity.deselectTabs();
             } else if ("/setTabs".equals(uri.getPath()) && jsonData != null) {
                 JSONObject tabsConfig = jsonData.optJSONObject("tabs");
+                int tabMenuId = tabsConfig.optInt("tabMenu", -1);
                 if(tabsConfig == null){
                     try {
                         tabsConfig = new JSONObject(jsonData.optString("tabs"));
@@ -473,7 +474,7 @@ public class UrlNavigation {
                         return;
                     }
                 }
-                tabManager.setTabsWithJson(tabsConfig);
+                tabManager.setTabsWithJson(tabsConfig, tabMenuId);
             }
 
             return;
