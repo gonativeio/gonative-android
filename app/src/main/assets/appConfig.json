@@ -23,7 +23,7 @@
           "items": [
             {
               "subLinks": [],
-              "icon": "fas fa-home",
+              "icon": "custom custom-gonative-icon",
               "label": "Home",
               "url": "https://gonative.io"
             },
