@@ -53,19 +53,24 @@
             android:label="@string/app_name"
             android:exported="true"
             android:configChanges="orientation|screenSize"
-            android:launchMode="singleTask"
             tools:node="merge">
+        </activity>
+
+        <activity
+            android:name=".AppLinksActivity"
+            android:launchMode="singleTask"
+            android:exported="true">
             <!--additional intent filters-->
 
             <!--example: -->
             <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.VIEW"></action>-->
-                <!--<category android:name="android.intent.category.DEFAULT"></category>-->
-                <!--<category android:name="android.intent.category.BROWSABLE"></category>-->
-                <!--<data android:scheme="http"></data>-->
-                <!--<data android:scheme="https"></data>-->
-                <!--<data android:host="gonative.io"></data>-->
-                <!--<data android:pathPrefix="/"></data>-->
+            <!--<action android:name="android.intent.action.VIEW"></action>-->
+            <!--<category android:name="android.intent.category.DEFAULT"></category>-->
+            <!--<category android:name="android.intent.category.BROWSABLE"></category>-->
+            <!--<data android:scheme="http"></data>-->
+            <!--<data android:scheme="https"></data>-->
+            <!--<data android:host="gonative.io"></data>-->
+            <!--<data android:pathPrefix="/"></data>-->
             <!--</intent-filter>-->
         </activity>
 
