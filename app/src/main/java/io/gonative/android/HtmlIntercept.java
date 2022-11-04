@@ -46,9 +46,6 @@ public class HtmlIntercept {
     }
 
     public WebResourceResponse interceptHtml(GoNativeWebviewInterface view, String url, String referer) {
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-            return null;
-        }
 
         AppConfig appConfig = AppConfig.getInstance(context);
         if (!appConfig.interceptHtml && (appConfig.customHeaders == null || appConfig.customHeaders.isEmpty())) return null;
@@ -167,6 +164,16 @@ public class HtmlIntercept {
                         builder.append(appConfig.androidCustomCSS);
                     builder.append("</style>");
                 }
+
+                if (appConfig.customJS != null || appConfig.androidCustomJS != null) {
+                    builder.append("<script>");
+                    if(appConfig.customJS != null)
+                        builder.append(appConfig.customJS).append(" ");
+                    if(appConfig.androidCustomJS != null)
+                        builder.append(appConfig.androidCustomJS);
+                    builder.append("</script>");
+                }
+
                 if (appConfig.stringViewport != null) {
                     builder.append("<meta name=\"viewport\" content=\"");
                     builder.append(TextUtils.htmlEncode(appConfig.stringViewport));

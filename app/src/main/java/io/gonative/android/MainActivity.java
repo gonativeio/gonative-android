@@ -72,6 +72,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.net.CookieHandler;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -931,9 +932,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.webviewOverlay.setAlpha(0.0f);
         this.mProgress.setVisibility(View.INVISIBLE);
 
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-            injectCSSviaJavascript();
-        }
+        injectCSSviaJavascript();
+        injectJSviaJavascript();
     }
 
     public void showWebview() {
@@ -949,9 +949,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             return;
         }
 
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-            injectCSSviaJavascript();
-        }
+        injectCSSviaJavascript();
+        injectJSviaJavascript();
 
         webviewIsHidden = false;
 
@@ -974,7 +973,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 builder.append(appConfig.customCSS).append(" ");
             if(appConfig.androidCustomCSS != null)
                 builder.append(appConfig.androidCustomCSS);
-            String encoded = Base64.encodeToString(builder.toString().getBytes("utf-8"), Base64.NO_WRAP);
+            String encoded = Base64.encodeToString(builder.toString().getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP);
             String js = "(function() {" +
                     "var parent = document.getElementsByTagName('head').item(0);" +
                     "var style = document.createElement('style');" +
@@ -986,6 +985,32 @@ public class MainActivity extends AppCompatActivity implements Observer,
             runJavascript(js);
         } catch (Exception e) {
             Log.e(TAG, "Error injecting customCSS via javascript", e);
+        }
+    }
+
+    private void injectJSviaJavascript() {
+        AppConfig appConfig = AppConfig.getInstance(this);
+        if ((appConfig.customJS == null || appConfig.customJS.isEmpty())
+                && (appConfig.androidCustomJS == null || appConfig.androidCustomJS.isEmpty())) return;
+
+        try {
+            StringBuilder builder = new StringBuilder();
+            if(appConfig.customJS != null)
+                builder.append(appConfig.customJS).append(" ");
+            if(appConfig.androidCustomJS != null)
+                builder.append(appConfig.androidCustomJS);
+
+            String encoded = Base64.encodeToString(builder.toString().getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP);
+            String js = "javascript:(function() {" +
+                    "var parent = document.getElementsByTagName('head').item(0);" +
+                    "var script = document.createElement('script');" +
+                    "script.type = 'text/javascript';" +
+                    "script.innerHTML = window.atob('" + encoded + "');" +
+                    "parent.appendChild(script)" +
+                    "})()";
+            runJavascript(js);
+        } catch (Exception e) {
+            Log.e(TAG, "Error injecting customJS via javascript", e);
         }
     }
 
