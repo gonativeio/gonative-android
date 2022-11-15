@@ -52,13 +52,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         sidebar_expand_indicator_size = mainActivity.getResources().getInteger(R.integer.sidebar_expand_indicator_size);
         this.expandableListView = expandableListView;
         menuItems = null;
-        
-        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
-        String currentAppTheme = configPreferences.getAppTheme();
-        this.highlightColor = AppConfig.getInstance(mainActivity).getSidebarHighlightColor(currentAppTheme);
-        if (this.highlightColor == null) {
-            this.highlightColor = activity.getResources().getColor(R.color.sideBarHighlight);
-        }
+
+        this.highlightColor = activity.getResources().getColor(R.color.sidebarHighlight);
 
         // broadcast messages
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -221,20 +216,16 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
 
     @Override
     public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
-        String currentAppTheme = configPreferences.getAppTheme();
-        
         if (convertView == null) {
             LayoutInflater inflater = mainActivity.getLayoutInflater();
 
             convertView = inflater.inflate(groupsHaveIcons ?
                     R.layout.menu_group_icon : R.layout.menu_group_noicon, null);
 
-            // style it
-            if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                TextView title = convertView.findViewById(R.id.menu_item_title);
-                title.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme));
-            }
+
+            TextView title = convertView.findViewById(R.id.menu_item_title);
+            title.setTextColor(mainActivity.getResources().getColor(R.color.sidebarForeground));
+
         }
         RelativeLayout menuItem = convertView.findViewById(R.id.menu_item);
         GradientDrawable shape = getHighlightDrawable();
@@ -254,14 +245,14 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             } else {
                 iconName = "fas fa-angle-down";
             }
-            
+
             if (groupPosition == this.selectedIndex) {
                 color = this.highlightColor;
-            } else if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                color = AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme);
+            } else {
+                color = mainActivity.getResources().getColor(R.color.sidebarForeground);
             }
             indicator.setImageDrawable(new Icon(mainActivity, iconName, sidebar_expand_indicator_size, color).getDrawable());
-            
+
             indicator.setVisibility(View.VISIBLE);
         } else {
             indicator.setVisibility(View.GONE);
@@ -273,7 +264,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         if (this.selectedIndex == groupPosition) {
             title.setTextColor(this.highlightColor);
         } else {
-            title.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme));
+            title.setTextColor(mainActivity.getResources().getColor(R.color.sidebarForeground));
         }
 
         // set icon
@@ -284,10 +275,10 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             if (groupPosition == this.selectedIndex) {
                 color = this.highlightColor;
             } else {
-                color = AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme);
+                color = mainActivity.getResources().getColor(R.color.sidebarForeground);
             }
             Drawable iconDrawable = new Icon(mainActivity, icon, sidebar_icon_size, color).getDrawable();
-    
+
             imageView.setImageDrawable(iconDrawable);
             imageView.setVisibility(View.VISIBLE);
         } else if (imageView != null) {
@@ -300,9 +291,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
     @Override
     public View getChildView(int groupPosition, int childPosition, boolean isLastChild,
                              View convertView, ViewGroup parent) {
-        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
-        String currentAppTheme = configPreferences.getAppTheme();
-        
+
         if (convertView == null) {
             LayoutInflater inflater = mainActivity.getLayoutInflater();
 
@@ -312,10 +301,8 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 convertView = inflater.inflate(R.layout.menu_child_noicon, parent, false);
 
             // style it
-            if (AppConfig.getInstance(mainActivity).sidebarForegroundColor != null) {
-                TextView title = convertView.findViewById(R.id.menu_item_title);
-                title.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme));
-            }
+            TextView title = convertView.findViewById(R.id.menu_item_title);
+            title.setTextColor(mainActivity.getResources().getColor(R.color.sidebarForeground));
         }
 
         RelativeLayout menuItem = convertView.findViewById(R.id.menu_item);
@@ -332,7 +319,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
         if (this.selectedIndex == (groupPosition + childPosition) + 1) {
             title.setTextColor(this.highlightColor);
         } else {
-            title.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme));
+            title.setTextColor(mainActivity.getResources().getColor(R.color.sidebarForeground));
         }
 
         // set icon
@@ -343,7 +330,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             if (this.selectedIndex == (groupPosition + childPosition) + 1) {
                 color = this.highlightColor;
             } else {
-                color = AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme);
+                color = mainActivity.getResources().getColor(R.color.sidebarForeground);
             }
             Drawable iconDrawable = new Icon(mainActivity, icon, sidebar_icon_size, color).getDrawable();
 

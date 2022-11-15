@@ -36,7 +36,10 @@ public class ActionbarManager {
     private final RelativeLayout titleContainer;
     private final SearchView searchView;
     private boolean isOnSearchMode = false;
-    
+
+    private int colorForeground;
+    private int colorBackground;
+
     public ActionbarManager(MainActivity mainActivity, ActionManager actionManager, boolean isRoot) {
         this.mainActivity = mainActivity;
         this.actionManager = actionManager;
@@ -47,6 +50,9 @@ public class ActionbarManager {
         header = (LinearLayout) mainActivity.getLayoutInflater().inflate(R.layout.actionbar_title, null);
         titleContainer = header.findViewById(R.id.title_container);
         searchView = header.findViewById(R.id.search_view);
+
+        colorForeground = mainActivity.getResources().getColor(R.color.titleTextColor);
+        colorBackground = mainActivity.getResources().getColor(R.color.colorPrimary);
     }
     
     public void setupActionBar(GoNativeDrawerLayout mDrawerLayout, ActionBarDrawerToggle mDrawerToggle) {
@@ -73,9 +79,8 @@ public class ActionbarManager {
             // search item in action bar
             SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
             if (searchAutoComplete != null) {
-                String currentAppTheme = configPreferences.getAppTheme();
-                searchAutoComplete.setTextColor(appConfig.getActionbarForegroundColor(currentAppTheme));
-                int hintColor = appConfig.getActionbarForegroundColor(currentAppTheme);
+                searchAutoComplete.setTextColor(colorForeground);
+                int hintColor = colorForeground;
                 hintColor = Color.argb(192, Color.red(hintColor), Color.green(hintColor),
                         Color.blue(hintColor));
                 searchAutoComplete.setHintTextColor(hintColor);
@@ -242,25 +247,23 @@ public class ActionbarManager {
     }
     
     private void styleActionBar(ActionBarDrawerToggle mDrawerToggle) {
-        String currentAppTheme = configPreferences.getAppTheme();
-        
         MaterialToolbar toolbar = mainActivity.findViewById(R.id.toolbar);
-        toolbar.setBackgroundColor(appConfig.getActionbarBackgroundColor(currentAppTheme));
-        
+        toolbar.setBackgroundColor(colorBackground);
+
         // Toggle Button
         if (mDrawerToggle != null) {
-            mDrawerToggle.getDrawerArrowDrawable().setColor(appConfig.getActionbarForegroundColor(currentAppTheme));
+            mDrawerToggle.getDrawerArrowDrawable().setColor(colorForeground);
         }
         // Search view button foreground color
         ImageView searchIcon = searchView.findViewById(androidx.appcompat.R.id.search_button);
         if (searchIcon != null) {
-            searchIcon.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme));
+            searchIcon.setColorFilter(colorForeground);
         }
         
         //Search view close button foreground color
         ImageView closeButtonImage = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
         if (closeButtonImage != null) {
-            closeButtonImage.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme));
+            closeButtonImage.setColorFilter(colorForeground);
         }
     }
     
