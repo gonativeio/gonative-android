@@ -132,7 +132,7 @@ dependencies {
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
     implementation 'com.squareup:seismic:1.0.2'
     implementation 'androidx.webkit:webkit:1.5.0'
-    implementation 'com.github.gonativeio:gonative-android-library:1.1.9'
+    implementation 'com.github.gonativeio:gonative-android-library:1.2.0'
     implementation 'com.github.gonativeio:gonative-icons:1.2.0'
     implementation 'com.github.gonativeio:gonative-android-core:1.2.6'
     /**** end all apps ****/

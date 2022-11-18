@@ -91,8 +91,8 @@ class GoNativeModules {
         }
     }
 
-    void generatePackagesFile(File outputDir, String generatedFileName, String generatedFileContentsTemplate) {
-        ArrayList<HashMap<String, String>>[] packages = this.modulesMetadata
+    void generatePackagesFile(File outputDir, String generatedFileName, GString generatedFileContentsTemplate) {
+        def packages = this.modulesMetadata
         String packageName = this.packageName
 
         String packageImports = ""
@@ -106,7 +106,7 @@ class GoNativeModules {
             packageClassInstances = packages.collect { "new ${it.classInstance}()" }.join(",\n      ")
         }
 
-        String generatedFileContents = generatedFileContentsTemplate
+        String generatedFileContents = generatedFileContentsTemplate.toString()
                 .replace("{{ packageImports }}", packageImports)
                 .replace("{{ packageClassInstances }}", packageClassInstances)
 

@@ -6,8 +6,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ConsoleMessage;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsResult;
 import android.webkit.PermissionRequest;
@@ -242,5 +244,28 @@ class GoNativeWebChromeClient extends WebChromeClient {
     @Override
     public void onPermissionRequestCanceled(PermissionRequest request) {
         super.onPermissionRequestCanceled(request);
+    }
+
+    @Override
+    public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+        if (mainActivity.isWebLogsEnabled()) {
+            String tag = "GoNative WebView";
+            switch (consoleMessage.messageLevel()) {
+                case LOG:
+                    Log.i(tag, consoleMessage.message());
+                    break;
+                case DEBUG:
+                case TIP:
+                    Log.d(tag, consoleMessage.message());
+                    break;
+                case WARNING:
+                    Log.w(tag, consoleMessage.message());
+                    break;
+                case ERROR:
+                    Log.e(tag, consoleMessage.message());
+                    break;
+            }
+        }
+        return true;
     }
 }

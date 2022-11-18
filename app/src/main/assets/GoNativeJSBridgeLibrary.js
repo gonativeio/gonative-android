@@ -81,6 +81,9 @@ gonative.registration = {
 gonative.sidebar = {
     setItems: function (params){
         addCommand("gonative://sidebar/setItems", params);
+    },
+    getItems: function (params){
+        return addCommandCallback("gonative://sidebar/getItems", params);
     }
 };
 
@@ -118,6 +121,9 @@ gonative.open = {
 gonative.webview = {
     clearCache: function(){
         addCommand("gonative://webview/clearCache");
+    },
+    reload: function (){
+        addCommand("gonative://webview/reload");
     }
 };
 
@@ -230,6 +236,15 @@ gonative.clipboard = {
         return addCommandCallback("gonative://clipboard/get", params);
     }
 };
+
+gonative.weblogs = {
+    enable: function(){
+        addCommand("gonative://weblogs/enable");
+    },
+    disable: function(){
+        addCommand("gonative://weblogs/disable");
+    }
+}
 
 ///////////////////////////////
 ////     iOS Exclusive     ////

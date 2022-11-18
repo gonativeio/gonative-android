@@ -266,6 +266,9 @@ public class UrlNavigation {
             if ("/clearCache".equals(uri.getPath())) {
                 Log.d(TAG, "Clearing webview cache");
                 mainActivity.clearWebviewCache();
+            } else if ("/reload".equals(uri.getPath())) {
+                Log.d(TAG, "Reloading webview");
+                mainActivity.refreshPage();
             }
             return;
         }
@@ -425,6 +428,12 @@ public class UrlNavigation {
                     AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
                 }
                 this.mainActivity.setSidebarNavigationEnabled(enabled);
+            } else if("/getItems".equals(uri.getPath()) && jsonData != null && !jsonData.optString("callback").isEmpty()){
+                String callback = jsonData.optString("callback");
+                JSONObject menus = AppConfig.getInstance(this.mainActivity).getSidebarNavigation();
+                if(menus != null){
+                    mainActivity.runJavascript(LeanUtils.createJsForCallback(callback, menus));
+                }
             }
             return;
         }
@@ -585,6 +594,14 @@ public class UrlNavigation {
                 }
             }
             return;
+        }
+
+        if ("weblogs".equals(uri.getHost())) {
+            if ("/enable".equals(uri.getPath())) {
+                this.mainActivity.setWebLogsEnabled(true);
+            } else if ("/disable".equals(uri.getPath())) {
+                this.mainActivity.setWebLogsEnabled(false);
+            }
         }
     }
 
