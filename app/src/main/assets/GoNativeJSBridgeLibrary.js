@@ -223,8 +223,8 @@ gonative.deviceInfo = function(params){
 };
 
 gonative.internalExternal = {
-    set: function(rules){
-        addCommand("gonative://internalExternal/set", { rules });
+    set: function(params){
+        addCommand("gonative://internalExternal/set", params);
     }
 };
 
