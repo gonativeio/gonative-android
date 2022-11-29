@@ -2196,14 +2196,31 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     public void updateStatusBarStyle(String statusBarStyle) {
         if (statusBarStyle != null && !statusBarStyle.isEmpty() && Build.VERSION.SDK_INT >= 23) {
-            if (statusBarStyle.equals("light")) {
-                // light icons and text
-                View decor = getWindow().getDecorView();
-                decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-            } else if (statusBarStyle.equals("dark")) {
-                // dark icons and text
-                View decor = getWindow().getDecorView();
-                decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            switch (statusBarStyle) {
+                case "light": {
+                    // light icons and text
+                    View decor = getWindow().getDecorView();
+                    decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    break;
+                }
+                case "dark": {
+                    // dark icons and text
+                    View decor = getWindow().getDecorView();
+                    decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    break;
+                }
+                case "auto":
+                    int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                    if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) {
+                        View decor = getWindow().getDecorView();
+                        decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    } else if (nightModeFlags == Configuration.UI_MODE_NIGHT_NO) {
+                        View decor = getWindow().getDecorView();
+                        decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    } else {
+                        Log.e(TAG, "updateStatusBarStyle: Current mode is undefined");
+                    }
+                    break;
             }
         }
     }

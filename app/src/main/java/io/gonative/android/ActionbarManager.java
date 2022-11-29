@@ -1,6 +1,7 @@
 package io.gonative.android;
 
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -261,6 +262,11 @@ public class ActionbarManager {
         ImageView closeButtonImage = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
         if (closeButtonImage != null) {
             closeButtonImage.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme));
+        }
+
+        // Overflow menu icon color (vertical dot menu)
+        if (toolbar.getOverflowIcon() != null) {
+            toolbar.getOverflowIcon().setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme), PorterDuff.Mode.SRC_ATOP);
         }
     }
     
