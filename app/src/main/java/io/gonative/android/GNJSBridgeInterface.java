@@ -30,6 +30,9 @@ public class GNJSBridgeInterface {
                 @Override
                 public void run() {
                     if(message.isEmpty()) return;
+
+                    String currentUrl = GNJSBridgeInterface.this.mainActivity.getWebView().getUrl();
+                    urlNavigation.setCurrentWebviewUrl(currentUrl);
                     try {
                         JSONObject commandObject = new JSONObject(message);
                         urlNavigation.handleJSBridgeFunctions(commandObject);

@@ -178,7 +178,7 @@ public class UrlNavigation {
             }
         }
 
-        if (((GoNativeApplication) mainActivity.getApplication()).mBridge.shouldOverrideUrlLoading(mainActivity, uri, jsonData)) {
+        if (((GoNativeApplication) mainActivity.getApplication()).mBridge.shouldOverrideUrlLoading(mainActivity, uri, jsonData, currentWebviewUrl)) {
             return;
         }
 
