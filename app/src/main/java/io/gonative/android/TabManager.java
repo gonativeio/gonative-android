@@ -56,21 +56,12 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         this.bottomNavigationView = bottomNavigationView;
         this.bottomNavigationView.setOnTabSelectedListener(this);
         this.appConfig = AppConfig.getInstance(this.mainActivity);
-        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
-        String currentAppTheme = configPreferences.getAppTheme();
 
         this.bottomNavigationView.setTitleState(AHBottomNavigation.TitleState.ALWAYS_SHOW);
-        if (appConfig.tabBarBackgroundColor != null){
-            this.bottomNavigationView.setDefaultBackgroundColor(appConfig.getTabBarBackgroundColor(currentAppTheme));
-        }
-        if (appConfig.tabBarIndicatorColor != null) {
-            this.bottomNavigationView.setAccentColor(appConfig.getTabBarIndicatorColor(currentAppTheme));
-        } else {
-            this.bottomNavigationView.setAccentColor(mainActivity.getResources().getColor(R.color.tabBarIndicator));
-        }
-        if (appConfig.tabBarTextColor != null) {
-            this.bottomNavigationView.setInactiveColor(appConfig.getTabBarTextColor(currentAppTheme));
-        }
+        this.bottomNavigationView.setDefaultBackgroundColor(mainActivity.getResources().getColor(R.color.tabBarBackground));
+        this.bottomNavigationView.setAccentColor(mainActivity.getResources().getColor(R.color.tabBarIndicator));
+        this.bottomNavigationView.setInactiveColor(mainActivity.getResources().getColor(R.color.tabBarTextColor));
+
         this.bottomNavigationView.setTitleTextSizeInSp(12, 12);
 
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -172,9 +163,6 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         int selectedNumber = -1;
         bottomNavigationView.removeAllItems();
         if(tabs == null) return;
-
-        ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
-        String currentAppTheme = configPreferences.getAppTheme();
     
         for (int i = 0; i < tabs.length(); i++) {
             if(i > (maxTabs-1)){
@@ -199,7 +187,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
                 Log.e(TAG, "All tabs must have icons.");
             }
             
-            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, new Icon(mainActivity.getApplicationContext(), icon, tabbar_icon_size, appConfig.getTabBarTextColor(currentAppTheme)).getDrawable());
+            AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, new Icon(mainActivity.getApplicationContext(), icon, tabbar_icon_size, mainActivity.getResources().getColor(R.color.tabBarTextColor)).getDrawable());
             bottomNavigationView.addItem(navigationItem);
 
             if (item.optBoolean("selected")) {

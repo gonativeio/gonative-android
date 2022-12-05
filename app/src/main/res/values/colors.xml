@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- dark theme colors -->
-    <!-- IMPORTANT: do not update the values unless also updated in generate-theme.js -->
-    <color name="colorPrimary">#FFFFFF</color>
+    <color name="colorPrimary">#ffffff</color>
     <color name="colorPrimaryDark">#757575</color>
     <color name="titleTextColor">#000000</color>
+
     <color name="colorAccent">#009688</color>
-    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorBackground">#ffffff</color>
     <color name="drawerArrow">#000000</color>
 
+    <color name="sidebarForeground">#1e496e</color>
+    <color name="sidebarBackground">#ffffff</color>
     <color name="sidebarSeparatorColor">#30808080</color>
-    <color name="tabBarIndicator">#2F79FE</color>
-    <color name="sideBarHighlight">#1E496E</color>
+    <color name="sidebarHighlight">#1e496e</color>
 
-    <color name="swipe_nav_background">#FAFAFA</color>
+    <color name="tabBarBackground">#ffffff</color>
+    <color name="tabBarTextColor">#949494</color>
+    <color name="tabBarIndicator">#1e496e</color>
+
+    <color name="swipe_nav_background">#fafafa</color>
     <color name="swipe_nav_inactive">#888888</color>
-    <color name="swipe_nav_active">#1E88E5</color>
+    <color name="swipe_nav_active">#1e88e5</color>
+
+    <color name="pull_to_refresh_color">#1e496e</color>
 </resources>

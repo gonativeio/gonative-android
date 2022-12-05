@@ -16,8 +16,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-import io.gonative.android.library.AppConfig;
-
 /**
  * Created by weiyin on 5/9/14.
  */
@@ -82,22 +80,20 @@ public class ProfilePicker implements AdapterView.OnItemSelectedListener {
 
     private ArrayAdapter<String> getAdapter(){
         if (adapter == null) {
-            ConfigPreferences configPreferences = new ConfigPreferences(mainActivity);
-            String currentAppTheme = configPreferences.getAppTheme();
-            
+
             adapter = new ArrayAdapter<String>(mainActivity, R.layout.profile_picker_dropdown, names) {
                 @NonNull
                 @Override
                 public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                     TextView view = (TextView) super.getView(position, convertView, parent);
-                    view.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme));
+                    view.setTextColor(mainActivity.getResources().getColor(R.color.sidebarForeground));
                     return view;
                 }
 
                 @Override
                 public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
                     TextView view = (TextView) super.getDropDownView(position, convertView, parent);
-                    view.setTextColor(AppConfig.getInstance(mainActivity).getSidebarForegroundColor(currentAppTheme));
+                    view.setTextColor(mainActivity.getResources().getColor(R.color.sidebarForeground));
                     return view;
                 }
             };

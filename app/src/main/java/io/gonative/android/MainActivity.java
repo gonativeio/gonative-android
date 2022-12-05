@@ -79,7 +79,6 @@ import java.util.Iterator;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
@@ -189,8 +188,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	protected void onCreate(Bundle savedInstanceState) {
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
-        ConfigPreferences configPreferences = new ConfigPreferences(this);
-        String currentAppTheme = configPreferences.getAppTheme();
 
         if(appConfig.androidFullScreen){
             toggleFullscreen(true);
@@ -320,14 +317,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 return appConfig.swipeGestures;
             }
         });
-        
-        if (appConfig.pullToRefreshColor != null) {
-            swipeRefreshLayout.setColorSchemeColors(appConfig.getPullToRefreshColor(currentAppTheme));
-            swipeNavLayout.setActiveColor(appConfig.getPullToRefreshColor(currentAppTheme));
-        } else {
-            swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.swipe_nav_active));
-            swipeNavLayout.setActiveColor(getResources().getColor(R.color.swipe_nav_active));
-        }
+
+        swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.pull_to_refresh_color));
+        swipeNavLayout.setActiveColor(getResources().getColor(R.color.pull_to_refresh_color));
         swipeRefreshLayout.setProgressBackgroundColorSchemeColor(getResources().getColor(R.color.swipe_nav_background));
         swipeNavLayout.setBackgroundColor(getResources().getColor(R.color.swipe_nav_background));
 
@@ -451,7 +443,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             if (!isRoot || appConfig.showNavigationMenu) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
-                backArrow.setColorFilter(AppConfig.getInstance(this).getActionbarForegroundColor(currentAppTheme), PorterDuff.Mode.SRC_ATOP);
+                backArrow.setColorFilter(getResources().getColor(R.color.titleTextColor), PorterDuff.Mode.SRC_ATOP);
                 getSupportActionBar().setHomeAsUpIndicator(backArrow);
             }
             
@@ -463,8 +455,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         updateStatusBarStyle(appConfig.statusBarStyle);
         
         // style sidebar
-        if (mDrawerView != null && AppConfig.getInstance(this).sidebarBackgroundColor != null) {
-            mDrawerView.setBackgroundColor(AppConfig.getInstance(this).getSidebarBackgroundColor(currentAppTheme));
+        if (mDrawerView != null) {
+            mDrawerView.setBackgroundColor(getResources().getColor(R.color.sidebarBackground));
         }
 
         // respond to navigation titles processed
@@ -1039,16 +1031,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     private void showTextActionBarTitle(CharSequence title) {
         if (this.actionbarManager == null) return;
-        ConfigPreferences configPreferences = new ConfigPreferences(this);
-        String currentAppTheme = configPreferences.getAppTheme();
-
         TextView textView = new TextView(this);
         textView.setText(TextUtils.isEmpty(title) ? getTitle() : title);
         textView.setTextSize(18);
         textView.setTypeface(null, Typeface.BOLD);
         textView.setMaxLines(1);
         textView.setEllipsize(TextUtils.TruncateAt.END);
-        textView.setTextColor(AppConfig.getInstance(this).getActionbarForegroundColor(currentAppTheme));
+        textView.setTextColor(getResources().getColor(R.color.titleTextColor));
         this.actionbarManager.showTitleView(textView);
     }
 
@@ -1417,9 +1406,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 		getMenuInflater().inflate(R.menu.topmenu, menu);
         mOptionsMenu = menu;
         AppConfig appConfig = AppConfig.getInstance(this);
-        ConfigPreferences configPreferences = new ConfigPreferences(this);
-        String currentAppTheme = configPreferences.getAppTheme();
-
 
         MenuItem refreshItem = menu.findItem(R.id.action_refresh);
         if (refreshItem != null) {
@@ -1428,7 +1414,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 refreshItem.setEnabled(false);
             } else {
                 Drawable drawable = refreshItem.getIcon();
-                drawable.setColorFilter(appConfig.getActionbarForegroundColor(currentAppTheme), PorterDuff.Mode.SRC_ATOP);
+                drawable.setColorFilter(getResources().getColor(R.color.sidebarForeground), PorterDuff.Mode.SRC_ATOP);
                 refreshItem.setIcon(drawable);
             }
         }
