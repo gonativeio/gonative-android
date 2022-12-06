@@ -6,6 +6,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
 
 import io.gonative.android.icons.Icon;
 
@@ -110,7 +111,7 @@ public class ActionManager {
                     
                     Drawable iconDrawable = null;
                     if (icon != null) {
-                        iconDrawable = new Icon(activity, icon, action_button_size, R.color.titleTextColor).getDrawable();
+                        iconDrawable = new Icon(activity, icon, action_button_size, ContextCompat.getColor(activity, R.color.titleTextColor)).getDrawable();
                     }
                     MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
                             .setIcon(iconDrawable)
