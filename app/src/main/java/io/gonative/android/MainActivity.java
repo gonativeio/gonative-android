@@ -1414,7 +1414,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 refreshItem.setEnabled(false);
             } else {
                 Drawable drawable = refreshItem.getIcon();
-                drawable.setColorFilter(getResources().getColor(R.color.sidebarForeground), PorterDuff.Mode.SRC_ATOP);
+                drawable.setColorFilter(getResources().getColor(R.color.titleTextColor), PorterDuff.Mode.SRC_ATOP);
                 refreshItem.setIcon(drawable);
             }
         }
