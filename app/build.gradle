@@ -37,6 +37,14 @@ task parseAppConfig {
     if (parsedJson.services.admob && parsedJson.services.admob.admobAndroid && parsedJson.services.admob.admobAndroid.applicationId) {
         adMobAppId = parsedJson.services.admob.admobAndroid.applicationId
     }
+    if (parsedJson.services.braze) {
+        if (parsedJson.services.braze.androidApiKey) {
+            gradle.ext.set("braze_api_key", parsedJson.services.braze.androidApiKey)
+        }
+        if (parsedJson.services.braze.androidEndpointKey) {
+            gradle.ext.set("braze_endpoint_key", parsedJson.services.braze.androidEndpointKey)
+        }
+    }
 }
 
 task checkGoogleService {
