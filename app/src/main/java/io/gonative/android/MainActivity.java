@@ -76,6 +76,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -125,8 +126,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	private View mDrawerView;
 	private ExpandableListView mDrawerList;
     private ProgressBar mProgress;
-    private Dialog splashDialog;
-    private boolean splashDismissRequiresForce;
     private MySwipeRefreshLayout swipeRefreshLayout;
     private SwipeHistoryNavigationLayout swipeNavLayout;
     private RelativeLayout fullScreenLayout;
@@ -147,7 +146,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private Handler handler = new Handler();
     private ActionbarManager actionbarManager;
     private Menu mOptionsMenu;
-    private boolean isSplashShown = false;
 
     private Runnable statusChecker = new Runnable() {
         @Override
@@ -209,25 +207,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         webViewCount++;
 
         if (isRoot) {
-            // Splash screen stuff
-            boolean isFromLauncher = getIntent().hasCategory(Intent.CATEGORY_LAUNCHER);
-            // FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY does not seem to be set when it should
-            // for some devices. I have yet to find a good workaround.
-            boolean isFromRecents = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
-            boolean noSplash = getIntent().getBooleanExtra("noSplash", false);
-
-            if (savedInstanceState != null) {
-                isSplashShown = savedInstanceState.getBoolean("isSplashShown", isSplashShown);
-            }
-            if (!noSplash && isFromLauncher && !isFromRecents && !isSplashShown) {
-                showSplashScreen(appConfig.showSplashMaxTime, appConfig.showSplashForceTime);
-                isSplashShown = true;
-            }
-
             File databasePath = new File(getCacheDir(), webviewDatabaseSubdir);
             if (databasePath.mkdirs()) {
                 Log.v(TAG, "databasePath " + databasePath.toString() + " exists");
-
             }
 
             // url inspector
@@ -399,6 +381,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (url == null) url = intent.getStringExtra("url");
 
         if (url != null) {
+
+            // let plugins add query params to url before loading to WebView
+            Map<String, String> queries = application.mBridge.getInitialUrlQueryItems(this, isRoot);
+            if (queries != null && !queries.isEmpty()) {
+                Uri.Builder builder = Uri.parse(url).buildUpon();
+                for (Map.Entry<String, String> entry : queries.entrySet()) {
+                    builder.appendQueryParameter(entry.getKey(), entry.getValue());
+                }
+                url = builder.build().toString();
+            }
+
             this.initialUrl = url;
             this.mWebview.loadUrl(url);
         } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
@@ -675,7 +668,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     protected void onSaveInstanceState (Bundle outState) {
         outState.putString("url", mWebview.getUrl());
         outState.putInt("urlLevel", urlLevel);
-        outState.putBoolean("isSplashShown", isSplashShown);
         super.onSaveInstanceState(outState);
     }
 
@@ -838,50 +830,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         WebViewSetup.setupWebviewForActivity(wv, this);
 	}
 
-    private void showSplashScreen(double maxTime, double forceTime) {
-        try {
-            splashDialog = new Dialog(this, R.style.SplashScreen);
-            if (splashDialog.getWindow() != null) {
-                splashDialog.getWindow().getAttributes().windowAnimations = R.style.SplashScreenAnimation;
-            }
-            splashDialog.setContentView(R.layout.splash_screen);
-            splashDialog.setCancelable(false);
-            splashDialog.show();
-        } catch (Exception e) {
-           Log.e(TAG, "Splash activity not launched. " + e);
-           splashDialog = null;
-        }
-
-        double delay;
-
-        if (forceTime > 0) {
-            delay = forceTime;
-            splashDismissRequiresForce = true;
-        } else {
-            delay = maxTime;
-            splashDismissRequiresForce = false;
-        }
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                hideSplashScreen(true);
-            }
-        }, (long) (delay * 1000));
-    }
-
-    private void hideSplashScreen(boolean isForce) {
-        try {
-            if (splashDialog != null && (!splashDismissRequiresForce || isForce)) {
-                splashDialog.dismiss();
-                splashDialog = null;
-            }
-        } catch (Exception e) {
-           Log.e(TAG, "Splash activity not launched. " + e);
-           splashDialog = null;
-        }
-    }
-
     public void hideWebview() {
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onHideWebview(this);
@@ -916,8 +864,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     // shows webview with no animation
     public void showWebviewImmediately() {
-        hideSplashScreen(false);
-
         this.isFirstHideWebview = false;
         webviewIsHidden = false;
         startedLoading = false;
@@ -930,8 +876,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void showWebview() {
-        hideSplashScreen(false);
-
         this.isFirstHideWebview = false;
         startedLoading = false;
         stopCheckingReadyStatus();

@@ -5,14 +5,20 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -91,18 +97,23 @@ public class Installation {
         info.put("timeZone", TimeZone.getDefault().getID());
         info.put("deviceName", getDeviceName());
 
-        String carrier = null;
-        try {
-            TelephonyManager telephonyManager =((TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE));
-            if (telephonyManager != null) {
-                carrier = telephonyManager.getNetworkOperatorName();
-            }
-        } catch (Error error) {
-            Log.e(TAG, "Error getting carrier name", error);
-        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
+            SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
 
-        if (carrier != null) {
-            info.put("carrierName", carrier);
+            if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                List<String> carriers = new ArrayList<>();
+                for (SubscriptionInfo subscriptionInfo : subscriptionManager.getActiveSubscriptionInfoList()) {
+                    carriers.add(subscriptionInfo.getCarrierName().toString());
+                }
+                info.put("carrierNames", carriers);
+                try {
+                    info.put("carrierName", carriers.get(0));
+                } catch ( IndexOutOfBoundsException e ) {
+                    Log.w(TAG, "getInfo: No carriers registered with subscription manager");
+                }
+            } else {
+                Log.w(TAG, "getInfo: Cannot get carrierNames, READ_PHONE_STATE not granted");
+            }
         }
 
         info.put("installationId", Installation.id(context));

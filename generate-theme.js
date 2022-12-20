@@ -9,7 +9,7 @@ var colorFileLight = require('path').join(__dirname, 'app/src/main/res/values/co
 var colorFileDark = require('path').join(__dirname, 'app/src/main/res/values-night/colors.xml');
 
 // Check argument length
-if (process.argv.length != 19) {
+if (process.argv.length != 20) {
   console.log('Incomplete args - ' + process.argv.length + '/19');
   showHelp();
 }
@@ -32,6 +32,7 @@ var LIGHT_DEFAULT_SWIPE_NAV_BACKGROUND_COLOR = 'fafafa';
 var LIGHT_DEFAULT_SWIPE_NAV_INACTIVE_COLOR = '888888';
 var LIGHT_DEFAULT_SWIPE_NAV_ACTIVE_COLOR = '1e88e5';
 var LIGHT_DEFAULT_PULL_TO_REFRESH_COLOR = '1e496e';
+var LIGHT_DEFAULT_SPLASH_BACKGROUND_COLOR = "1e496e";
 
 // DARK theme color defaults
 
@@ -51,6 +52,7 @@ var DARK_DEFAULT_SWIPE_NAV_BACKGROUND_COLOR = '666666';
 var DARK_DEFAULT_SWIPE_NAV_INACTIVE_COLOR = '888888';
 var DARK_DEFAULT_SWIPE_NAV_ACTIVE_COLOR = 'ffffff';
 var DARK_DEFAULT_PULL_TO_REFRESH_COLOR = 'ffffff';
+var DARK_DEFAULT_SPLASH_BACKGROUND_COLOR = '333333';
 
 // Handle args
 // Theme
@@ -82,6 +84,9 @@ var swipeActiveColor = process.argv[17].toLowerCase();
 // Pull to Refresh args
 var pullToRefresh = process.argv[18].toLowerCase();
 
+// Splash args
+var splashBackgroundColor = process.argv[19].toLowerCase();
+
 var defaultActionBarColor;
 var defaultStatusBarColor;
 var defaultTitleColor;
@@ -98,6 +103,7 @@ var defaultSwipeBackgroundColor;
 var defaultSwipeInactiveColor;
 var defaultSwipeActiveColor;
 var defaultPullToRefreshColor;
+var defaultSplashBackgroundColor;
 
 // Theme and default color values
 var writeDir;
@@ -120,6 +126,7 @@ if (theme === 'light' || theme === 'auto') {
   defaultSwipeInactiveColor = LIGHT_DEFAULT_SWIPE_NAV_INACTIVE_COLOR;
   defaultSwipeActiveColor = LIGHT_DEFAULT_SWIPE_NAV_ACTIVE_COLOR;
   defaultPullToRefreshColor = LIGHT_DEFAULT_PULL_TO_REFRESH_COLOR;
+  defaultSplashBackgroundColor = LIGHT_DEFAULT_SPLASH_BACKGROUND_COLOR;
 
 } else if (theme === 'dark' || theme === 'light.darkactionbar') {
   writeDir = colorFileDark;
@@ -140,6 +147,7 @@ if (theme === 'light' || theme === 'auto') {
   defaultSwipeInactiveColor = DARK_DEFAULT_SWIPE_NAV_INACTIVE_COLOR;
   defaultSwipeActiveColor = DARK_DEFAULT_SWIPE_NAV_ACTIVE_COLOR;
   defaultPullToRefreshColor = DARK_DEFAULT_PULL_TO_REFRESH_COLOR;
+  defaultSplashBackgroundColor = DARK_DEFAULT_SPLASH_BACKGROUND_COLOR;
 
 } else {
   console.log('Invalid theme ' + theme);
@@ -163,6 +171,7 @@ checkColorRegex(swipeBackgroundColor, 'Invalid swipe nav background color');
 checkColorRegex(swipeInactiveColor, 'Invalid swipe nav inactive color');
 checkColorRegex(swipeActiveColor, 'Invalid swipe nav active color');
 checkColorRegex(pullToRefresh, 'Invalid pullToRefresh color');
+checkColorRegex(splashBackgroundColor, 'Invalid splash background color');
 
 // Start generating colors
 var colorArray = [];
@@ -194,6 +203,9 @@ colorArray.push(createColorJSON('swipe_nav_active', swipeActiveColor, defaultSwi
 // Pull to Refresh color
 colorArray.push(createColorJSON('pull_to_refresh_color', pullToRefresh, defaultPullToRefreshColor));
 
+// Splash colors
+colorArray.push(createColorJSON('splash_background', splashBackgroundColor, defaultSplashBackgroundColor));
+
 // Build colors in xml from JSON array of colors
 var xmlFinal = builder.buildObject({resources: colorArray});
 
@@ -213,7 +225,7 @@ function showHelp() {
           'actionBarColor statusBarColor titleColor accentColor backgroundColor ' +
           'sidebarForegroundColor sidebarBackgroundColor sidebarSeparatorColor sidebarHighlightColor ' +
           'tabBarBackgroundColor tabBarTextColor tabBarIndicatorColor ' +
-          'swipeBackgroundColor swipeInactiveColor swipeActiveColor pullToRefreshColor');
+          'swipeBackgroundColor swipeInactiveColor swipeActiveColor pullToRefreshColor splashBackgroundColor');
   console.log('Example: generate-theme.js light dcdcdc 757575 000000 ff0000 ...');
   console.log('Colors can be blank for default');
   process.exit(1);

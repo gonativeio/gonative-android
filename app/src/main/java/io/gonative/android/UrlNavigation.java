@@ -32,7 +32,6 @@ import android.security.KeyChainAliasCallback;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
-import android.view.View;
 import android.view.WindowManager;
 import android.webkit.ClientCertRequest;
 import android.webkit.CookieManager;
@@ -42,6 +41,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -106,6 +107,9 @@ public class UrlNavigation {
     private double connectionOfflineTime;
     private String JSBridgeScript;
 
+    private ActivityResultLauncher<String> requestPermissionLauncher;
+    private String deviceInfoCallback = "";
+
     UrlNavigation(MainActivity activity) {
 		this.mainActivity = activity;
         this.htmlIntercept = new HtmlIntercept(activity);
@@ -124,6 +128,9 @@ public class UrlNavigation {
         }
 
         connectionOfflineTime = appConfig.androidConnectionOfflineTime;
+        requestPermissionLauncher = mainActivity.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+            runGonativeDeviceInfo(deviceInfoCallback);
+        });
 	}
 
 	private boolean isInternalUri(Uri uri) {
@@ -276,10 +283,18 @@ public class UrlNavigation {
         if ("run".equals(uri.getHost())) {
             if ("/gonative_device_info".equals(uri.getPath())) {
                 String callback = "gonative_device_info";
+                boolean includeCarrierNames = false;
                 if(jsonData != null){
                     callback = jsonData.optString("callback", "gonative_device_info");
+                    includeCarrierNames = jsonData.optBoolean("includeCarrierNames", false);
                 }
-                runGonativeDeviceInfo(callback);
+
+                if (includeCarrierNames) {
+                    deviceInfoCallback = callback;
+                    requestPermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE);
+                } else {
+                    runGonativeDeviceInfo(callback);
+                }
             }
         }
 

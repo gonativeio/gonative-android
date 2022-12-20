@@ -44,18 +44,18 @@
         <item name="android:padding">16dp</item>
     </style>
 
-    <style name="SplashScreen">
-        <item name="android:padding">0dp</item>
-        <item name="android:windowBackground">?android:attr/colorBackground</item>
-        <item name="android:windowFrame">@null</item>
+    <style name="SplashScreen" parent="Theme.AppCompat.NoActionBar">
     </style>
 
     <style name="SplashScreenAnimation">
         <item name="android:windowExitAnimation">@anim/fast_fade_out</item>
     </style>
 
-    <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:background">@drawable/splash</item>
+    <style name="SplashTheme" parent="Theme.SplashScreen">
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimationDuration">0</item>
+        <item name="postSplashScreenTheme">@style/SplashScreen</item>
+        <item name="windowSplashScreenAnimatedIcon">@color/splash_background</item>
     </style>
 
     <attr name="inactiveColor" format="color" />

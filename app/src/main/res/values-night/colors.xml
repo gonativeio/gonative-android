@@ -22,4 +22,6 @@
     <color name="swipe_nav_active">#ffffff</color>
 
     <color name="pull_to_refresh_color">#ffffff</color>
+
+    <color name="splash_background">#333333</color>
 </resources>
