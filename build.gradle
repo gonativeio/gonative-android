@@ -27,9 +27,15 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
         jcenter()
         maven { url("$rootDir/maven") }
-        //[moxo-plugin: enabled by builder]
+    }
+
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            substitute module("com.github.gonativeio:gonative-android-library") with module("io.gonative.android:library:+")
+            substitute module("com.github.gonativeio:gonative-android-core") with module("io.gonative.android:core:+")
+            substitute module("com.github.gonativeio:gonative-icons") with module("io.gonative.android:icons:+")
+        }
     }
 }
