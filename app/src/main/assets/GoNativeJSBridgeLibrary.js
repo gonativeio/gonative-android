@@ -237,12 +237,12 @@ gonative.clipboard = {
     }
 };
 
-gonative.weblogs = {
+gonative.webconsolelogs = {
     enable: function(){
-        addCommand("gonative://weblogs/enable");
+        addCommand("gonative://webconsolelogs/enable");
     },
     disable: function(){
-        addCommand("gonative://weblogs/disable");
+        addCommand("gonative://webconsolelogs/disable");
     }
 }
 

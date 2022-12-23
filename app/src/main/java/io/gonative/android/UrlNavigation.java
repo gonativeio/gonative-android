@@ -611,11 +611,11 @@ public class UrlNavigation {
             return;
         }
 
-        if ("weblogs".equals(uri.getHost())) {
+        if ("webconsolelogs".equals(uri.getHost())) {
             if ("/enable".equals(uri.getPath())) {
-                this.mainActivity.setWebLogsEnabled(true);
+                this.mainActivity.setWebConsoleLogsEnabled(true);
             } else if ("/disable".equals(uri.getPath())) {
-                this.mainActivity.setWebLogsEnabled(false);
+                this.mainActivity.setWebConsoleLogsEnabled(false);
             }
         }
     }

@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private String connectivityOnceCallback;
     private PhoneStateListener phoneStateListener;
     private SignalStrength latestSignalStrength;
-    private boolean webLogsEnabled = false;
+    private boolean webConsoleLogsEnabled = false;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -2155,11 +2155,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-    public boolean isWebLogsEnabled() {
-        return this.webLogsEnabled;
+    public boolean isWebConsoleLogsEnabled() {
+        return this.webConsoleLogsEnabled;
     }
 
-    public void setWebLogsEnabled(boolean enabled) {
-        this.webLogsEnabled = enabled;
+    public void setWebConsoleLogsEnabled(boolean enabled) {
+        this.webConsoleLogsEnabled = enabled;
     }
 }

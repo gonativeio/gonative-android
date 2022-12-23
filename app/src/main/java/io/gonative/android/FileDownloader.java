@@ -169,7 +169,11 @@ public class FileDownloader implements DownloadListener {
 
     private void enqueueBackgroundDownload(String url, DownloadManager.Request request) {
         this.pendingExternalDownloads.put(url, request);
-        this.context.getExternalStorageWritePermission();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            this.context.getExternalStorageWritePermission();
+        }else {
+            gotExternalStoragePermissions(true);
+        }
     }
 
     public void gotExternalStoragePermissions(boolean granted) {

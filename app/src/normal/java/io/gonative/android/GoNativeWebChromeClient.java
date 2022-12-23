@@ -248,7 +248,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-        if (mainActivity.isWebLogsEnabled()) {
+        if (mainActivity.isWebConsoleLogsEnabled()) {
             String tag = "GoNative WebView";
             switch (consoleMessage.messageLevel()) {
                 case LOG:
