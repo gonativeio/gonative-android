@@ -56,6 +56,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
@@ -608,15 +609,6 @@ public class UrlNavigation {
                     mainActivity.runJavascript(LeanUtils.createJsForCallback(callback, jsonObject));
                 }
             }
-            return;
-        }
-
-        if ("webconsolelogs".equals(uri.getHost())) {
-            if ("/enable".equals(uri.getPath())) {
-                this.mainActivity.setWebConsoleLogsEnabled(true);
-            } else if ("/disable".equals(uri.getPath())) {
-                this.mainActivity.setWebConsoleLogsEnabled(false);
-            }
         }
     }
 
@@ -705,14 +697,18 @@ public class UrlNavigation {
         if (!isInternalUri(uri)){
             if (noAction) return true;
 
+            Intent intent;
             // launch browser
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             try {
+                if (uri.getScheme().equals("intent")) {
+                    intent = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME);
+                } else {
+                    intent = new Intent(Intent.ACTION_VIEW, uri);
+                }
                 mainActivity.startActivity(intent);
-            } catch (ActivityNotFoundException e) {
+            } catch (ActivityNotFoundException | URISyntaxException e) {
                 Log.e(TAG, e.getMessage(), e);
             }
-
             return true;
         }
 
@@ -1257,7 +1253,7 @@ public class UrlNavigation {
         if (directCaptureIntents.isEmpty()) {
             intentToSend = documentIntent;
         } else {
-            Intent chooserIntent = Intent.createChooser(documentIntent, "Choose an action");
+            Intent chooserIntent = Intent.createChooser(documentIntent, mainActivity.getString(R.string.choose_action));
             chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, directCaptureIntents.toArray(new Parcelable[0]));
             intentToSend = chooserIntent;
         }

@@ -6,4 +6,5 @@
         <item>취소</item>
     </string-array>
     <string name="cleared_cache">캐시 삭제중</string>
+    <string name="choose_action">작업 선택</string>
 </resources>

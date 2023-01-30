@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -329,8 +330,8 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             String url = entry.optString("url");
             String javascript = entry.optString("javascript");
 
-            if (url != null && !url.isEmpty()) {
-                if (javascript != null) mainActivity.loadUrlAndJavascript(url, javascript, true);
+            if (!TextUtils.isEmpty(url)) {
+                if (!TextUtils.isEmpty(javascript)) mainActivity.loadUrlAndJavascript(url, javascript, true);
                 else mainActivity.loadUrl(url, true);
             }
         }

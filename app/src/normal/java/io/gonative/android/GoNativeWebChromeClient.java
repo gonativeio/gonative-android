@@ -34,11 +34,13 @@ class GoNativeWebChromeClient extends WebChromeClient {
     private CustomViewCallback callback;
     private boolean isFullScreen = false;
     private long deniedGeolocationUptime;
+    private boolean webviewConsoleLogEnabled;
 
     public GoNativeWebChromeClient(MainActivity mainActivity, UrlNavigation urlNavigation) {
         this.mainActivity = mainActivity;
         this.urlNavigation = urlNavigation;
         this.deniedGeolocationUptime = 0;
+        this.webviewConsoleLogEnabled = AppConfig.getInstance(mainActivity).enableWebConsoleLogs;
     }
 
     @Override
@@ -248,7 +250,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-        if (mainActivity.isWebConsoleLogsEnabled()) {
+        if (webviewConsoleLogEnabled) {
             String tag = "GoNative WebView";
             switch (consoleMessage.messageLevel()) {
                 case LOG:

@@ -110,6 +110,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             zipAlignEnabled true
+            debuggable project.getProperties().get("enableLogsInRelease").toBoolean()
             signingConfig signingConfigs.release
         }
         upload {
@@ -117,6 +118,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
             zipAlignEnabled true
             matchingFallbacks = ['release']
+            debuggable project.getProperties().get("enableLogsInRelease").toBoolean()
             signingConfig signingConfigs.upload
         }
         buildTypes.each {

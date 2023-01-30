@@ -237,15 +237,6 @@ gonative.clipboard = {
     }
 };
 
-gonative.webconsolelogs = {
-    enable: function(){
-        addCommand("gonative://webconsolelogs/enable");
-    },
-    disable: function(){
-        addCommand("gonative://webconsolelogs/disable");
-    }
-}
-
 ///////////////////////////////
 ////     iOS Exclusive     ////
 ///////////////////////////////
