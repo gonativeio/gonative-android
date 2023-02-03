@@ -144,7 +144,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private int urlLevel = -1;
     private int parentUrlLevel = -1;
     private Handler handler = new Handler();
-    private ActionbarManager actionbarManager;
     private Menu mOptionsMenu;
 
     private Runnable statusChecker = new Runnable() {
@@ -367,8 +366,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         // actions in action bar
-        this.actionManager = new ActionManager(this);
-        this.actionbarManager = new ActionbarManager(this, actionManager, isRoot);
+        this.actionManager = new ActionManager(this, isRoot);
 
         Intent intent = getIntent();
         // load url
@@ -439,7 +437,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 getSupportActionBar().setHomeAsUpIndicator(backArrow);
             }
             
-            this.actionbarManager.setupActionBar(mDrawerLayout, mDrawerToggle);
+            this.actionManager.setupActionBar();
             showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
         }
 
@@ -953,7 +951,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public void showLogoInActionBar(boolean show) {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar == null) return;
-        if (this.actionbarManager == null) return;
+        if (this.actionManager == null) return;
 
         actionBar.setDisplayOptions(show ? 0 : ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
 
@@ -965,7 +963,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 this.navigationTitleImage = new ImageView(this);
                 this.navigationTitleImage.setImageResource(R.drawable.ic_actionbar);
             }
-            this.actionbarManager.showTitleView(navigationTitleImage);
+            this.actionManager.showTitleView(navigationTitleImage);
         } else {
             // Show Text
             showTextActionBarTitle(getTitle());
@@ -973,7 +971,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     private void showTextActionBarTitle(CharSequence title) {
-        if (this.actionbarManager == null) return;
+        if (this.actionManager == null) return;
         TextView textView = new TextView(this);
         textView.setText(TextUtils.isEmpty(title) ? getTitle() : title);
         textView.setTextSize(18);
@@ -981,7 +979,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         textView.setMaxLines(1);
         textView.setEllipsize(TextUtils.TruncateAt.END);
         textView.setTextColor(getResources().getColor(R.color.titleTextColor));
-        this.actionbarManager.showTitleView(textView);
+        this.actionManager.showTitleView(textView);
     }
 
 	public void updatePageTitle() {
@@ -1070,7 +1068,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        this.actionbarManager.setupActionBarTitleDisplay();
+        this.actionManager.setupActionBarTitleDisplay();
 
         GoNativeApplication application = (GoNativeApplication)getApplication();
      // Pass any configuration change to the drawer toggles
@@ -1348,23 +1346,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.topmenu, menu);
         mOptionsMenu = menu;
-        AppConfig appConfig = AppConfig.getInstance(this);
-
-        MenuItem refreshItem = menu.findItem(R.id.action_refresh);
-        if (refreshItem != null) {
-            if (!appConfig.showRefreshButton) {
-                refreshItem.setVisible(false);
-                refreshItem.setEnabled(false);
-            } else {
-                Drawable drawable = refreshItem.getIcon();
-                drawable.setColorFilter(getResources().getColor(R.color.titleTextColor), PorterDuff.Mode.SRC_ATOP);
-                refreshItem.setIcon(drawable);
-            }
-        }
 
         if (this.actionManager != null) {
             this.actionManager.addActions(menu);
-            this.actionbarManager.setupActionBarTitleDisplay();
         }
 
 		return true;
@@ -1379,15 +1363,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
 	private void setMenuItemsVisible(Menu menu, boolean visible, MenuItem exception) {
-        MenuItem refreshItem = menu.findItem(R.id.action_refresh);
 
         for (int i = 0; i < menu.size(); i++) {
             MenuItem item = menu.getItem(i);
             if (item == exception) {
-                continue;
-            }
-
-            if (visible && item == refreshItem && !AppConfig.getInstance(this).showRefreshButton) {
                 continue;
             }
 
@@ -1415,21 +1394,16 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         // handle other items
-        switch (item.getItemId()){
-            case android.R.id.home:
-                if (this.actionbarManager.isOnSearchMode()){
-                    this.actionbarManager.closeSearchView();
-                    this.actionbarManager.setOnSearchMode(false);
-                    return true;
-                }
-                finish();
+        if (item.getItemId() == android.R.id.home) {
+            if (this.actionManager.isOnSearchMode()) {
+                this.actionManager.closeSearchView();
+                this.actionManager.setOnSearchMode(false);
                 return true;
-	        case R.id.action_refresh:
-                onRefresh();
-	        	return true;
-        	default:
-                return super.onOptionsItemSelected(item);
+            }
+            finish();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
     
     @Override
@@ -2041,6 +2015,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public void setSidebarNavigationEnabled(boolean enabled){
         sidebarNavigationEnabled = enabled;
         setDrawerEnabled(enabled);
+    }
+
+    public GoNativeDrawerLayout getDrawerLayout() {
+        return this.mDrawerLayout;
+    }
+
+    public ActionBarDrawerToggle getDrawerToggle() {
+        return this.mDrawerToggle;
     }
 
     /**

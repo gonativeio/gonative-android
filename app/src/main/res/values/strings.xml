@@ -39,4 +39,5 @@
 	<string name="google_service_required">Google Service JSON was not properly set up.</string>
 	<string name="banner_message">Powered by GoNative</string>
 	<string name="choose_action">Choose an action</string>
+    <string name="app_not_installed">App is not installed</string>
 </resources>

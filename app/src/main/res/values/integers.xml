@@ -5,5 +5,5 @@
     <integer name="tabbar_icon_padding">2</integer>
     <integer name="sidebar_icon_size">22</integer>
     <integer name="sidebar_expand_indicator_size">22</integer>
-    <integer name="action_button_size">64</integer>
+    <integer name="action_button_size">48</integer>
 </resources>

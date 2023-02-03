@@ -697,7 +697,7 @@ public class UrlNavigation {
         if (!isInternalUri(uri)){
             if (noAction) return true;
 
-            Intent intent;
+            Intent intent = null;
             // launch browser
             try {
                 if (uri.getScheme().equals("intent")) {
@@ -706,7 +706,18 @@ public class UrlNavigation {
                     intent = new Intent(Intent.ACTION_VIEW, uri);
                 }
                 mainActivity.startActivity(intent);
-            } catch (ActivityNotFoundException | URISyntaxException e) {
+            } catch (ActivityNotFoundException ex) {
+                Log.e(TAG, ex.getMessage(), ex);
+                // Try loading fallback url if available
+                if (intent != null) {
+                    String fallbackUrl = intent.getStringExtra("browser_fallback_url");
+                    if (!TextUtils.isEmpty(fallbackUrl)) {
+                        mainActivity.loadUrl(fallbackUrl);
+                    } else {
+                        Toast.makeText(mainActivity, R.string.app_not_installed, Toast.LENGTH_LONG).show();
+                    }
+                }
+            } catch (URISyntaxException e) {
                 Log.e(TAG, e.getMessage(), e);
             }
             return true;
@@ -1213,6 +1224,7 @@ public class UrlNavigation {
                     directCaptureIntents.add(intent);
                 }
             }
+
         }
 
         if (useVideo) {
@@ -1227,14 +1239,12 @@ public class UrlNavigation {
             }
         }
 
-        Intent documentIntent = new Intent();
-        documentIntent.setAction(Intent.ACTION_GET_CONTENT);
-        documentIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        Intent documentIntent = new Intent(Intent.ACTION_PICK);
 
         if (mimeTypes.size() == 1) {
-            documentIntent.setType(mimeTypes.iterator().next());
+            documentIntent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, mimeTypes.iterator().next());
         } else {
-            documentIntent.setType("*/*");
+            documentIntent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "*/*");
 
             // If running kitkat or later, then we can specify multiple mime types
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
