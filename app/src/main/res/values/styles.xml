@@ -55,7 +55,7 @@
         <item name="android:windowBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimationDuration">0</item>
         <item name="postSplashScreenTheme">@style/SplashScreen</item>
-        <item name="windowSplashScreenAnimatedIcon">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
     </style>
 
     <attr name="inactiveColor" format="color" />
