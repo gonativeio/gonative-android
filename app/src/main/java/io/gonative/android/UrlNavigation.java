@@ -697,6 +697,7 @@ public class UrlNavigation {
         if (!isInternalUri(uri)){
             if (noAction) return true;
 
+            Log.d(TAG,"processing dynamic link: " + uri);
             Intent intent = null;
             // launch browser
             try {
@@ -706,6 +707,7 @@ public class UrlNavigation {
                     intent = new Intent(Intent.ACTION_VIEW, uri);
                 }
                 mainActivity.startActivity(intent);
+                mainActivity.goBack(); // to consume the dynamic link intent on top
             } catch (ActivityNotFoundException ex) {
                 Log.e(TAG, ex.getMessage(), ex);
                 // Try loading fallback url if available
