@@ -25,7 +25,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-import androidx.multidex.BuildConfig;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -51,7 +50,6 @@ public class FileDownloader implements DownloadListener {
     }
 
     private static final String TAG = FileDownloader.class.getName();
-    static final String AUTHORITY = BuildConfig.APPLICATION_ID + ".fileprovider";
     private MainActivity context;
     private UrlNavigation urlNavigation;
     private String lastDownloadedUrl;
@@ -193,6 +191,11 @@ public class FileDownloader implements DownloadListener {
     public void downloadFile(String url, boolean shouldSaveToGallery) {
         if (TextUtils.isEmpty(url)) {
             Log.d(TAG, "downloadFile: Url empty!");
+            return;
+        }
+
+        if (url.startsWith("blob:") && context != null) {
+            context.getFileWriterSharer().downloadBlobUrl(url);
             return;
         }
 

@@ -1,10 +1,10 @@
 package io.gonative.android;
 
 import android.content.Context;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.WebResourceResponse;
+import android.webkit.WebView;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -32,6 +32,7 @@ public class HtmlIntercept {
     private Context context;
     private String interceptUrl;
     private String JSBridgeScript;
+    private String redirectedUrl;
 
     // track whether we have intercepted a page at all. We will always try to intercept the first time,
     // because interceptUrl may not have been set if restoring from a bundle.
@@ -92,16 +93,17 @@ public class HtmlIntercept {
                     responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
                     responseCode == HttpURLConnection.HTTP_SEE_OTHER ||
                     responseCode == 307) {
-                // run javascript to do redirect. We cannot pass headers in webresourceresponse until
-                // Android API 21, and we cannot return null or else the webview will handle the
-                // request entirely without intercept
+                // Get redirect URL to be loaded directly to webview, return blank resource which we cancel on UrlNavigation.onPageStart()
+                // We cannot pass headers in webresourceresponse until Android API 21, and we cannot return null
+                // or else the webview will handle the request entirely without intercept
                 String location = connection.getHeaderField("Location");
-                if (location != null) {
-                    String webpage = "<html><head><script>window.location=" +
-                            LeanUtils.jsWrapString(location) + "</script></head><body></body></html>";
-                    return new WebResourceResponse("text/html", "UTF-8",
-                            new ByteArrayInputStream(webpage.getBytes("UTF-8")));
+                if (!TextUtils.isEmpty(location)) {
+                    this.redirectedUrl = url;
+                    MainActivity mainActivity = (MainActivity) context;
+                    WebView webView = (WebView) mainActivity.getWebView();
+                    webView.post(() -> webView.loadUrl(location));
                 }
+                return new WebResourceResponse("text/html", "utf-8", new ByteArrayInputStream("".getBytes()));
             }
 
             String mimetype = connection.getContentType();
@@ -266,5 +268,13 @@ public class HtmlIntercept {
         }
 
         return null;
+    }
+
+    public String getRedirectedUrl() {
+        return redirectedUrl;
+    }
+
+    public void setRedirectedUrl(String redirectUrl) {
+        this.redirectedUrl = redirectUrl;
     }
 }

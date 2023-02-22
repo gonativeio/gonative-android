@@ -346,7 +346,7 @@ public class FileWriterSharer {
     private Intent getIntentToOpenFile(File file, String mimetype) {
         Uri content;
         try {
-            content = FileProvider.getUriForFile(context, FileDownloader.AUTHORITY, file);
+            content = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".fileprovider", file);
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "Unable to get content url from FileProvider", e);
             return null;

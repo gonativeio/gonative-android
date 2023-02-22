@@ -1,14 +1,15 @@
 package io.gonative.android;
 
-import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.appcompat.widget.SearchView;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -42,6 +44,7 @@ public class ActionManager {
     private static final String TAG = ActionManager.class.getName();
     private static final String ACTION_SHARE = "share";
     private static final String ACTION_REFRESH = "refresh";
+    private static final String ACTION_SEARCH = "search";
     private static final int ACTIONBAR_ITEM_MARGIN = 132;
 
     private final MainActivity activity;
@@ -55,12 +58,10 @@ public class ActionManager {
 
     private String currentMenuID;
     private LinearLayout header;
+    private LinearLayoutCompat menuContainer;
     private RelativeLayout titleContainer;
     private boolean isOnSearchMode = false;
     private SearchView searchView;
-
-    private boolean searchButtonInitialized = false;
-    private boolean searchActive = false;
 
     private int leftItemsCount = 0;
     private int rightItemsCount = 0;
@@ -87,9 +88,9 @@ public class ActionManager {
         actionBar.setCustomView(header);
         ActionBar.LayoutParams params = (ActionBar.LayoutParams) header.getLayoutParams();
         params.width = ActionBar.LayoutParams.MATCH_PARENT;
-
-        searchView = header.findViewById(R.id.search_view);
         titleContainer = header.findViewById(R.id.title_container);
+
+        menuContainer = header.findViewById(R.id.left_menu_container);
 
         ViewGroup.MarginLayoutParams titleContainerParams = (ViewGroup.MarginLayoutParams) titleContainer.getLayoutParams();
         titleContainerParams.rightMargin = ACTIONBAR_ITEM_MARGIN + 8;
@@ -168,89 +169,120 @@ public class ActionManager {
         JSONArray actions = appConfig.actions.get(currentMenuID);
         if (actions == null) return;
 
-        for (int itemID = 0; itemID < actions.length(); itemID++) {
-            JSONObject entry = actions.optJSONObject(itemID);
-            if (entry != null) {
-                String system = AppConfig.optString(entry, "system");
+        if (actions.length() == 0) {
+            replaceLeftIcon(null);
+        } else {
+            for (int itemID = 0; itemID < actions.length(); itemID++) {
+                JSONObject entry = actions.optJSONObject(itemID);
 
-                if (!TextUtils.isEmpty(system)) {
-                    if (system.equalsIgnoreCase("share")) {
-                        TypedArray a = this.activity.getTheme().obtainStyledAttributes(new int []{R.attr.ic_action_share});
-                        Drawable shareIcon = a.getDrawable(0);
-                        a.recycle();
+                if (entry != null) {
 
-                        MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, R.string.action_share)
-                                .setIcon(shareIcon)
-                                .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-                        itemToUrl.put(menuItem, ACTION_SHARE);
-                    } else if (system.equalsIgnoreCase("refresh")) {
-                        String icon = AppConfig.optString(entry, "icon");
-                        String label = AppConfig.optString(entry, "label");
-                        Drawable refreshIcon;
-
-                        if (TextUtils.isEmpty(icon)) {
-                            refreshIcon = new Icon(activity, "fa fa-refresh", action_button_size, colorForeground).getDrawable();
-                        } else {
-                            refreshIcon = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
-                        }
-
-                        String menuLabel = !TextUtils.isEmpty(label) ? label : "Refresh";
-
-                        MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, menuLabel)
-                                .setIcon(refreshIcon)
-                                .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-
-                        itemToUrl.put(menuItem, ACTION_REFRESH);
-                        rightItemsCount++;
-                    } else if (system.equalsIgnoreCase("search")) {
-                        initializeSearchButton(appConfig, entry);
-                        showSearchButton();
-                        this.searchActive = true;
-                        leftItemsCount++;
-                    }
-                } else {
+                    String system = AppConfig.optString(entry, "system");
                     String label = AppConfig.optString(entry, "label");
                     String icon = AppConfig.optString(entry, "icon");
                     String url = AppConfig.optString(entry, "url");
-                    
-                    Drawable iconDrawable = null;
-                    if (icon != null) {
-                        iconDrawable = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
+
+                    if (itemID == 0) {
+                        if (!TextUtils.isEmpty(system)) {
+                            if (system.equalsIgnoreCase("refresh")) {
+                                Button refresh = createButtonMenu("fa-rotate-right");
+                                refresh.setOnClickListener(v -> this.activity.onRefresh());
+                                replaceLeftIcon(refresh);
+                            } else if (system.equalsIgnoreCase("search")) {
+                                this.searchView = createSearchView(appConfig, entry, null, true);
+                                replaceLeftIcon(this.searchView);
+                            }
+                        } else {
+                            Button userButton = createButtonMenu(icon);
+                            userButton.setOnClickListener(v -> this.activity.loadUrl(url));
+                            replaceLeftIcon(userButton);
+                        }
+
+                        leftItemsCount++;
+                    } else {
+                        if (!TextUtils.isEmpty(system)) {
+                            if (system.equalsIgnoreCase("refresh")) {
+                                Drawable refreshIcon;
+                                if (TextUtils.isEmpty(icon)) {
+                                    refreshIcon = new Icon(activity, "fa-rotate-right", action_button_size, colorForeground).getDrawable();
+                                } else {
+                                    refreshIcon = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
+                                }
+
+                                String menuLabel = !TextUtils.isEmpty(label) ? label : "Refresh";
+
+                                MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, menuLabel)
+                                        .setIcon(refreshIcon)
+                                        .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+                                itemToUrl.put(menuItem, ACTION_REFRESH);
+                                rightItemsCount++;
+                            } else if (system.equalsIgnoreCase("search")) {
+
+                                String menuLabel = !TextUtils.isEmpty(label) ? label : "Search";
+
+                                MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, menuLabel)
+                                        .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+                                this.searchView = createSearchView(appConfig, entry, menuItem, false);
+                                menuItem.setActionView(searchView);
+
+                                itemToUrl.put(menuItem, ACTION_SEARCH);
+                                rightItemsCount++;
+                            }
+                        } else {
+                            Drawable iconDrawable = null;
+                            if (icon != null) {
+                                iconDrawable = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
+                            }
+                            MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
+                                    .setIcon(iconDrawable)
+                                    .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+                            if (url != null) {
+                                this.itemToUrl.put(menuItem, url);
+                            }
+                            rightItemsCount++;
+                        }
                     }
-                    MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
-                            .setIcon(iconDrawable)
-                            .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-                    if (url != null) {
-                        this.itemToUrl.put(menuItem, url);
-                    }
-                    rightItemsCount++;
                 }
             }
         }
-
-        if (!searchActive) {
-            hideSearchButton();
-        }
-
         setupActionBarTitleDisplay();
     }
 
-    private void initializeSearchButton(AppConfig appConfig, JSONObject entry) {
-        if (searchButtonInitialized) return;
-        if (this.searchView == null) return;
+    private void replaceLeftIcon(View view) {
+        if (menuContainer == null) return;
+        menuContainer.removeAllViews();
+        if (view != null) {
+            menuContainer.addView(view);
+        } else {
+            menuContainer.setVisibility(View.GONE);
+        }
+    }
 
-        ActionBar actionBar = activity.getSupportActionBar();
-        if (actionBar == null) return;
+    private Button createButtonMenu(String iconString) {
+        Drawable icon = new Icon(activity, iconString, action_button_size, colorForeground).getDrawable();
+        icon.setBounds( 0, 0, 50, 50);
+        LinearLayout tempView = (LinearLayout) LayoutInflater.from(activity).inflate(R.layout.button_menu, null);
+        Button button = tempView.findViewById(R.id.menu_button);
+        tempView.removeView(button);
+        button.setCompoundDrawables(icon, null, null, null);
+        return button;
+    }
 
+    private SearchView createSearchView(AppConfig appConfig, JSONObject entry, MenuItem menuItem, boolean forLeftSide) {
+        SearchView searchView = new SearchView(activity);
         String icon = AppConfig.optString(entry, "icon");
         String url = AppConfig.optString(entry, "url");
 
+        // Set layout Params to WRAP_CONTENT
+        ViewGroup.LayoutParams searchViewParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        searchView.setLayoutParams(searchViewParams);
+
+        // Left Drawer Instance
         DrawerLayout drawerLayout = activity.getDrawerLayout();
         ActionBarDrawerToggle drawerToggle = activity.getDrawerToggle();
-
-        RelativeLayout titleContainer = header.findViewById(R.id.title_container);
-
-        LinearLayout.LayoutParams searchviewParams = (LinearLayout.LayoutParams) searchView.getLayoutParams();
 
         // search item in action bar
         SearchView.SearchAutoComplete searchAutoComplete = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
@@ -263,13 +295,14 @@ public class ActionManager {
         }
 
         searchView.setOnSearchClickListener(view -> {
-            activity.setMenuItemsVisible(false);
-            titleContainer.setVisibility(View.GONE);
-
-            ActionBar.LayoutParams params = (ActionBar.LayoutParams) header.getLayoutParams();
-            params.width = ActionBar.LayoutParams.MATCH_PARENT;
-
-            searchviewParams.width = ActionBar.LayoutParams.MATCH_PARENT;
+            if (forLeftSide) {
+                activity.setMenuItemsVisible(false);
+                titleContainer.setVisibility(View.GONE);
+            } else {
+                header.setVisibility(View.GONE);
+                activity.setMenuItemsVisible(false, menuItem);
+            }
+            searchViewParams.width = ActionBar.LayoutParams.MATCH_PARENT;
 
             // Need to check this otherwise the app will crash
             if (!activity.isNotRoot() && appConfig.showNavigationMenu) {
@@ -285,11 +318,16 @@ public class ActionManager {
         });
 
         searchView.setOnCloseListener(() -> {
-            titleContainer.setVisibility(View.VISIBLE);
-            searchviewParams.width = ActionBar.LayoutParams.WRAP_CONTENT;
+            activity.setMenuItemsVisible(true);
+            if (forLeftSide) {
+                titleContainer.setVisibility(View.VISIBLE);
+            } else {
+                header.setVisibility(View.VISIBLE);
+                activity.invalidateOptionsMenu();
+            }
+            searchViewParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
 
             activity.setMenuItemsVisible(true);
-
             if (!activity.isNotRoot() && appConfig.showNavigationMenu) {
                 drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
                 actionBar.setDisplayShowHomeEnabled(false);
@@ -297,7 +335,6 @@ public class ActionManager {
             } else if (!activity.isNotRoot()) {
                 actionBar.setDisplayHomeAsUpEnabled(false);
             }
-
             return false;
         });
 
@@ -352,7 +389,7 @@ public class ActionManager {
             closeButtonImage.setColorFilter(colorForeground);
         }
 
-        this.searchButtonInitialized = true;
+        return searchView;
     }
 
     // Count left and right actionbar buttons to calculate side margins
@@ -385,8 +422,7 @@ public class ActionManager {
             }
         } else {
             if (titleContainer.getChildAt(0) != null
-                    && titleContainer.getChildAt(0) instanceof TextView
-                    && searchActive) {
+                    && titleContainer.getChildAt(0) instanceof TextView) {
                 titleContainer.setGravity(Gravity.CENTER_VERTICAL);
             } else {
                 tempLeftItemsCount++;
@@ -399,21 +435,6 @@ public class ActionManager {
                 }
             }
         }
-
-        // Need to add extra margin if no options menu are visible so Title would not move
-        if (tempRightItemsCount == 0) {
-            params.rightMargin = params.rightMargin + 8;
-        }
-    }
-
-    private void showSearchButton() {
-        if (this.searchView == null) return;
-        this.searchView.setVisibility(View.VISIBLE);
-    }
-
-    private void hideSearchButton() {
-        if (this.searchView == null) return;
-        this.searchView.setVisibility(View.GONE);
     }
 
     public boolean isOnSearchMode() {
@@ -425,7 +446,7 @@ public class ActionManager {
     }
 
     public void closeSearchView() {
-        if (!searchButtonInitialized) return;
+        if (searchView == null) return;
 
         if (!searchView.isIconified()) {
             searchView.setIconified(true);
@@ -438,12 +459,16 @@ public class ActionManager {
         }
         String url = this.itemToUrl.get(item);
         if (url != null) {
-            if (url.equals(ACTION_SHARE)) {
-                this.activity.sharePage(null);
-                return true;
-            } else if (url.equals(ACTION_REFRESH)) {
-                this.activity.onRefresh();
-                return true;
+            switch (url) {
+                case ACTION_SHARE:
+                    this.activity.sharePage(null);
+                    return true;
+                case ACTION_REFRESH:
+                    this.activity.onRefresh();
+                    return true;
+                case ACTION_SEARCH:
+                    // Ignore
+                    return true;
             }
 
             this.activity.loadUrl(url);

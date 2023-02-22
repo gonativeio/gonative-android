@@ -707,7 +707,6 @@ public class UrlNavigation {
                     intent = new Intent(Intent.ACTION_VIEW, uri);
                 }
                 mainActivity.startActivity(intent);
-                mainActivity.goBack(); // to consume the dynamic link intent on top
             } catch (ActivityNotFoundException ex) {
                 Log.e(TAG, ex.getMessage(), ex);
                 // Try loading fallback url if available
@@ -889,7 +888,13 @@ public class UrlNavigation {
     }
 
 	public void onPageStarted(String url) {
-//        Log.d(TAG, "onpagestarted " + url);
+        // catch blank pages from htmlIntercept and cancel loading
+        if (url.equals(htmlIntercept.getRedirectedUrl())) {
+            mainActivity.goBack();
+            htmlIntercept.setRedirectedUrl(null);
+            return;
+        }
+
         state = WebviewLoadState.STATE_PAGE_STARTED;
         startLoadTimeout.removeCallbacksAndMessages(null);
         htmlIntercept.setInterceptUrl(url);

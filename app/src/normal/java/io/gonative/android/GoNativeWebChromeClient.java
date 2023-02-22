@@ -28,19 +28,22 @@ import io.gonative.android.library.AppConfig;
 * Copyright 2014 GoNative.io LLC
 */
 class GoNativeWebChromeClient extends WebChromeClient {
-    private MainActivity mainActivity;
-    private UrlNavigation urlNavigation;
+    private final MainActivity mainActivity;
+    private final UrlNavigation urlNavigation;
+    private final boolean webviewConsoleLogEnabled;
     private View customView;
     private CustomViewCallback callback;
     private boolean isFullScreen = false;
     private long deniedGeolocationUptime;
-    private boolean webviewConsoleLogEnabled;
 
     public GoNativeWebChromeClient(MainActivity mainActivity, UrlNavigation urlNavigation) {
         this.mainActivity = mainActivity;
         this.urlNavigation = urlNavigation;
         this.deniedGeolocationUptime = 0;
         this.webviewConsoleLogEnabled = AppConfig.getInstance(mainActivity).enableWebConsoleLogs;
+        if (this.webviewConsoleLogEnabled) {
+            Log.d("GoNative WebView", "Web Console logs enabled");
+        }
     }
 
     @Override
@@ -251,20 +254,19 @@ class GoNativeWebChromeClient extends WebChromeClient {
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
         if (webviewConsoleLogEnabled) {
-            String tag = "GoNative WebView";
             switch (consoleMessage.messageLevel()) {
                 case LOG:
-                    Log.i(tag, consoleMessage.message());
+                    Log.i("[console.log]", consoleMessage.message());
                     break;
                 case DEBUG:
                 case TIP:
-                    Log.d(tag, consoleMessage.message());
+                    Log.d("[console.debug]", consoleMessage.message());
                     break;
                 case WARNING:
-                    Log.w(tag, consoleMessage.message());
+                    Log.w("[console.warn]", consoleMessage.message());
                     break;
                 case ERROR:
-                    Log.e(tag, consoleMessage.message());
+                    Log.e("[console.error]", consoleMessage.message());
                     break;
             }
         }

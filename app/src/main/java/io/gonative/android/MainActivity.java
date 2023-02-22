@@ -1359,13 +1359,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
 	public void setMenuItemsVisible (boolean visible) {
-        setMenuItemsVisible(mOptionsMenu, visible, null);
+        setMenuItemsVisible(visible, null);
     }
 
-	private void setMenuItemsVisible(Menu menu, boolean visible, MenuItem exception) {
+	public void setMenuItemsVisible(boolean visible, MenuItem exception) {
 
-        for (int i = 0; i < menu.size(); i++) {
-            MenuItem item = menu.getItem(i);
+        for (int i = 0; i < mOptionsMenu.size(); i++) {
+            MenuItem item = mOptionsMenu.getItem(i);
             if (item == exception) {
                 continue;
             }

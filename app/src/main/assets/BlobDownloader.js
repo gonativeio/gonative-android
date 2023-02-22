@@ -1,3 +1,5 @@
+// This is used because download from native side won't have session changes.
+
 function gonativeDownloadBlobUrl(url) {
 	var req = new XMLHttpRequest();
 	req.open('GET', url, true);
