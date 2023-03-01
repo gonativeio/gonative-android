@@ -7,4 +7,7 @@
     </string-array>
     <string name="cleared_cache">캐시 삭제중</string>
     <string name="choose_action">작업 선택</string>
+    <string name="file_download_title">다운로드 시작됨</string>
+    <string name="file_download_finished">다운로드한 파일</string>
+    <string name="download_canceled">다운로드 취소됨</string>
 </resources>

@@ -1246,22 +1246,38 @@ public class UrlNavigation {
             }
         }
 
-        Intent documentIntent = new Intent(Intent.ACTION_PICK);
-
-        if (mimeTypes.size() == 1) {
-            documentIntent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, mimeTypes.iterator().next());
-        } else {
-            documentIntent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "*/*");
-
-            // If running kitkat or later, then we can specify multiple mime types
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                documentIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray(new String[mimeTypes.size()]));
+        Intent documentIntent;
+        if (mimeTypes.size() > 0) {
+            boolean hasMediaType = false;
+            for (String type : mimeTypes) {
+                if (type.contains("image") || type.contains("video") || type.contains("audio")) {
+                    hasMediaType = true;
+                    break;
+                }
             }
+
+            if (hasMediaType) {
+                // ACTION_PICK for multimedia files to show Gallery/Album/Audio option
+                // Some devices shows File option
+                documentIntent = new Intent(Intent.ACTION_PICK);
+            } else {
+                // ACTION_GET_CONTENT for types other than multimedia cause this doesn't show multimedia options
+                // only shows File option where user can pick any type of file including multimedia files
+                documentIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                documentIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            }
+
+            documentIntent.setType(mimeTypes.iterator().next());
+            if (mimeTypes.size() > 1) {
+                documentIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray());
+            }
+        } else {
+            documentIntent = new Intent(Intent.ACTION_GET_CONTENT);
+            documentIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            documentIntent.setType("*/*");
         }
 
-        // INTENT_ALLOW_MULTIPLE can be used starting API 18. But we should only get multiple=true
-        // starting in Lollipop anyway.
-        if (multiple && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+        if (multiple) {
             documentIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         }
 

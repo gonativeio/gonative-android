@@ -3,11 +3,14 @@ package io.gonative.android;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -69,6 +72,8 @@ public class FileDownloader implements DownloadListener {
     private String filename = "download";
     private String extension = "";
     private static final int timeout = 5; // in seconds
+    private DownloadManager downloadManager;
+    private Map<Long, String> pendingDownloadNotification;
     
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Handler handler = new Handler(Looper.getMainLooper());
@@ -76,6 +81,7 @@ public class FileDownloader implements DownloadListener {
     FileDownloader(MainActivity context) {
         this.context = context;
         this.pendingExternalDownloads = new HashMap<>();
+        this.pendingDownloadNotification = new HashMap<>();
 
         AppConfig appConfig = AppConfig.getInstance(this.context);
         if (appConfig.downloadToPublicStorage) {
@@ -83,8 +89,33 @@ public class FileDownloader implements DownloadListener {
         } else {
             this.defaultDownloadLocation = DownloadLocation.PRIVATE_INTERNAL;
         }
-
+        registerDownloadBroadCastReceiver(context);
         initLauncher();
+    }
+
+    private void registerDownloadBroadCastReceiver(Context context) {
+        if (context == null) return;
+        BroadcastReceiver onDownloadComplete = new BroadcastReceiver() {
+            public void onReceive(Context ctx, Intent intent) {
+                long dwnId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                if (dwnId == -1 || downloadManager == null) {
+                    return;
+                }
+                Cursor cursor = downloadManager.query(new DownloadManager.Query().setFilterById(dwnId));
+                if(cursor.moveToFirst()) {
+                    int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                    int status = cursor.getInt(columnIndex);
+                    String filename = getDownloadFilename(dwnId);
+                    if (TextUtils.isEmpty(filename)) return;
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        Toast.makeText(ctx, ctx.getString(R.string.file_download_finished) + ": " + filename, Toast.LENGTH_SHORT).show();
+                    } else if (status == DownloadManager.STATUS_FAILED) {
+                        Toast.makeText(ctx, ctx.getString(R.string.download_canceled) + ": " + filename, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        };
+        context.getApplicationContext().registerReceiver(onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
     @Override
@@ -146,9 +177,9 @@ public class FileDownloader implements DownloadListener {
                     String guessedName = LeanUtils.guessFileName(url, contentDisposition, mimetype);
                     request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
                     request.setMimeType(mimetype);
+                    request.setTitle(context.getResources().getString(R.string.file_download_title) + " " + guessedName);
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-
-                    enqueueBackgroundDownload(url, request);
+                    enqueueBackgroundDownload(guessedName, request);
 
                 } catch (Exception e) {
                     Log.e(TAG, e.getMessage(), e);
@@ -165,8 +196,8 @@ public class FileDownloader implements DownloadListener {
         initializeDownload(url, userAgent);
     }
 
-    private void enqueueBackgroundDownload(String url, DownloadManager.Request request) {
-        this.pendingExternalDownloads.put(url, request);
+    private void enqueueBackgroundDownload(String filename, DownloadManager.Request request) {
+        this.pendingExternalDownloads.put(filename, request);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             this.context.getExternalStorageWritePermission();
         }else {
@@ -176,16 +207,28 @@ public class FileDownloader implements DownloadListener {
 
     public void gotExternalStoragePermissions(boolean granted) {
         if (granted) {
-            DownloadManager downloadManager = (DownloadManager) this.context.getSystemService(Context.DOWNLOAD_SERVICE);
-            if (downloadManager == null) {
-                Log.e(TAG, "Error getting system download manager");
-                return;
+            if (this.downloadManager == null) {
+                this.downloadManager = (DownloadManager) this.context.getSystemService(Context.DOWNLOAD_SERVICE);
+                if (downloadManager == null) {
+                    Log.e(TAG, "Error getting system download manager");
+                    return;
+                }
             }
-            for (DownloadManager.Request request : this.pendingExternalDownloads.values()) {
-                downloadManager.enqueue(request);
+            for (Map.Entry<String, DownloadManager.Request> set : this.pendingExternalDownloads.entrySet()) {
+                long downloadId = downloadManager.enqueue(set.getValue());
+                this.pendingDownloadNotification.put(downloadId, set.getKey());
             }
             this.pendingExternalDownloads.clear();
         }
+    }
+
+    private String getDownloadFilename(long dwnId) {
+        String filename = null;
+        if (pendingDownloadNotification.containsKey(dwnId)) {
+            filename = pendingDownloadNotification.get(dwnId);
+            pendingDownloadNotification.remove(dwnId);
+        }
+        return filename;
     }
 
     public void downloadFile(String url, boolean shouldSaveToGallery) {

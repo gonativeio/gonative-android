@@ -40,4 +40,6 @@
 	<string name="banner_message">Powered by GoNative</string>
 	<string name="choose_action">Choose an action</string>
     <string name="app_not_installed">App is not installed</string>
+	<string name="file_download_title">Download started</string>
+	<string name="file_download_finished">File downloaded</string>
 </resources>
