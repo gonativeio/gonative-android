@@ -76,12 +76,6 @@
             android:scaleY="0.6"
             android:visibility="invisible" />
 
-        <RelativeLayout
-            android:id="@+id/fullscreen"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="?android:attr/colorBackground"
-            android:visibility="invisible" />
 
         <com.aurelhubert.ahbottomnavigation.AHBottomNavigation
             android:id="@+id/bottom_navigation"
@@ -90,6 +84,14 @@
             android:layout_alignParentBottom="true"
             android:elevation="8dp"
             android:visibility="gone" />
+
+        <RelativeLayout
+            android:id="@+id/fullscreen"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?android:attr/colorBackground"
+            android:layout_above="@+id/bottom_navigation"
+            android:visibility="invisible" />
 
     </RelativeLayout>
     <!-- The navigation drawer -->
