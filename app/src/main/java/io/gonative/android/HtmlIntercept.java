@@ -66,7 +66,7 @@ public class HtmlIntercept {
             if (!protocol.equalsIgnoreCase("http") && !protocol.equalsIgnoreCase("https")) return null;
 
             HttpURLConnection connection = (HttpURLConnection)parsedUrl.openConnection();
-            connection.setInstanceFollowRedirects(false);
+            connection.setInstanceFollowRedirects(true);
             String customUserAgent = appConfig.userAgentForUrl(parsedUrl.toString());
             if (customUserAgent != null) {
                 connection.setRequestProperty("User-Agent", customUserAgent);
