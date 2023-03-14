@@ -6,7 +6,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -65,6 +64,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     private var firstTouchX: Int = Int.MIN_VALUE
     private var isSwipingLeftEdge = false
     private var isSwipingRightEdge = false
+    private var isTouchInProgress = false
 
     private var lastTouchX: Float = Float.NaN
     private var oldDeltaX: Float = Float.NaN
@@ -168,9 +168,40 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-        if (isTouchedEdge(ev)) {
-            return true
+        if (!swipeNavListener.isSwipeEnabled()) {
+            return false
         }
+
+        when (ev?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                if (isLeftEdge(ev.x) && swipeNavListener.canSwipeLeftEdge()) {
+                    isSwipingLeftEdge = true
+                    firstTouchX = ev.x.toInt()
+                    leftEdgeGrabbed()
+                } else if (isRightEdge(ev.x)) {
+                    isSwipingRightEdge = true
+                    firstTouchX = width
+                    rightEdgeGrabbed()
+                }
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (isTouchInProgress) {
+                    return true
+                }
+
+                if ((isSwipingLeftEdge || isSwipingRightEdge) && ev.x.toInt() != firstTouchX) {
+                    isTouchInProgress = true
+                    parent.requestDisallowInterceptTouchEvent(true)
+                    return true
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                if (isTouchInProgress) {
+                    return true
+                }
+            }
+        }
+
         return super.onInterceptTouchEvent(ev)
     }
 
@@ -178,21 +209,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     override fun onTouchEvent(ev: MotionEvent?): Boolean {
         var needsInvalidate = false
         when (ev?.action) {
-            MotionEvent.ACTION_DOWN -> {
-                if (isLeftEdge(ev.x) && swipeNavListener.canSwipeLeftEdge()) {
-                    isSwipingLeftEdge = true
-                    firstTouchX = ev.x.toInt()
-                    leftEdgeGrabbed()
-                    parent.requestDisallowInterceptTouchEvent(true)
-                    return true
-                } else if (isRightEdge(ev.x)) {
-                    isSwipingRightEdge = true
-                    firstTouchX = width
-                    rightEdgeGrabbed()
-                    parent.requestDisallowInterceptTouchEvent(true)
-                    return true
-                }
-            }
             MotionEvent.ACTION_MOVE -> {
                 lastTouchX = ev.x
                 oldDeltaX = deltaX
@@ -211,7 +227,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                     }
                 }
 
-                val rightOffset = isSwipingRightEdge.let { +iconWidth }
+//                val rightOffset = isSwipingRightEdge.let { +iconWidth }
                 if (deltaX > swipeableWidth) { // + rightOffset) {
                     if (!isSwipeReachesLimit) {
                         isSwipeReachesLimit = true
@@ -308,6 +324,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         isSwipingLeftEdge = false
         isSwipingRightEdge = false
         isSwipeReachesLimit = false
+        isTouchInProgress = false
         return rightEdgeEffect.isFinished
     }
 
@@ -333,8 +350,8 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         }
     }
 
-    public fun setActiveColor(color: Int){
-       activeColor = color;
+    fun setActiveColor(color: Int) {
+        activeColor = color;
         rightHandleView.activeColor = color;
         leftHandleView.activeColor = color;
     }
@@ -414,6 +431,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
          * Called when the movement of the right-edge swipe reaches its limit.
          */
         fun rightSwipeReachesLimit()
+
         /**
          * Return true if swipe edge to navigate is enabled
          */
