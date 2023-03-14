@@ -301,18 +301,21 @@ public class UrlNavigation {
 
         if ("geoLocation".equals(uri.getHost())) {
             if ("/promptAndroidLocationServices".equals(uri.getPath())) {
-                if (isLocationServiceEnabled()) return;
-
-                new AlertDialog.Builder(mainActivity)
-                        .setMessage(R.string.location_services_not_enabled)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                mainActivity.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                            }
-                        })
-                        .setNegativeButton(R.string.no_thanks, null)
-                        .show();
+                mainActivity.getRuntimeGeolocationPermission(granted -> {
+                    if (!granted) return;
+                    if (!isLocationServiceEnabled()) {
+                        new AlertDialog.Builder(mainActivity)
+                                .setMessage(R.string.location_services_not_enabled)
+                                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        mainActivity.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                                    }
+                                })
+                                .setNegativeButton(R.string.no_thanks, null)
+                                .show();
+                    }
+                });
             }
             return;
         }
@@ -1248,15 +1251,15 @@ public class UrlNavigation {
 
         Intent documentIntent;
         if (mimeTypes.size() > 0) {
-            boolean hasMediaType = false;
+            boolean onlyMediaFiles = true;
             for (String type : mimeTypes) {
-                if (type.contains("image") || type.contains("video") || type.contains("audio")) {
-                    hasMediaType = true;
+                if (!type.contains("image") && !type.contains("video") && !type.contains("audio")) {
+                    onlyMediaFiles = false;
                     break;
                 }
             }
 
-            if (hasMediaType) {
+            if (onlyMediaFiles) {
                 // ACTION_PICK for multimedia files to show Gallery/Album/Audio option
                 // Some devices shows File option
                 documentIntent = new Intent(Intent.ACTION_PICK);
