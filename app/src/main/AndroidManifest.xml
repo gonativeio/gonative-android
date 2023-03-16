@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="io.gonative.android"
-    android:versionName="1.0.0" >
+    android:versionName="1.0.0">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -10,7 +10,9 @@
     <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- WebRTC Audio and Video -->
@@ -22,7 +24,8 @@
 
     <!-- permissions for push messages -->
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-    <permission android:name="${applicationId}.permission.C2D_MESSAGE"
+    <permission
+        android:name="${applicationId}.permission.C2D_MESSAGE"
         android:protectionLevel="signature" />
     <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
 
@@ -31,36 +34,59 @@
     <!--<uses-permission android:name="android.permission.READ_CALL_LOG" />-->
     <!--<uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />-->
 
+    <queries>
+        <!-- Camera -->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.VIDEO_CAPTURE" />
+        </intent>
+
+        <!-- Gallery -->
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.PICK" />
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.CHOOSER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".GoNativeApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:logo="@drawable/ic_actionbar"
-        android:theme="@style/GoNativeTheme.NoActionBar"
-        android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:supportsRtl="true"
+        android:theme="@style/GoNativeTheme.NoActionBar">
 
-        <meta-data android:name="com.google.android.gms.version"
+        <meta-data
+            android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="${admob_app_id}"/>
+            android:value="${admob_app_id}" />
 
         <activity
             android:name="io.gonative.android.MainActivity"
-            android:label="@string/app_name"
-            android:exported="true"
             android:configChanges="orientation|screenSize"
-            tools:node="merge">
-        </activity>
+            android:exported="true"
+            android:label="@string/app_name"
+            tools:node="merge" />
 
         <activity
             android:name=".AppLinksActivity"
-            android:launchMode="singleTask"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
             <!--additional intent filters-->
 
             <!--example: -->
@@ -79,16 +105,20 @@
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
-            android:grantUriPermissions="true"
-            android:exported="false">
+            android:exported="false"
+            android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
         </provider>
 
         <!-- Facebook -->
-        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="fb${facebook_app_id}"/>
-        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="${facebook_client_token}"/>
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="fb${facebook_app_id}" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="${facebook_client_token}" />
 
         <activity
             android:name=".SplashActivity"

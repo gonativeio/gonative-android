@@ -95,7 +95,7 @@ public class UrlNavigation {
 
     public static final int DEFAULT_HTML_SIZE = 10 * 1024; // 10 kilobytes
 
-	private MainActivity mainActivity;
+    private MainActivity mainActivity;
     private String profilePickerExec;
     private String currentWebviewUrl;
     private HtmlIntercept htmlIntercept;
@@ -112,7 +112,7 @@ public class UrlNavigation {
     private String deviceInfoCallback = "";
 
     UrlNavigation(MainActivity activity) {
-		this.mainActivity = activity;
+        this.mainActivity = activity;
         this.htmlIntercept = new HtmlIntercept(activity);
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
@@ -132,9 +132,9 @@ public class UrlNavigation {
         requestPermissionLauncher = mainActivity.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             runGonativeDeviceInfo(deviceInfoCallback);
         });
-	}
+    }
 
-	private boolean isInternalUri(Uri uri) {
+    private boolean isInternalUri(Uri uri) {
         String scheme = uri.getScheme();
         if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
             return false;
@@ -162,16 +162,16 @@ public class UrlNavigation {
                 (host.equals(initialHost) || host.endsWith("." + initialHost));
     }
 
-    public void handleJSBridgeFunctions(Object jsData){
+    public void handleJSBridgeFunctions(Object jsData) {
         Uri uri;
         JSONObject jsonData;
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
 
-        if(jsData instanceof Uri){
+        if (jsData instanceof Uri) {
             try {
                 uri = (Uri) jsData;
                 jsonData = LeanUtils.parseQueryParamsWithUri(uri); // can be null if only command is needed to be executed
-            } catch (Exception exception){
+            } catch (Exception exception) {
                 Log.d(TAG, "GoNative Handle JS Bridge Functions Error:- " + exception.getMessage());
                 return;
             }
@@ -180,7 +180,7 @@ public class UrlNavigation {
                 JSONObject jsonObject = (JSONObject) jsData;
                 jsonData = jsonObject.optJSONObject("data"); // can be null if only command is needed to be executed
                 uri = Uri.parse(jsonObject.optString("gonativeCommand"));
-            } catch (Exception exception){
+            } catch (Exception exception) {
                 Log.d(TAG, "GoNative Handle JS Bridge Functions Error:- " + exception.getMessage());
                 return;
             }
@@ -192,16 +192,16 @@ public class UrlNavigation {
 
         if ("registration".equals(uri.getHost()) && "/send".equals(uri.getPath())) {
             RegistrationManager registrationManager = ((GoNativeApplication) mainActivity.getApplication()).getRegistrationManager();
-            if(jsonData != null){
+            if (jsonData != null) {
                 JSONObject customData = jsonData.optJSONObject("customData");
-                if(customData == null){
+                if (customData == null) {
                     try { // try converting json string from url to json object
                         customData = new JSONObject(jsonData.optString("customData"));
-                    } catch (JSONException e){
+                    } catch (JSONException e) {
                         Log.e(TAG, "GoNative Registration JSONException:- " + e.getMessage());
                     }
                 }
-                if(customData != null){
+                if (customData != null) {
                     registrationManager.setCustomData(customData);
                 }
             }
@@ -210,7 +210,7 @@ public class UrlNavigation {
 
         if ("nativebridge".equals(uri.getHost())) {
             if ("/multi".equals(uri.getPath())) {
-                if(jsonData == null) return;
+                if (jsonData == null) return;
                 String data = jsonData.optString("data");
                 if (data.isEmpty()) return;
                 try {
@@ -225,8 +225,8 @@ public class UrlNavigation {
                 } catch (Exception e) {
                     Log.e(TAG, "Error calling gonative://nativebridge/multi", e);
                 }
-            } else if("/custom".equals(uri.getPath())) {
-                if(jsonData == null) return;
+            } else if ("/custom".equals(uri.getPath())) {
+                if (jsonData == null) return;
                 Map<String, String> params = new HashMap<String, String>();
                 // map to json
                 for (Iterator<String> it = jsonData.keys(); it.hasNext(); ) {
@@ -240,7 +240,7 @@ public class UrlNavigation {
                 JSONObject data = JsCustomCodeExecutor.execute(params);
 
                 String callback = params.get("callback");
-                if(callback != null && !callback.isEmpty()) {
+                if (callback != null && !callback.isEmpty()) {
                     final String js = LeanUtils.createJsForCallback(callback, data);
                     // run on main thread
                     Handler mainHandler = new Handler(mainActivity.getMainLooper());
@@ -285,7 +285,7 @@ public class UrlNavigation {
             if ("/gonative_device_info".equals(uri.getPath())) {
                 String callback = "gonative_device_info";
                 boolean includeCarrierNames = false;
-                if(jsonData != null){
+                if (jsonData != null) {
                     callback = jsonData.optString("callback", "gonative_device_info");
                     includeCarrierNames = jsonData.optBoolean("includeCarrierNames", false);
                 }
@@ -332,7 +332,7 @@ public class UrlNavigation {
 
         if ("screen".equals(uri.getHost())) {
             if ("/setBrightness".equals(uri.getPath())) {
-                if(jsonData == null) return;
+                if (jsonData == null) return;
                 String brightnessString = jsonData.optString("brightness");
                 if (brightnessString.isEmpty()) {
                     Log.e(TAG, "Brightness not specified in " + uri.toString());
@@ -359,16 +359,15 @@ public class UrlNavigation {
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing brightness", e);
                 }
-            }
-            else if("/fullscreen".equals(uri.getPath())) {
+            } else if ("/fullscreen".equals(uri.getPath())) {
                 mainActivity.toggleFullscreen(true);
-            } else if("/normal".equals(uri.getPath())){
+            } else if ("/normal".equals(uri.getPath())) {
                 mainActivity.toggleFullscreen(false);
-            } else if("/keepScreenOn".equals(uri.getPath())){
+            } else if ("/keepScreenOn".equals(uri.getPath())) {
                 mainActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            } else if("/keepScreenNormal".equals(uri.getPath())){
+            } else if ("/keepScreenNormal".equals(uri.getPath())) {
                 mainActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            } else if("/setMode".equals(uri.getPath())) {
+            } else if ("/setMode".equals(uri.getPath())) {
                 String mode = jsonData.optString("mode", "auto");
                 mainActivity.setupAppTheme(mode);
             }
@@ -389,10 +388,10 @@ public class UrlNavigation {
                 boolean persist = jsonData.optBoolean("persist");
                 JSONObject data = jsonData.optJSONObject("data");
                 try {
-                    if(data == null){ // convert string to json from url
+                    if (data == null) { // convert string to json from url
                         data = new JSONObject(jsonData.optString("data"));
                     }
-                }catch (JSONException e){
+                } catch (JSONException e) {
                     Log.e(TAG, "GoNative Navigation Titles JSONException:- " + e.getMessage());
                     return;
                 }
@@ -413,10 +412,10 @@ public class UrlNavigation {
                 boolean persist = jsonData.optBoolean("persist");
                 JSONObject data = jsonData.optJSONObject("data");
                 try {
-                    if(data == null){ // convert string to json from url
+                    if (data == null) { // convert string to json from url
                         data = new JSONObject(jsonData.optString("data"));
                     }
-                }catch (JSONException e){
+                } catch (JSONException e) {
                     Log.e(TAG, "GoNative Navigation Levels JSONException:- " + e.getMessage());
                     return;
                 }
@@ -428,7 +427,7 @@ public class UrlNavigation {
         if ("sidebar".equals(uri.getHost())) {
             if ("/setItems".equals(uri.getPath()) && jsonData != null) {
                 Object items = jsonData.optJSONArray("items");
-                if(items == null){
+                if (items == null) {
                     String itemsString = jsonData.optString("items");
                     if (!itemsString.isEmpty()) {
                         try {
@@ -447,10 +446,10 @@ public class UrlNavigation {
                     AppConfig.getInstance(this.mainActivity).setSidebarNavigation(items);
                 }
                 this.mainActivity.setSidebarNavigationEnabled(enabled);
-            } else if("/getItems".equals(uri.getPath()) && jsonData != null && !jsonData.optString("callback").isEmpty()){
+            } else if ("/getItems".equals(uri.getPath()) && jsonData != null && !jsonData.optString("callback").isEmpty()) {
                 String callback = jsonData.optString("callback");
                 JSONObject menus = AppConfig.getInstance(this.mainActivity).getSidebarNavigation();
-                if(menus != null){
+                if (menus != null) {
                     mainActivity.runJavascript(LeanUtils.createJsForCallback(callback, menus));
                 }
             }
@@ -463,7 +462,7 @@ public class UrlNavigation {
                 this.mainActivity.sharePage(urlString);
             } else if ("/downloadFile".equals(uri.getPath()) && !urlString.isEmpty()) {
                 this.mainActivity.getFileDownloader().downloadFile(urlString, false);
-            } else if ("/downloadImage".equals(uri.getPath()) && !urlString.isEmpty()){
+            } else if ("/downloadImage".equals(uri.getPath()) && !urlString.isEmpty()) {
                 this.mainActivity.getFileDownloader().downloadFile(urlString, true);
             }
 
@@ -494,7 +493,7 @@ public class UrlNavigation {
             } else if ("/setTabs".equals(uri.getPath()) && jsonData != null) {
                 JSONObject tabsConfig = jsonData.optJSONObject("tabs");
                 int tabMenuId = tabsConfig.optInt("tabMenu", -1);
-                if(tabsConfig == null){
+                if (tabsConfig == null) {
                     try {
                         tabsConfig = new JSONObject(jsonData.optString("tabs"));
                     } catch (JSONException e) {
@@ -510,11 +509,11 @@ public class UrlNavigation {
 
         if ("connectivity".equals(uri.getHost())) {
             if ("/get".equals(uri.getPath())) {
-                if(jsonData != null && !jsonData.optString("callback").isEmpty()){
+                if (jsonData != null && !jsonData.optString("callback").isEmpty()) {
                     this.mainActivity.sendConnectivityOnce(jsonData.optString("callback"));
                 }
             } else if ("/subscribe".equals(uri.getPath())) {
-                if(jsonData != null && !jsonData.optString("callback").isEmpty()){
+                if (jsonData != null && !jsonData.optString("callback").isEmpty()) {
                     this.mainActivity.subscribeConnectivity(jsonData.optString("callback"));
                 }
             } else if ("/unsubscribe".equals(uri.getPath())) {
@@ -550,7 +549,7 @@ public class UrlNavigation {
             }
             return;
         }
-    
+
         if ("internalExternal".equals(uri.getHost())) {
             if ("/set".equals(uri.getPath())) {
                 if (jsonData == null || jsonData.length() == 0) {
@@ -594,7 +593,7 @@ public class UrlNavigation {
                 }
             } else if ("/get".equals(uri.getPath())) {
                 String callback = jsonData.optString("callback");
-                if(callback != null && !callback.isEmpty()) {
+                if (callback != null && !callback.isEmpty()) {
                     Map<String, String> params = new HashMap<String, String>();
                     ClipboardManager clipboard = (ClipboardManager) mainActivity.getSystemService(Context.CLIPBOARD_SERVICE);
                     CharSequence pasteData = "";
@@ -674,7 +673,7 @@ public class UrlNavigation {
             return true;
         }
 
-        if("gonative".equals(uri.getScheme())){
+        if ("gonative".equals(uri.getScheme())) {
             handleJSBridgeFunctions(uri);
             return true;
         }
@@ -697,10 +696,10 @@ public class UrlNavigation {
             }
         }
 
-        if (!isInternalUri(uri)){
+        if (!isInternalUri(uri)) {
             if (noAction) return true;
 
-            Log.d(TAG,"processing dynamic link: " + uri);
+            Log.d(TAG, "processing dynamic link: " + uri);
             Intent intent = null;
             // launch browser
             try {
@@ -759,8 +758,7 @@ public class UrlNavigation {
                 mainActivity.postLoadJavascriptForRefresh = null;
 
                 return true;
-            }
-            else if (newLevel < currentLevel && newLevel <= mainActivity.getParentUrlLevel()) {
+            } else if (newLevel < currentLevel && newLevel <= mainActivity.getParentUrlLevel()) {
                 if (noAction) return true;
 
                 // pop activity
@@ -802,7 +800,7 @@ public class UrlNavigation {
         }
 
         // check to see if the webview exists in pool.
-        WebViewPool webViewPool = ((GoNativeApplication)mainActivity.getApplication()).getWebViewPool();
+        WebViewPool webViewPool = ((GoNativeApplication) mainActivity.getApplication()).getWebViewPool();
         Pair<GoNativeWebviewInterface, WebViewPoolDisownPolicy> pair = webViewPool.webviewForUrl(url);
         final GoNativeWebviewInterface poolWebview = pair.first;
         WebViewPoolDisownPolicy poolDisownPolicy = pair.second;
@@ -854,7 +852,7 @@ public class UrlNavigation {
         return false;
     }
 
-	public boolean shouldOverrideUrlLoading(final GoNativeWebviewInterface view, String url,
+    public boolean shouldOverrideUrlLoading(final GoNativeWebviewInterface view, String url,
                                             @SuppressWarnings("unused") boolean isReload) {
         if (url == null) return false;
 
@@ -884,13 +882,13 @@ public class UrlNavigation {
                         view.loadUrlDirect(OFFLINE_PAGE_URL);
                     }
                 }
-            }, (long)(connectionOfflineTime * 1000));
+            }, (long) (connectionOfflineTime * 1000));
         }
 
         return false;
     }
 
-	public void onPageStarted(String url) {
+    public void onPageStarted(String url) {
         // catch blank pages from htmlIntercept and cancel loading
         if (url.equals(htmlIntercept.getRedirectedUrl())) {
             mainActivity.goBack();
@@ -903,7 +901,7 @@ public class UrlNavigation {
         htmlIntercept.setInterceptUrl(url);
 
         UrlInspector.getInstance().inspectUrl(url);
-		Uri uri = Uri.parse(url);
+        Uri uri = Uri.parse(url);
 
         // reload menu if internal url
         if (AppConfig.getInstance(mainActivity).loginDetectionUrl != null && isInternalUri(uri)) {
@@ -937,7 +935,7 @@ public class UrlNavigation {
         });
     }
 
-	@SuppressLint("ApplySharedPref")
+    @SuppressLint("ApplySharedPref")
     public void onPageFinished(GoNativeWebviewInterface view, String url) {
 //        Log.d(TAG, "onpagefinished " + url);
         state = WebviewLoadState.STATE_DONE;
@@ -945,7 +943,7 @@ public class UrlNavigation {
 
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
         if (url != null && appConfig.ignorePageFinishedRegexes != null) {
-            for (Pattern pattern: appConfig.ignorePageFinishedRegexes) {
+            for (Pattern pattern : appConfig.ignorePageFinishedRegexes) {
                 if (pattern.matcher(url).matches()) return;
             }
         }
@@ -959,18 +957,18 @@ public class UrlNavigation {
 
         UrlInspector.getInstance().inspectUrl(url);
 
-		Uri uri = Uri.parse(url);
-		if (isInternalUri(uri)){
+        Uri uri = Uri.parse(url);
+        if (isInternalUri(uri)) {
             AsyncTask.THREAD_POOL_EXECUTOR.execute(new Runnable() {
                 @Override
                 public void run() {
                     CookieManager.getInstance().flush();
                 }
             });
-		}
+        }
 
         if (appConfig.loginDetectionUrl != null) {
-            if (mVisitedLoginOrSignup){
+            if (mVisitedLoginOrSignup) {
                 mainActivity.updateMenu();
             }
 
@@ -980,7 +978,7 @@ public class UrlNavigation {
 
         // post-load javascript
         if (appConfig.postLoadJavascript != null) {
-		    view.runJavascript(appConfig.postLoadJavascript);
+            view.runJavascript(appConfig.postLoadJavascript);
         }
 
         // profile picker
@@ -1015,10 +1013,10 @@ public class UrlNavigation {
         ((GoNativeApplication) mainActivity.getApplication()).mBridge.onPageFinish(mainActivity, doNativeBridge);
     }
 
-    private void injectJSBridgeLibrary(){
-        if(!LeanUtils.checkNativeBridgeUrls(currentWebviewUrl,mainActivity)) return;
+    private void injectJSBridgeLibrary() {
+        if (!LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity)) return;
         try {
-            if(JSBridgeScript == null) {
+            if (JSBridgeScript == null) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 InputStream is = new BufferedInputStream(mainActivity.getAssets().open("GoNativeJSBridgeLibrary.js"));
                 IOUtils.copy(is, baos);
@@ -1037,7 +1035,7 @@ public class UrlNavigation {
         resend.sendToTarget();
     }
 
-	private void runGonativeDeviceInfo(String callback) {
+    private void runGonativeDeviceInfo(String callback) {
         Map<String, Object> installationInfo = Installation.getInfo(mainActivity);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
         if (!sharedPreferences.getBoolean("hasLaunched", false)) {
@@ -1063,9 +1061,9 @@ public class UrlNavigation {
         }
     }
 
-	public void onReceivedError(final GoNativeWebviewInterface view,
+    public void onReceivedError(final GoNativeWebviewInterface view,
                                 @SuppressWarnings("unused") int errorCode,
-                                String errorDescription, String failingUrl){
+                                String errorDescription, String failingUrl) {
         if (errorDescription != null && errorDescription.contains("net::ERR_CACHE_MISS")) {
             mainActivity.runOnUiThread(new Runnable() {
                 @Override
@@ -1116,7 +1114,7 @@ public class UrlNavigation {
                 }
             });
         }
-	}
+    }
 
     public void onReceivedSslError(SslError error) {
         int errorMessage;
@@ -1159,7 +1157,11 @@ public class UrlNavigation {
     }
 
     public boolean chooseFileUpload(final String[] mimetypespec, final boolean multiple) {
-        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            chooseFileUploadAfterPermission(mimetypespec, multiple);
+        } else {
+            mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
+        }
         return true;
     }
 
@@ -1167,116 +1169,9 @@ public class UrlNavigation {
     private boolean chooseFileUploadAfterPermission(String[] mimetypespec, boolean multiple) {
         mainActivity.setDirectUploadImageUri(null);
 
-        Set<String> mimeTypes = new HashSet<>();
-        for (String spec : mimetypespec) {
-            String[] splitSpec = spec.split("[,;\\s]");
-            for (String s : splitSpec) {
-                if (s.startsWith(".")) {
-                    String t = MimeTypeMap.getSingleton().getMimeTypeFromExtension(s.substring(1));
-                    if (t != null) mimeTypes.add(t);
-                } else if (s.contains("/")) {
-                    mimeTypes.add(s);
-                }
-            }
-        }
-
-        if (mimeTypes.isEmpty()) mimeTypes.add("*/*");
-
-        boolean useCamera = false;
-        boolean useVideo = false;
-
-        if (AppConfig.getInstance(mainActivity).directCameraUploads) {
-            for (String type : mimeTypes) {
-                if (type.equals("*/*")) {
-                    useCamera = true;
-                    useVideo = true;
-                } else if (type.equals("image/*") || type.equals("image/jpeg") || type.equals("image/jpg")) {
-                    useCamera = true;
-                } else if (type.startsWith("video/")) {
-                    useVideo = true;
-                }
-            }
-        }
-
-        List<Intent> directCaptureIntents = new ArrayList<>();
-
-        PackageManager packageManger = mainActivity.getPackageManager();
-        if (useCamera) {
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            String imageFileName = "IMG_" + timeStamp + ".jpg";
-
-            Uri captureUrl = null;
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                ContentResolver resolver = mainActivity.getContentResolver();
-                ContentValues contentValues = new ContentValues();
-                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName);
-                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/*");
-                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
-
-                captureUrl = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-            }else {
-                File storageDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES);
-                File captureFile = new File(storageDir, imageFileName);
-                captureUrl = Uri.fromFile(captureFile);
-            }
-
-            if (captureUrl != null) {
-                Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                List<ResolveInfo> resolveList = packageManger.queryIntentActivities(captureIntent, 0);
-                for (ResolveInfo resolve : resolveList) {
-                    String packageName = resolve.activityInfo.packageName;
-                    Intent intent = new Intent(captureIntent);
-                    intent.setComponent(new ComponentName(resolve.activityInfo.packageName, resolve.activityInfo.name));
-                    intent.setPackage(packageName);
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUrl);
-                    mainActivity.setDirectUploadImageUri(captureUrl);
-                    directCaptureIntents.add(intent);
-                }
-            }
-
-        }
-
-        if (useVideo) {
-            Intent captureIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-            List<ResolveInfo> resolveList = packageManger.queryIntentActivities(captureIntent, 0);
-            for (ResolveInfo resolve : resolveList) {
-                String packageName = resolve.activityInfo.packageName;
-                Intent intent = new Intent(captureIntent);
-                intent.setComponent(new ComponentName(resolve.activityInfo.packageName, resolve.activityInfo.name));
-                intent.setPackage(packageName);
-                directCaptureIntents.add(intent);
-            }
-        }
-
-        Intent documentIntent = new Intent(Intent.ACTION_PICK);
-
-        if (mimeTypes.size() == 1) {
-            documentIntent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, mimeTypes.iterator().next());
-        } else {
-            documentIntent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "*/*");
-
-            // If running kitkat or later, then we can specify multiple mime types
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                documentIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray(new String[mimeTypes.size()]));
-            }
-        }
-
-        // INTENT_ALLOW_MULTIPLE can be used starting API 18. But we should only get multiple=true
-        // starting in Lollipop anyway.
-        if (multiple && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            documentIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        }
-
-        Intent intentToSend;
-
-        if (directCaptureIntents.isEmpty()) {
-            intentToSend = documentIntent;
-        } else {
-            Intent chooserIntent = Intent.createChooser(documentIntent, mainActivity.getString(R.string.choose_action));
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, directCaptureIntents.toArray(new Parcelable[0]));
-            intentToSend = chooserIntent;
-        }
+        FileUploadIntentsCreator creator = new FileUploadIntentsCreator(mainActivity, mimetypespec, multiple);
+        Intent intentToSend = creator.chooserIntent();
+        mainActivity.setDirectUploadImageUri(creator.getCurrentCaptureUri());
 
         try {
             mainActivity.startActivityForResult(intentToSend, MainActivity.REQUEST_SELECT_FILE);
@@ -1287,96 +1182,42 @@ public class UrlNavigation {
             return false;
         }
     }
-    
-    
+
+
     public boolean openDirectCamera(final String[] mimetypespec, final boolean multiple) {
-        mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> openDirectCameraAfterPermission(mimetypespec, multiple));
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            openDirectCameraAfterPermission(mimetypespec, multiple);
+        } else {
+            mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> openDirectCameraAfterPermission(mimetypespec, multiple));
+        }
         return true;
     }
-    
+
     /*
         Directly opens camera if the mime types are images. If not, run existing default process
      */
     @SuppressWarnings("UnusedReturnValue")
     private boolean openDirectCameraAfterPermission(String[] mimetypespec, boolean multiple) {
         mainActivity.setDirectUploadImageUri(null);
-        
-        Set<String> mimeTypes = new HashSet<>();
-        for (String spec : mimetypespec) {
-            String[] splitSpec = spec.split("[,;\\s]");
-            for (String s : splitSpec) {
-                if (s.startsWith(".")) {
-                    String t = MimeTypeMap.getSingleton().getMimeTypeFromExtension(s.substring(1));
-                    if (t != null) mimeTypes.add(t);
-                } else if (s.contains("/")) {
-                    mimeTypes.add(s);
-                }
-            }
+
+        FileUploadIntentsCreator creator = new FileUploadIntentsCreator(mainActivity, mimetypespec, multiple);
+        Intent intentToSend = creator.cameraIntent();
+        mainActivity.setDirectUploadImageUri(creator.getCurrentCaptureUri());
+
+        try {
+            // Directly open the camera intent with the same Request Result value value
+            mainActivity.startActivityForResult(intentToSend, MainActivity.REQUEST_SELECT_FILE);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            mainActivity.cancelFileUpload();
+            Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
         }
-        
-        // Checks if mimeTypes is empty. If true, redirect process to existing file chooser
-        if (mimeTypes.isEmpty()) {
-            return chooseFileUploadAfterPermission(mimetypespec, multiple);
-        }
-        
-        if (AppConfig.getInstance(mainActivity).directCameraUploads) {
-            for (String type : mimeTypes) {
-                if (type.equals("image/*") || type.equals("image/jpeg") || type.equals("image/jpg")) {
-                    // Filter types to be just images
-                } else {
-                    
-                    // Redirect process to existing file chooser
-                    return chooseFileUploadAfterPermission(mimetypespec, multiple);
-                }
-            }
-        }
-        
-        PackageManager packageManger = mainActivity.getPackageManager();
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-        String imageFileName = "IMG_" + timeStamp + ".jpg";
-        
-        Uri captureUrl = null;
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            ContentResolver resolver = mainActivity.getContentResolver();
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName);
-            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/*");
-            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
-            captureUrl = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-        } else {
-            File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-            File captureFile = new File(storageDir, imageFileName);
-            captureUrl = Uri.fromFile(captureFile);
-        }
-        
-        Intent captureIntent;
-        if (captureUrl != null) {
-            captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            List<ResolveInfo> resolveList = packageManger.queryIntentActivities(captureIntent, 0);
-            for (ResolveInfo resolve : resolveList) {
-                String packageName = resolve.activityInfo.packageName;
-                Intent intent = new Intent(captureIntent);
-                intent.setComponent(new ComponentName(resolve.activityInfo.packageName, resolve.activityInfo.name));
-                intent.setPackage(packageName);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUrl);
-                mainActivity.setDirectUploadImageUri(captureUrl);
-            }
-            
-            try {
-                // Directly open the camera intent with the same Request Result value value
-                mainActivity.startActivityForResult(captureIntent, MainActivity.REQUEST_SELECT_FILE);
-                return true;
-            } catch (ActivityNotFoundException e) {
-                mainActivity.cancelFileUpload();
-                Toast.makeText(mainActivity, R.string.cannot_open_file_chooser, Toast.LENGTH_LONG).show();
-            }
-        }
-        
+
         return false;
     }
-    
+
     public boolean createNewWindow(Message resultMsg) {
-        ((GoNativeApplication)mainActivity.getApplication()).setWebviewMessage(resultMsg);
+        ((GoNativeApplication) mainActivity.getApplication()).setWebviewMessage(resultMsg);
         return createNewWindow();
     }
 
@@ -1396,8 +1237,7 @@ public class UrlNavigation {
         return true;
     }
 
-    public boolean isLocationServiceEnabled()
-    {
+    public boolean isLocationServiceEnabled() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             LocationManager lm = mainActivity.getSystemService(LocationManager.class);
             return lm.isLocationEnabled();
@@ -1405,7 +1245,7 @@ public class UrlNavigation {
             // This is Deprecated in API 28
             int mode = Settings.Secure.getInt(mainActivity.getContentResolver(), Settings.Secure.LOCATION_MODE,
                     Settings.Secure.LOCATION_MODE_OFF);
-            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
+            return (mode != Settings.Secure.LOCATION_MODE_OFF);
         }
     }
 
@@ -1444,7 +1284,8 @@ public class UrlNavigation {
             if (result != null && result.first != null & result.second != null) {
                 request.proceed(result.first, result.second);
             } else {
-                request.ignore();;
+                request.ignore();
+                ;
             }
         }
     }
@@ -1464,7 +1305,7 @@ public class UrlNavigation {
         KeyChain.choosePrivateKeyAlias(mainActivity, callback, request.getKeyTypes(), request.getPrincipals(), request.getHost(),
                 request.getPort(), null);
     }
-    
+
     // Cancels scheduled display of offline page after timeout
     public void cancelLoadTimeout() {
         if (startLoadTimeout == null && state != WebviewLoadState.STATE_START_LOAD) return;
