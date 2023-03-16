@@ -1251,15 +1251,15 @@ public class UrlNavigation {
 
         Intent documentIntent;
         if (mimeTypes.size() > 0) {
-            boolean onlyMediaFiles = true;
+            boolean hasMediaType = false;
             for (String type : mimeTypes) {
-                if (!type.contains("image") && !type.contains("video") && !type.contains("audio")) {
-                    onlyMediaFiles = false;
+                if (type.contains("image") || type.contains("video") || type.contains("audio")) {
+                    hasMediaType = true;
                     break;
                 }
             }
 
-            if (onlyMediaFiles) {
+            if (hasMediaType) {
                 // ACTION_PICK for multimedia files to show Gallery/Album/Audio option
                 // Some devices shows File option
                 documentIntent = new Intent(Intent.ACTION_PICK);
