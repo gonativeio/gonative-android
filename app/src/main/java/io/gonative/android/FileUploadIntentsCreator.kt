@@ -10,6 +10,8 @@ import android.os.Environment
 import android.os.Parcelable
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.content.FileProvider
 import io.gonative.android.library.AppConfig
 import java.io.File
 import java.text.SimpleDateFormat
@@ -74,7 +76,7 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
             val storageDir = Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES)
             val captureFile = File(storageDir, imageFileName)
-            Uri.fromFile(captureFile)
+            FileProvider.getUriForFile(context, context.applicationContext.packageName + ".fileprovider", captureFile);
         }
 
         val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
