@@ -1085,8 +1085,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
 	@Override
-    @TargetApi(21)
-    // Lollipop target API for REQEUST_SELECT_FILE_LOLLIPOP
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         GoNativeApplication application = (GoNativeApplication)getApplication();
@@ -1184,18 +1182,20 @@ public class MainActivity extends AppCompatActivity implements Observer,
             // from camera
             if (this.directUploadImageUri != null) {
                 // check if we have external storage permissions
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) !=
-                    PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                        Toast.makeText(this, R.string.external_storage_explanation, Toast.LENGTH_LONG).show();
-                    }
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) !=
+                            PackageManager.PERMISSION_GRANTED) {
+                        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                                Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                            Toast.makeText(this, R.string.external_storage_explanation, Toast.LENGTH_LONG).show();
+                        }
 
-                    ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
-                    // wait for the onRequestPermissionsResult callback
-                    return;
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                                REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
+                        // wait for the onRequestPermissionsResult callback
+                        return;
+                    }
                 }
 
 
