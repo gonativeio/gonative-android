@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -245,7 +246,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         swipeRefreshLayout.setEnabled(appConfig.pullToRefresh);
         swipeRefreshLayout.setOnRefreshListener(this);
         swipeRefreshLayout.setCanChildScrollUpCallback(() -> mWebview.getScrollY() > 0);
-        
+
+        if (isAndroidGestureEnabled()) {
+            appConfig.swipeGestures = false;
+        }
         swipeNavLayout = findViewById(R.id.swipe_history_nav);
         swipeNavLayout.setEnabled(appConfig.swipeGestures);
         swipeNavLayout.setSwipeNavListener(new SwipeHistoryNavigationLayout.OnSwipeNavListener() {
@@ -2092,6 +2096,25 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @SuppressLint("DiscouragedApi")
+    private boolean isAndroidGestureEnabled() {
+        if (Build.VERSION.SDK_INT < 29) return false;
+        try {
+            int resourceId = getResources().getIdentifier("config_navBarInteractionMode", "integer", "android");
+            if (resourceId > 0) {
+                // 0 : Navigation is displaying with 3 buttons
+                // 1 : Navigation is displaying with 2 button(Android P navigation mode)
+                // 2 : Full screen gesture(Gesture on android Q)
+                if (getResources().getInteger(resourceId) == 2) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Resources.NotFoundException ex) {
+            Log.e(TAG, "isAndroidGestureEnabled: ", ex);
+            return false;
+        }
+    }
 
     public void updateStatusBarOverlay(boolean isOverlayEnabled) {
         View decor = getWindow().getDecorView();

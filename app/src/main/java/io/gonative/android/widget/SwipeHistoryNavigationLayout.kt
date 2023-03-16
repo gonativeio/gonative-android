@@ -3,12 +3,9 @@ package io.gonative.android.widget;
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -73,7 +70,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     private var oldDeltaX: Float = Float.NaN
     private var deltaX: Float = Float.NaN
     private var isSwipeReachesLimit = false
-    private var androidGestureEnabled = false;
 
     @JvmOverloads
     constructor(
@@ -129,7 +125,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         )
         rightEdgeEffect = EdgeEffect(context)
         setWillNotDraw(false)
-        androidGestureEnabled = isAndroidGestureEnabled();
     }
 
     @SuppressLint("RtlHardcoded")
@@ -173,7 +168,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-        if (!swipeNavListener.isSwipeEnabled() || androidGestureEnabled) {
+        if (!swipeNavListener.isSwipeEnabled()) {
             return false
         }
 
@@ -388,26 +383,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         }
     }
 
-    @SuppressLint("DiscouragedApi")
-    private fun isAndroidGestureEnabled(): Boolean {
-        if (Build.VERSION.SDK_INT < 29) return false
-        try {
-            val resources: Resources = context.resources
-            val resourceId: Int = resources.getIdentifier("config_navBarInteractionMode", "integer", "android")
-            if (resourceId > 0) {
-                // 0 : Navigation is displaying with 3 buttons
-                // 1 : Navigation is displaying with 2 button(Android P navigation mode)
-                // 2 : Full screen gesture(Gesture on android Q)
-                if (resources.getInteger(resourceId) == 2) {
-                    return true
-                }
-            }
-            return false
-        } catch (ex: Resources.NotFoundException) {
-            Log.e("SwipeNav", "isAndroidGestureEnabled: ", ex)
-            return false
-        }
-    }
 
     var swipeNavListener: OnSwipeNavListener = object : OnSwipeNavListener {
         override fun canSwipeLeftEdge(): Boolean = true
