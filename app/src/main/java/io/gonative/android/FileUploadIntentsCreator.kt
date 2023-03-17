@@ -10,7 +10,6 @@ import android.os.Environment
 import android.os.Parcelable
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
-import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.FileProvider
 import io.gonative.android.library.AppConfig
 import java.io.File
@@ -80,11 +79,7 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
         }
 
         val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        val resolveList: List<ResolveInfo> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManger.queryIntentActivities(captureIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
-        } else {
-            packageManger.queryIntentActivities(captureIntent, PackageManager.MATCH_DEFAULT_ONLY)
-        }
+        val resolveList: List<ResolveInfo> = listOfAvailableAppsForIntent(captureIntent)
         for (resolve in resolveList) {
             val packageName = resolve.activityInfo.packageName
             val intent = Intent(captureIntent)
@@ -105,11 +100,7 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
         }
 
         val captureIntent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
-        val resolveList: List<ResolveInfo> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManger.queryIntentActivities(captureIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
-        } else {
-            packageManger.queryIntentActivities(captureIntent, PackageManager.MATCH_DEFAULT_ONLY)
-        }
+        val resolveList: List<ResolveInfo> = listOfAvailableAppsForIntent(captureIntent)
         for (resolve in resolveList) {
             val packageName = resolve.activityInfo.packageName
             val intent = Intent(captureIntent)
@@ -122,16 +113,20 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
     }
 
     private fun filePickerIntent(): Intent {
-        val intent: Intent
-        if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) {
+        var intent: Intent
+        intent = Intent(Intent.ACTION_GET_CONTENT) // or ACTION_OPEN_DOCUMENT
+        intent.type = mimeTypes.joinToString(", ")
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toTypedArray())
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+
+        val resolveList: List<ResolveInfo> = listOfAvailableAppsForIntent(intent)
+
+        if (resolveList.isEmpty() && Build.MANUFACTURER.equals("samsung", ignoreCase = true)) {
             intent = Intent("com.sec.android.app.myfiles.PICK_DATA")
             intent.putExtra("CONTENT_TYPE", "*/*")
             intent.addCategory(Intent.CATEGORY_DEFAULT)
-        } else {
-            intent = Intent(Intent.ACTION_GET_CONTENT) // or ACTION_OPEN_DOCUMENT
-            intent.type = "*/*"
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toTypedArray())
-            intent.addCategory(Intent.CATEGORY_OPENABLE)
+            return intent
         }
 
         return intent
@@ -140,7 +135,7 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
     fun cameraIntent(): Intent {
         val mediaIntents = if (imagesAllowed()) {
             photoCameraIntents()
-        }else {
+        } else {
             videoCameraIntents()
         }
         return mediaIntents.first()
@@ -159,14 +154,14 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
         val chooserIntent: Intent?
         val mediaIntent: Intent?
 
-        if (onlyImagesAndVideo() && !isGooglePhotosDefaultApp()) {
+        if (imagesAllowed() xor videosAllowed()) {
+            mediaIntent = getMediaInitialIntent()
+            mediaIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
+            chooserIntent = Intent.createChooser(mediaIntent, context.getString(R.string.choose_action))
+        } else if (onlyImagesAndVideo() && !isGooglePhotosDefaultApp()) {
             mediaIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             mediaIntent.type = "image/*, video/*"
             mediaIntent.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
-            mediaIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
-            chooserIntent = Intent.createChooser(mediaIntent, context.getString(R.string.choose_action))
-        }else if (imagesAllowed() xor videosAllowed()) {
-            mediaIntent = getMediaInitialIntent()
             mediaIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
             chooserIntent = Intent.createChooser(mediaIntent, context.getString(R.string.choose_action))
         } else {
@@ -191,12 +186,16 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
 
     private fun isGooglePhotosDefaultApp(): Boolean {
         val captureIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        val resolveList: List<ResolveInfo> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManger.queryIntentActivities(captureIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
-        } else {
-            packageManger.queryIntentActivities(captureIntent, PackageManager.MATCH_DEFAULT_ONLY)
-        }
+        val resolveList: List<ResolveInfo> = listOfAvailableAppsForIntent(captureIntent)
 
         return resolveList.size == 1 && resolveList.first().activityInfo.packageName == "com.google.android.apps.photos"
+    }
+
+    private fun listOfAvailableAppsForIntent(intent: Intent): List<ResolveInfo> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManger.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+        } else {
+            packageManger.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        }
     }
 }
