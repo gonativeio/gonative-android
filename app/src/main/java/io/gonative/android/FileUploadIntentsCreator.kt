@@ -130,7 +130,7 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
         } else {
             intent = Intent(Intent.ACTION_GET_CONTENT) // or ACTION_OPEN_DOCUMENT
             intent.type = "*/*"
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toArray())
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toTypedArray())
             intent.addCategory(Intent.CATEGORY_OPENABLE)
         }
 
