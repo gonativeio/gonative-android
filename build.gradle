@@ -2,7 +2,7 @@
 buildscript {
     ext {
         kotlin_version = '1.6.21'
-        libraryVersion = '1.2.8'
+        libraryVersion = '1.2.9'
         coreVersion = '1.3.3'
         iconsVersion = '1.2.0'
     }
