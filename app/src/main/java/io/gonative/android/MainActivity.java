@@ -1892,7 +1892,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void deselectTabs() {
-        this.bottomNavigationView.refresh();
+        this.bottomNavigationView.setCurrentItem(AHBottomNavigation.CURRENT_ITEM_NONE);
     }
 
     private void listenForSignalStrength() {

@@ -324,7 +324,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
     @Override
     public boolean onTabSelected(int position, boolean wasSelected) {
-        if (this.tabs != null && position < this.tabs.length()) {
+        if (this.tabs != null && position < this.tabs.length() && position != -1) {
             JSONObject entry = this.tabs.optJSONObject(position);
 
             String url = entry.optString("url");
