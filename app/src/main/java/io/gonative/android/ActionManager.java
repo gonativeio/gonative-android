@@ -74,7 +74,7 @@ public class ActionManager {
         actionBar = activity.getSupportActionBar();
         this.isRoot = isRoot;
 
-        colorForeground = activity.getResources().getColor(R.color.titleTextColor);
+        colorForeground = activity.getResources().getColor(R.color.colorAccent);
         colorBackground = activity.getResources().getColor(R.color.colorPrimary);
     }
 
@@ -426,7 +426,9 @@ public class ActionManager {
 
         // Add to temporary fields so actual items count would not be affected
         int tempLeftItemsCount = leftItemsCount;
-        int tempRightItemsCount = rightItemsCount;
+
+        // Limit right menu count to three for margin
+        int tempRightItemsCount = Math.min(rightItemsCount, 3);
 
         if (appConfig.showNavigationMenu && isRoot)
             tempLeftItemsCount++;

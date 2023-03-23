@@ -373,6 +373,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
         // actions in action bar
         this.actionManager = new ActionManager(this, isRoot);
 
+        // overflow menu icon color
+        if (toolbar!= null && toolbar.getOverflowIcon() != null) {
+            toolbar.getOverflowIcon().setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_ATOP);
+        }
+
         Intent intent = getIntent();
         // load url
         String url = getUrlFromIntent(intent);
@@ -423,6 +428,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
                 }
             };
+
+            mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.colorAccent));
+
             mDrawerLayout.addDrawerListener(mDrawerToggle);
             mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
 
@@ -438,7 +446,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             if (!isRoot || appConfig.showNavigationMenu) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
-                backArrow.setColorFilter(getResources().getColor(R.color.titleTextColor), PorterDuff.Mode.SRC_ATOP);
+                backArrow.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_ATOP);
                 getSupportActionBar().setHomeAsUpIndicator(backArrow);
             }
             
