@@ -477,6 +477,7 @@ public class UrlNavigation {
                 mainActivity.deselectTabs();
             } else if ("/setTabs".equals(uri.getPath()) && jsonData != null) {
                 JSONObject tabsConfig = jsonData.optJSONObject("tabs");
+                if (tabsConfig == null) return;
                 int tabMenuId = tabsConfig.optInt("tabMenu", -1);
                 if (tabsConfig == null) {
                     try {
@@ -922,7 +923,11 @@ public class UrlNavigation {
 
     @SuppressLint("ApplySharedPref")
     public void onPageFinished(GoNativeWebviewInterface view, String url) {
-//        Log.d(TAG, "onpagefinished " + url);
+
+        if (url.startsWith("intent")) {
+            return;
+        }
+
         state = WebviewLoadState.STATE_DONE;
         this.currentWebviewUrl = url;
 
