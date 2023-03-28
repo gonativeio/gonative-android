@@ -3,6 +3,7 @@ package io.gonative.android;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Message;
@@ -37,7 +38,16 @@ public class GoNativeWebviewClient extends WebViewClient{
     }
 
     public boolean shouldOverrideUrlLoading(WebView view, String url, boolean isReload) {
-        return urlNavigation.shouldOverrideUrlLoading((GoNativeWebviewInterface)view, url, isReload);
+        return urlNavigation.shouldOverrideUrlLoading((GoNativeWebviewInterface)view, url, isReload, false);
+    }
+
+    @Override
+    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Uri uri = request.getUrl();
+            return urlNavigation.shouldOverrideUrlLoading((GoNativeWebviewInterface)view, uri.toString(), false, request.isRedirect());
+        }
+        return super.shouldOverrideUrlLoading(view, request);
     }
 
     @Override

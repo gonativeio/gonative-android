@@ -95,6 +95,7 @@ public class UrlNavigation {
 
     private ActivityResultLauncher<String> requestPermissionLauncher;
     private String deviceInfoCallback = "";
+    private String interceptedRedirectUrl = "";
 
     UrlNavigation(MainActivity activity) {
         this.mainActivity = activity;
@@ -601,7 +602,7 @@ public class UrlNavigation {
     }
 
     public boolean shouldOverrideUrlLoading(GoNativeWebviewInterface view, String url) {
-        return shouldOverrideUrlLoading(view, url, false);
+        return shouldOverrideUrlLoading(view, url, false, false);
     }
 
     // noAction to skip stuff like opening url in external browser, higher nav levels, etc.
@@ -839,13 +840,19 @@ public class UrlNavigation {
     }
 
     public boolean shouldOverrideUrlLoading(final GoNativeWebviewInterface view, String url,
-                                            @SuppressWarnings("unused") boolean isReload) {
+                                            @SuppressWarnings("unused") boolean isReload, boolean isRedirect) {
         if (url == null) return false;
 
         boolean shouldOverride = shouldOverrideUrlLoadingNoIntercept(view, url, false);
         if (shouldOverride) {
             if (finishOnExternalUrl) {
                 mainActivity.finish();
+            }
+
+            // Check if intercepted URL request was a result of a server-side redirect.
+            // Redirect URLs triggers redundant onPageFinished()
+            if (isRedirect) {
+                interceptedRedirectUrl = url;
             }
             return true;
         } else {
@@ -923,11 +930,14 @@ public class UrlNavigation {
 
     @SuppressLint("ApplySharedPref")
     public void onPageFinished(GoNativeWebviewInterface view, String url) {
-
-        if (url.startsWith("intent")) {
+        // Catch intercepted Redirect URL to
+        // prevent loading unnecessary components
+        if (interceptedRedirectUrl.equals(url)) {
+            interceptedRedirectUrl = "";
             return;
         }
 
+        Log.d(TAG, "onpagefinished " + url);
         state = WebviewLoadState.STATE_DONE;
         this.currentWebviewUrl = url;
 
