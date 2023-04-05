@@ -2269,23 +2269,23 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     public void clipboardGet(String callback) {
-        if(!TextUtils.isEmpty(callback)) return;
-
-        Map<String, String> params = new HashMap<>();
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        CharSequence pasteData;
-        if (clipboard.hasPrimaryClip()) {
-            ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
-            pasteData = item.getText();
-            if (pasteData != null)
-                params.put("data", pasteData.toString());
-            else
-                params.put("error", "Clipboard item is not a string.");
-        } else {
-            params.put("error", "No Clipboard item available.");
+        if (!TextUtils.isEmpty(callback)) {
+            Map<String, String> params = new HashMap<>();
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            CharSequence pasteData;
+            if (clipboard.hasPrimaryClip()) {
+                ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+                pasteData = item.getText();
+                if (pasteData != null)
+                    params.put("data", pasteData.toString());
+                else
+                    params.put("error", "Clipboard item is not a string.");
+            } else {
+                params.put("error", "No Clipboard item available.");
+            }
+            JSONObject jsonObject = new JSONObject(params);
+            runJavascript(LeanUtils.createJsForCallback(callback, jsonObject));
         }
-        JSONObject jsonObject = new JSONObject(params);
-        runJavascript(LeanUtils.createJsForCallback(callback, jsonObject));
     }
 
     @Override
