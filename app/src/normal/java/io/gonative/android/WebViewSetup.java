@@ -21,6 +21,7 @@ import io.gonative.gonative_core.GoNativeWebviewInterface;
 public class WebViewSetup {
     private static final String TAG = WebViewSetup.class.getName();
 
+    @SuppressLint("JavascriptInterface")
     public static void setupWebviewForActivity(GoNativeWebviewInterface webview, MainActivity activity) {
         if (!(webview instanceof LeanWebView)) {
             Log.e(TAG, "Expected webview to be of class LeanWebView and not " + webview.getClass().getName());
@@ -55,11 +56,8 @@ public class WebViewSetup {
         wv.removeJavascriptInterface("gonative_file_writer_sharer");
         wv.addJavascriptInterface(activity.getFileWriterSharer().getJavascriptBridge(), "gonative_file_writer_sharer");
 
-        // pass urlNavigation object for the interface to access handleJSBridgeFunctions()
-        activity.getJsBridgeInterface().setUrlNavigation(urlNavigation);
-
         wv.removeJavascriptInterface("JSBridge");
-        wv.addJavascriptInterface(activity.getJsBridgeInterface().getJavascriptBridge(), "JSBridge");
+        wv.addJavascriptInterface(activity.getJavascriptBridge(), "JSBridge");
 
         ((GoNativeApplication) activity.getApplication()).mBridge.onWebviewSetUp(activity, wv);
 

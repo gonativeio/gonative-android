@@ -6,9 +6,11 @@ import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -17,6 +19,7 @@ import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -24,6 +27,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -50,9 +55,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
@@ -162,7 +170,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private ShakeDetector shakeDetector = new ShakeDetector(this);
     private FileDownloader fileDownloader;
     private FileWriterSharer fileWriterSharer;
-    private GNJSBridgeInterface jsBridgeInterface;
     private boolean startedLoading = false; // document readystate checker
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
@@ -180,6 +187,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private String connectivityOnceCallback;
     private PhoneStateListener phoneStateListener;
     private SignalStrength latestSignalStrength;
+    private boolean restoreBrightnessOnNavigation = false;
+    private ActivityResultLauncher<String> requestPermissionLauncher;
+    private String deviceInfoCallback = "";
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -225,7 +235,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.loginManager = application.getLoginManager();
 
         this.fileWriterSharer = new FileWriterSharer(this);
-        this.jsBridgeInterface = new GNJSBridgeInterface(this);
         this.fileDownloader = new FileDownloader(this);
 
         // webview pools
@@ -383,7 +392,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         String url = getUrlFromIntent(intent);
 
         if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
-        if (url == null && isRoot) url = appConfig.initialUrl;
+        if (url == null && isRoot) url = appConfig.getInitialUrl();
         // url from intent (hub and spoke nav)
         if (url == null) url = intent.getStringExtra("url");
 
@@ -514,6 +523,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         setupAppTheme(null);
         validateGoogleService();
+
+        requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+            runGonativeDeviceInfo(deviceInfoCallback, false);
+        });
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -743,6 +756,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.mWebview.goForward();
     }
 
+    @Override
     public void sharePage(String optionalUrl) {
         String shareUrl;
         String currentUrl = this.mWebview.getUrl();
@@ -780,7 +794,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
  
         updateMenu(false);
         this.loginManager.checkLogin();
-        this.mWebview.loadUrl(AppConfig.getInstance(this).initialUrl);
+        this.mWebview.loadUrl(AppConfig.getInstance(this).getInitialUrl());
     }
 
     public void loadUrl(String url) {
@@ -832,6 +846,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return ni == null || !ni.isConnected();
 	}
 
+	@Override
 	public void clearWebviewCache() {
         mWebview.clearCache(true);
     }
@@ -1114,7 +1129,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             else {
                 // go to initialURL without login/signup override
                 this.mWebview.setCheckLoginSignup(false);
-                this.mWebview.loadUrl(AppConfig.getInstance(this).initialUrl);
+                this.mWebview.loadUrl(AppConfig.getInstance(this).getInitialUrl());
             }
 
             if (AppConfig.getInstance(this).showNavigationMenu) {
@@ -1562,10 +1577,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return fileWriterSharer;
     }
 
-    public GNJSBridgeInterface getJsBridgeInterface() {
-        return jsBridgeInterface;
-    }
-
     public StatusCheckerBridge getStatusCheckerBridge() {
         return new StatusCheckerBridge();
     }
@@ -1618,6 +1629,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.bottomNavigationView.setVisibility(View.GONE);
     }
 
+    @Override
     public void toggleFullscreen(boolean fullscreen) {
         ActionBar actionBar = this.getSupportActionBar();
         View decorView = getWindow().getDecorView();
@@ -1899,6 +1911,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @Override
     public void deselectTabs() {
         this.bottomNavigationView.setCurrentItem(AHBottomNavigation.CURRENT_ITEM_NONE);
     }
@@ -1930,6 +1943,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     }
 
+    @Override
     public void sendConnectivityOnce(String callback) {
         if (callback == null) return;
 
@@ -1991,6 +2005,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @Override
     public void subscribeConnectivity(final String callback) {
         this.connectivityCallback = callback;
         listenForSignalStrength();
@@ -2002,6 +2017,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }, 500);
     }
 
+    @Override
     public void unsubscribeConnectivity() {
         this.connectivityCallback = null;
     }
@@ -2011,6 +2027,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     // set brightness to a negative number to restore default
+    @Override
     public void setBrightness(float brightness) {
         WindowManager.LayoutParams layout = getWindow().getAttributes();
         layout.screenBrightness = brightness;
@@ -2025,7 +2042,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return webViewCount;
     }
 
-    public void setSidebarNavigationEnabled(boolean enabled){
+    @Override
+    public void setSidebarNavigationEnabled(boolean enabled) {
         sidebarNavigationEnabled = enabled;
         setDrawerEnabled(enabled);
     }
@@ -2042,6 +2060,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
      * @param appTheme set to null if will use sharedPreferences
      */
     @SuppressLint("RequiresFeature")
+    @Override
     public void setupAppTheme(String appTheme) {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
             Log.d(TAG, "Dark mode feature is not supported");
@@ -2124,6 +2143,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @Override
     public void updateStatusBarOverlay(boolean isOverlayEnabled) {
         View decor = getWindow().getDecorView();
         if (isOverlayEnabled) {
@@ -2137,6 +2157,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @Override
     public void updateStatusBarStyle(String statusBarStyle) {
         if (statusBarStyle != null && !statusBarStyle.isEmpty() && Build.VERSION.SDK_INT >= 23) {
             switch (statusBarStyle) {
@@ -2166,5 +2187,183 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     break;
             }
         }
+    }
+
+    @Override
+    public void setStatusBarColor(int color) {
+        getWindow().setStatusBarColor(color);
+    }
+
+    @Override
+    public void runGonativeDeviceInfo(String callback, boolean includeCarrierNames) {
+        if (includeCarrierNames) {
+            deviceInfoCallback = callback;
+            requestPermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE);
+        } else {
+            Map<String, Object> installationInfo = Installation.getInfo(this);
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+            if (!sharedPreferences.getBoolean("hasLaunched", false)) {
+                sharedPreferences.edit().putBoolean("hasLaunched", true).commit();
+                installationInfo.put("isFirstLaunch", true);
+            } else {
+                installationInfo.put("isFirstLaunch", false);
+            }
+
+            JSONObject jsonObject = new JSONObject(installationInfo);
+            String js = LeanUtils.createJsForCallback(callback, jsonObject);
+            this.runJavascript(js);
+        }
+    }
+
+    @Override
+    public void windowFlag(boolean add, int flag) {
+        if (add) {
+            getWindow().addFlags(flag);
+        } else {
+            getWindow().clearFlags(flag);
+        }
+    }
+
+    @Override
+    public void setCustomTitle(String title) {
+        if (!title.isEmpty()) {
+            setTitle(title);
+        } else {
+            setTitle(R.string.app_name);
+        }
+    }
+
+    @Override
+    public void downloadFile(String url, boolean shouldSaveToGallery) {
+        fileDownloader.downloadFile(url, shouldSaveToGallery);
+    }
+
+    @Override
+    public void selectTab(int tabNumber) {
+        if (tabManager == null) return;
+        tabManager.selectTabNumber(tabNumber);
+    }
+
+    @Override
+    public void setTabsWithJson(JSONObject tabsJson, int tabMenuId) {
+        if (tabManager == null) return;
+        tabManager.setTabsWithJson(tabsJson, tabMenuId);
+    }
+
+    @Override
+    public void focusAudio(boolean enabled) {
+        if (enabled) {
+            AudioUtils.requestAudioFocus(this);
+        } else {
+            AudioUtils.abandonFocusRequest(this);
+        }
+    }
+
+    @Override
+    public void clipboardSet(String content) {
+        if (content.isEmpty()) return;
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("copy", content);
+        clipboard.setPrimaryClip(clip);
+    }
+
+    @Override
+    public void clipboardGet(String callback) {
+        if(!TextUtils.isEmpty(callback)) return;
+
+        Map<String, String> params = new HashMap<>();
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        CharSequence pasteData;
+        if (clipboard.hasPrimaryClip()) {
+            ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+            pasteData = item.getText();
+            if (pasteData != null)
+                params.put("data", pasteData.toString());
+            else
+                params.put("error", "Clipboard item is not a string.");
+        } else {
+            params.put("error", "No Clipboard item available.");
+        }
+        JSONObject jsonObject = new JSONObject(params);
+        runJavascript(LeanUtils.createJsForCallback(callback, jsonObject));
+    }
+
+    @Override
+    public void sendRegistration(JSONObject data) {
+        if(registrationManager == null) return;
+
+        if(data != null){
+            JSONObject customData = data.optJSONObject("customData");
+            if(customData == null){
+                try { // try converting json string from url to json object
+                    customData = new JSONObject(data.optString("customData"));
+                } catch (JSONException e){
+                    Log.e(TAG, "GoNative Registration JSONException:- " + e.getMessage());
+                }
+            }
+            if(customData != null){
+                registrationManager.setCustomData(customData);
+            }
+        }
+        registrationManager.sendToAllEndpoints();
+    }
+
+    @Override
+    public void runCustomNativeBridge(Map<String, String> params) {
+        // execute code defined by the CustomCodeHandler
+        // call JsCustomCodeExecutor#setHandler to override this default handler
+        JSONObject data = JsCustomCodeExecutor.execute(params);
+        String callback = params.get("callback");
+        if(callback != null && !callback.isEmpty()) {
+            final String js = LeanUtils.createJsForCallback(callback, data);
+            // run on main thread
+            Handler mainHandler = new Handler(getMainLooper());
+            mainHandler.post(() -> runJavascript(js));
+        }
+    }
+
+    @Override
+    public void promptLocationService() {
+        getRuntimeGeolocationPermission(granted -> {
+            if (!granted) return;
+            if (!isLocationServiceEnabled()) {
+                new AlertDialog.Builder(this)
+                        .setMessage(R.string.location_services_not_enabled)
+                        .setPositiveButton(R.string.ok, (dialogInterface, i) -> startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)))
+                        .setNegativeButton(R.string.no_thanks, null)
+                        .show();
+            }
+        });
+    }
+
+    public boolean isLocationServiceEnabled() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManager lm = getSystemService(LocationManager.class);
+            return lm.isLocationEnabled();
+        } else {
+            // This is Deprecated in API 28
+            int mode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE,
+                    Settings.Secure.LOCATION_MODE_OFF);
+            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
+        }
+    }
+
+    @Override
+    public void setRestoreBrightnessOnNavigation(boolean restore) {
+        this.restoreBrightnessOnNavigation = restore;
+    }
+
+    public boolean isRestoreBrightnessOnNavigation() {
+        return this.restoreBrightnessOnNavigation;
+    }
+
+    public void injectJSBridgeLibrary(String currentWebviewUrl) {
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        application.mBridge.injectJSBridgeLibrary(currentWebviewUrl, this);
+    }
+
+    public Object getJavascriptBridge() {
+        GoNativeApplication application = (GoNativeApplication)getApplication();
+        return application.mBridge.getJavaScriptBridge();
     }
 }
