@@ -2,8 +2,8 @@
 buildscript {
     ext {
         kotlin_version = '1.7.10'
-        libraryVersion = '1.4.3'
-        coreVersion = '1.4.3'
+        libraryVersion = '1.4.4'
+        coreVersion = '1.4.5'
         iconsVersion = '1.2.0'
     }
     repositories {
@@ -16,7 +16,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath 'com.android.tools.build:gradle:7.4.2'
         classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:0.14.0'
         //[enabled by builder] classpath 'com.google.gms:google-services:4.3.13'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"

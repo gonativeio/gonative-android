@@ -133,6 +133,8 @@ android {
             dimension "webview"
         }
     }
+    namespace 'io.gonative.android'
+    testNamespace '${applicationId}.test'
 }
 
 dependencies {
