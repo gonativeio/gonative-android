@@ -2,8 +2,6 @@ package io.gonative.android;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -27,6 +25,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.telephony.PhoneStateListener;
@@ -47,6 +46,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -89,6 +89,7 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import io.gonative.android.library.AppConfig;
@@ -109,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	private static final String TAG = MainActivity.class.getName();
     public static final String INTENT_TARGET_URL = "targetUrl";
     public static final String EXTRA_WEBVIEW_WINDOW_OPEN = "io.gonative.android.MainActivity.Extra.WEBVIEW_WINDOW_OPEN";
+    public static final String EXTRA_NEW_ROOT_URL = "newRootUrl";
 	public static final int REQUEST_SELECT_FILE = 100;
     private static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     private static final int REQUEST_PERMISSION_GEOLOCATION = 102;
@@ -124,9 +126,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private Stack<String> backHistory = new Stack<>();
     private String initialUrl;
     private boolean sidebarNavigationEnabled = true;
-
-    private static int webViewCount = 0;
-    private static boolean removeExcessWebView = false;
 
 	private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> uploadMessageLP;
@@ -150,10 +149,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private float hideWebviewAlpha = 0.0f;
     private boolean isFirstHideWebview = true;
     private boolean webviewIsHidden = false;
-    private int urlLevel = -1;
-    private int parentUrlLevel = -1;
     private Handler handler = new Handler();
     private Menu mOptionsMenu;
+    private String activityId;
 
     private Runnable statusChecker = new Runnable() {
         @Override
@@ -193,8 +191,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
+        this.activityId = UUID.randomUUID().toString();
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
+        GoNativeWindowManager windowManager = application.getWindowManager();
 
         if(appConfig.androidFullScreen){
             toggleFullscreen(true);
@@ -211,25 +211,16 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onCreate(savedInstanceState);
 
         isRoot = getIntent().getBooleanExtra("isRoot", true);
+        int urlLevel = getIntent().getIntExtra("urlLevel", -1);
+        int parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
+
         application.mBridge.onActivityCreate(this, isRoot);
-        parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
-        webViewCount++;
+
+        windowManager.addNewWindow(activityId, isRoot);
+        windowManager.setUrlLevels(activityId, urlLevel, parentUrlLevel);
 
         if (isRoot) {
-            File databasePath = new File(getCacheDir(), webviewDatabaseSubdir);
-            if (databasePath.mkdirs()) {
-                Log.v(TAG, "databasePath " + databasePath.toString() + " exists");
-            }
-
-            // url inspector
-            UrlInspector.getInstance().init(this);
-
-            // Register launch
-            ConfigUpdater configUpdater = new ConfigUpdater(this);
-            configUpdater.registerEvent();
-
-            // registration service
-            this.registrationManager = application.getRegistrationManager();
+            initialRootSetup();
         }
 
         this.loginManager = application.getLoginManager();
@@ -323,11 +314,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         // profile picker
         if (isRoot && (appConfig.showActionBar || appConfig.showNavigationMenu)) {
-            Spinner profileSpinner = findViewById(R.id.profile_picker);
-            profilePicker = new ProfilePicker(this, profileSpinner);
-
-            Spinner segmentedSpinner = findViewById(R.id.segmented_control);
-            new SegmentedController(this, segmentedSpinner);
+            setupProfilePicker();
         }
 
 		// proxy cookie manager for httpUrlConnection (syncs to webview cookies)
@@ -417,51 +404,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         if (isRoot && appConfig.showNavigationMenu) {
-            // do the list stuff
-            mDrawerLayout = findViewById(R.id.drawer_layout);
-            mDrawerView = findViewById(R.id.left_drawer);
-            mDrawerList = findViewById(R.id.drawer_list);
-
-            // set shadow
-            mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-
-            mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                    R.string.drawer_open, R.string.drawer_close){
-                //Called when a drawer has settled in a completely closed state.
-                public void onDrawerClosed(View view) {
-                    invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-                }
-
-                //Called when a drawer has settled in a completely open state.
-                public void onDrawerOpened(View drawerView) {
-                    invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-                }
-            };
-
-            mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.colorAccent));
-
-            mDrawerLayout.addDrawerListener(mDrawerToggle);
-            mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
-
-            setupMenu();
-
-            // update the menu
-            if (appConfig.loginDetectionUrl != null) {
-                this.loginManager.addObserver(this);
-            }
+           showNavigationMenu();
         }
 
-		if (getSupportActionBar() != null) {
-            if (!isRoot || appConfig.showNavigationMenu) {
-                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
-                backArrow.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_ATOP);
-                getSupportActionBar().setHomeAsUpIndicator(backArrow);
-            }
-            
-            this.actionManager.setupActionBar();
-            showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
-        }
+		setupActionBar(url);
 
         updateStatusBarOverlay(appConfig.enableOverlayInStatusBar);
         updateStatusBarStyle(appConfig.statusBarStyle);
@@ -508,8 +454,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED.equals(intent.getAction())) {
-                    if (!isRoot && removeExcessWebView) {
-                        removeExcessWebView = false;
+                    boolean isActivityRoot = getGNWindowManager().isRoot(activityId);
+                    if (!isActivityRoot) {
                         finish();
                     }
                 }
@@ -527,6 +473,87 @@ public class MainActivity extends AppCompatActivity implements Observer,
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             runGonativeDeviceInfo(deviceInfoCallback, false);
         });
+    }
+
+    public String getActivityId() {
+        return this.activityId;
+    }
+
+    private void initialRootSetup() {
+        File databasePath = new File(getCacheDir(), webviewDatabaseSubdir);
+        if (databasePath.mkdirs()) {
+            Log.v(TAG, "databasePath " + databasePath.toString() + " exists");
+        }
+
+        // url inspector
+        UrlInspector.getInstance().init(this);
+
+        // Register launch
+        ConfigUpdater configUpdater = new ConfigUpdater(this);
+        configUpdater.registerEvent();
+
+        // registration service
+        this.registrationManager = ((GoNativeApplication) getApplication()).getRegistrationManager();
+    }
+
+    private void setupProfilePicker() {
+        Spinner profileSpinner = findViewById(R.id.profile_picker);
+        profilePicker = new ProfilePicker(this, profileSpinner);
+
+        Spinner segmentedSpinner = findViewById(R.id.segmented_control);
+        new SegmentedController(this, segmentedSpinner);
+    }
+
+    private void showNavigationMenu() {
+        AppConfig appConfig = AppConfig.getInstance(this);
+        // do the list stuff
+        mDrawerLayout = findViewById(R.id.drawer_layout);
+        mDrawerView = findViewById(R.id.left_drawer);
+        mDrawerList = findViewById(R.id.drawer_list);
+
+        // set shadow
+        mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                R.string.drawer_open, R.string.drawer_close){
+            //Called when a drawer has settled in a completely closed state.
+            public void onDrawerClosed(View view) {
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+
+            //Called when a drawer has settled in a completely open state.
+            public void onDrawerOpened(View drawerView) {
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.pull_to_refresh_color));
+
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
+
+        setupMenu();
+
+        // update the menu
+        if (appConfig.loginDetectionUrl != null) {
+            this.loginManager.addObserver(this);
+        }
+    }
+
+    private void setupActionBar(String url) {
+        AppConfig appConfig = AppConfig.getInstance(this);
+        if (getSupportActionBar() != null) {
+
+            if (!isRoot && appConfig.showNavigationMenu) {
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
+                backArrow.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_ATOP);
+                getSupportActionBar().setHomeAsUpIndicator(backArrow);
+            }
+            this.actionManager.setupActionBar();
+            showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
+        }
     }
 
     private String getUrlFromIntent(Intent intent) {
@@ -627,7 +654,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onDestroy();
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onActivityDestroy(this);
-        webViewCount--;
+        application.getWindowManager().removeWindow(activityId);
 
         // destroy webview
         if (this.mWebview != null) {
@@ -690,7 +717,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     protected void onSaveInstanceState (Bundle outState) {
         outState.putString("url", mWebview.getUrl());
-        outState.putInt("urlLevel", urlLevel);
+        outState.putInt("urlLevel", getGNWindowManager().getUrlLevel(activityId));
         super.onSaveInstanceState(outState);
     }
 
@@ -1140,6 +1167,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (requestCode == REQUEST_WEB_ACTIVITY && resultCode == RESULT_OK) {
             if (url != null) {
                 int urlLevel = data.getIntExtra("urlLevel", -1);
+                int parentUrlLevel = getGNWindowManager().getParentUrlLevel(activityId);
                 if (urlLevel == -1 || parentUrlLevel == -1 || urlLevel > parentUrlLevel) {
                     // open in this activity
                     this.postLoadJavascript = data.getStringExtra("postLoadJavascript");
@@ -1554,15 +1582,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public int getParentUrlLevel() {
-        return parentUrlLevel;
+        return getGNWindowManager().getParentUrlLevel(activityId);
     }
 
     public int getUrlLevel() {
-        return urlLevel;
+        return getGNWindowManager().getUrlLevel(activityId);
     }
 
     public void setUrlLevel(int urlLevel) {
-        this.urlLevel = urlLevel;
+        getGNWindowManager().setUrlLevel(activityId, urlLevel);
     }
 
     public ProfilePicker getProfilePicker() {
@@ -1744,6 +1772,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 }
                 break;
         }
+    }
+
+    public GoNativeWindowManager getGNWindowManager() {
+        return ((GoNativeApplication) getApplication()).getWindowManager();
     }
 
     public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
@@ -2032,14 +2064,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         WindowManager.LayoutParams layout = getWindow().getAttributes();
         layout.screenBrightness = brightness;
         getWindow().setAttributes(layout);
-    }
-
-    public void setRemoveExcessWebView(boolean removeExcessWebView){
-        this.removeExcessWebView = removeExcessWebView;
-    }
-
-    public int getWebViewCount(){
-        return webViewCount;
     }
 
     @Override
@@ -2365,5 +2389,49 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public Object getJavascriptBridge() {
         GoNativeApplication application = (GoNativeApplication)getApplication();
         return application.mBridge.getJavaScriptBridge();
+    }
+
+    public void onMaxWindowsReached(String url) {
+
+        // Set this activity as new root
+        isRoot = true;
+        GoNativeWindowManager windowManager = getGNWindowManager();
+        windowManager.setAsNewRoot(activityId);
+
+        // Reset URL levels
+        windowManager.setUrlLevels(activityId, -1, -1);
+
+        // Send broadcast to close other activity
+        Intent intent = new Intent(MainActivity.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED);
+        intent.putExtra(MainActivity.EXTRA_NEW_ROOT_URL, url);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+        AppConfig appConfig = AppConfig.getInstance(this);
+
+        // Reload activity as root
+        initialRootSetup();
+        if (appConfig.showActionBar || appConfig.showNavigationMenu) {
+            setupProfilePicker();
+        }
+        if (appConfig.showNavigationMenu) showNavigationMenu();
+        setupActionBar(url);
+        if (mDrawerToggle != null && appConfig.showNavigationMenu) {
+            mDrawerToggle.syncState();
+        }
+
+        // Await the closure of any other activities before loading the URL
+        new Thread(() -> {
+            while(getGNWindowManager().getWindowCount() > 1) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            // Load Url
+            MainActivity.this.runOnUiThread(() -> {
+                mWebview.loadUrl(url);
+            });
+        }).start();
     }
 }

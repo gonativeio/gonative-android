@@ -22,12 +22,11 @@ import android.util.Log;
 import android.util.Pair;
 import android.webkit.ClientCertRequest;
 import android.webkit.CookieManager;
-import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
+import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -246,17 +245,23 @@ public class UrlNavigation {
             mainActivity.setRestoreBrightnessOnNavigation(false);
         }
 
+        if (appConfig.maxWindowsEnabled) {
+            String initialUrl = appConfig.getInitialUrl();
+            boolean urlMatched = LeanUtils.urlsMatchIgnoreTrailing(url, initialUrl);
+            if (appConfig.autoClose &&
+                    appConfig.numWindows > 0 &&
+                    mainActivity.getGNWindowManager().getWindowCount() > appConfig.numWindows &&
+                    urlMatched) {
+                mainActivity.onMaxWindowsReached(url);
+                return true;
+            }
+        }
+
         int currentLevel = mainActivity.getUrlLevel();
         int newLevel = mainActivity.urlLevelForUrl(url);
         if (currentLevel >= 0 && newLevel >= 0) {
             if (newLevel > currentLevel) {
                 if (noAction) return true;
-
-                if (appConfig.maxWindows > 0 && mainActivity.getWebViewCount() > appConfig.maxWindows) {
-                    mainActivity.setRemoveExcessWebView(true);
-                    LocalBroadcastManager.getInstance(mainActivity)
-                            .sendBroadcast(new Intent(MainActivity.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED));
-                }
 
                 // new activity
                 Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
@@ -724,25 +729,40 @@ public class UrlNavigation {
         return false;
     }
 
-    public boolean createNewWindow(Message resultMsg) {
+    @SuppressLint("SetJavaScriptEnabled")
+    public void createNewWindow(WebView webView, Message resultMsg) {
+        AppConfig appConfig = AppConfig.getInstance(mainActivity);
+        if (appConfig.maxWindowsEnabled && appConfig.autoClose && appConfig.numWindows > 0 && mainActivity.getGNWindowManager().getWindowCount() > appConfig.numWindows) {
+            // All of these just to get new url
+            WebView newWebView = new WebView(webView.getContext());
+            WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+            transport.setWebView(newWebView);
+            resultMsg.sendToTarget();
+            newWebView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    if (LeanUtils.urlsMatchIgnoreTrailing(url, appConfig.getInitialUrl())) {
+                        mainActivity.onMaxWindowsReached(url);
+                    } else {
+                        Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
+                        intent.putExtra("isRoot", false);
+                        intent.putExtra("url", url);
+                        mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
+                    }
+                }
+            });
+            return;
+        }
+        createNewWindow(resultMsg);
+    }
+
+    private void createNewWindow(Message resultMsg) {
         ((GoNativeApplication) mainActivity.getApplication()).setWebviewMessage(resultMsg);
-        return createNewWindow();
-    }
-
-    @SuppressWarnings("unused")
-    public boolean createNewWindow(ValueCallback callback) {
-        ((GoNativeApplication) mainActivity.getApplication()).setWebviewValueCallback(callback);
-        return createNewWindow();
-    }
-
-    private boolean createNewWindow() {
         Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
         intent.putExtra("isRoot", false);
         intent.putExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, true);
         // need to use startActivityForResult instead of startActivity because of singleTop launch mode
         mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
-
-        return true;
     }
 
     public boolean isLocationServiceEnabled() {
@@ -793,7 +813,6 @@ public class UrlNavigation {
                 request.proceed(result.first, result.second);
             } else {
                 request.ignore();
-                ;
             }
         }
     }

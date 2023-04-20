@@ -26,6 +26,7 @@ public class GoNativeApplication extends MultiDexApplication {
     private WebViewPool webViewPool;
     private Message webviewMessage;
     private ValueCallback webviewValueCallback;
+    private GoNativeWindowManager goNativeWindowManager;
     private final static String TAG = GoNativeApplication.class.getSimpleName();
     public final Bridge mBridge = new Bridge(this) {
         @Override
@@ -60,6 +61,7 @@ public class GoNativeApplication extends MultiDexApplication {
 
         webViewPool = new WebViewPool();
 
+        goNativeWindowManager = new GoNativeWindowManager();
     }
 
     public LoginManager getLoginManager() {
@@ -94,5 +96,9 @@ public class GoNativeApplication extends MultiDexApplication {
 
     public void setWebviewValueCallback(ValueCallback webviewValueCallback) {
         this.webviewValueCallback = webviewValueCallback;
+    }
+
+    public GoNativeWindowManager getWindowManager() {
+        return goNativeWindowManager;
     }
 }

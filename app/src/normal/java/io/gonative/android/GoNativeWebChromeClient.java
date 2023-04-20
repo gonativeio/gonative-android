@@ -198,7 +198,8 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
     @Override
     public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-        return urlNavigation.createNewWindow(resultMsg);
+        urlNavigation.createNewWindow(view, resultMsg);
+        return true;
     }
 
     @Override
