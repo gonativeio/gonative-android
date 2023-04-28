@@ -10,4 +10,5 @@
     <string name="file_download_title">다운로드 시작됨</string>
     <string name="file_download_finished">다운로드한 파일</string>
     <string name="download_canceled">다운로드 취소됨</string>
+    <string name="file_download_error">다운로드 오류</string>
 </resources>

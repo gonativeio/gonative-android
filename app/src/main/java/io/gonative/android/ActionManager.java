@@ -1,6 +1,8 @@
 package io.gonative.android;
 
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -19,6 +21,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -51,11 +54,10 @@ public class ActionManager {
     private final HashMap<MenuItem, String>itemToUrl;
     private final int action_button_size;
     private final ActionBar actionBar;
-    private final AppConfig appConfig;
-    private final boolean isRoot;
+    private final ImageView actionBarImageTitle;
     private final int colorForeground;
     private final int colorBackground;
-
+    private boolean isRoot;
     private String currentMenuID;
     private LinearLayout header;
     private LinearLayoutCompat menuContainer;
@@ -66,20 +68,35 @@ public class ActionManager {
     private int leftItemsCount = 0;
     private int rightItemsCount = 0;
 
-    ActionManager(MainActivity activity, boolean isRoot) {
-        this.activity = activity;
-        this.appConfig = AppConfig.getInstance(activity);
-        this.itemToUrl = new HashMap<>();
-        action_button_size = this.activity.getResources().getInteger(R.integer.action_button_size);
-        actionBar = activity.getSupportActionBar();
-        this.isRoot = isRoot;
+    private String currentUrl;
 
-        colorForeground = activity.getResources().getColor(R.color.colorAccent);
-        colorBackground = activity.getResources().getColor(R.color.colorPrimary);
+    ActionManager(MainActivity activity) {
+        this.activity = activity;
+        this.itemToUrl = new HashMap<>();
+        this.action_button_size = this.activity.getResources().getInteger(R.integer.action_button_size);
+        this.actionBar = activity.getSupportActionBar();
+
+        this.actionBarImageTitle = new ImageView(activity);
+        this.actionBarImageTitle.setImageResource(R.drawable.ic_actionbar);
+
+        this.colorForeground = activity.getResources().getColor(R.color.titleTextColor);
+        this.colorBackground = activity.getResources().getColor(R.color.colorPrimary);
     }
 
-    public void setupActionBar() {
+    public void setupActionBar(boolean isRoot) {
         if (actionBar == null) return;
+
+        this.isRoot = isRoot;
+        AppConfig appConfig = AppConfig.getInstance(activity);
+
+        // Change hamburger button to back arrow if window is not root
+        if (!isRoot) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            Drawable backArrow = ContextCompat.getDrawable(activity, R.drawable.abc_ic_ab_back_material);
+            backArrow.setColorFilter(colorForeground, PorterDuff.Mode.SRC_ATOP);
+            actionBar.setHomeAsUpIndicator(backArrow);
+        }
+
         header = (LinearLayout) activity.getLayoutInflater().inflate(R.layout.actionbar_title, null);
         // why use a custom view and not setDisplayUseLogoEnabled and setLogo?
         // Because logo doesn't work!
@@ -102,6 +119,79 @@ public class ActionManager {
         if (!appConfig.showNavigationMenu) {
             menuContainer.getLayoutParams().width = 140;
         }
+    }
+
+    public void setupTitleDisplayForUrl(String url) {
+        if (actionBar == null || url == null) return;
+        AppConfig appConfig = AppConfig.getInstance(activity);
+        this.currentUrl = url;
+
+        boolean urlHasNavTitle = false;
+        boolean urlHasActionMenu = false;
+
+        // Check for Nav title
+        HashMap<String, Object> urlNavTitle = appConfig.getNavigationTitleForUrl(url);
+        if (urlNavTitle != null) {
+            urlHasNavTitle = true;
+        }
+
+        // Check for Action Menus
+        ArrayList<Pattern> regexes = appConfig.actionRegexes;
+        ArrayList<String> ids = appConfig.actionIDs;
+        if (regexes != null && ids != null) {
+            for (int i = 0; i < regexes.size(); i++) {
+                Pattern regex = regexes.get(i);
+                if (regex.matcher(url).matches()) {
+                    urlHasActionMenu = true;
+                    break;
+                }
+            }
+        }
+
+        if (!appConfig.showActionBar && !appConfig.showNavigationMenu && !urlHasNavTitle && !urlHasActionMenu) {
+            actionBar.hide();
+        } else {
+            if (urlHasNavTitle) {
+                boolean showImage = true;
+                if (urlNavTitle.containsKey("showImage")) showImage = (boolean) urlNavTitle.get("showImage");
+
+                if (showImage) {
+                    // Show image title
+                    actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
+                    showTitleView(actionBarImageTitle);
+                } else {
+                    // Show text title
+                    String title = activity.getTitle().toString();;
+                    if (urlNavTitle.containsKey("title")) title = (String) urlNavTitle.get("title");
+                    showTextActionBarTitle(title);
+                }
+            } else {
+                showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(currentUrl));
+            }
+            setupActionBarDisplay();
+            actionBar.show();
+        }
+    }
+
+    private void showLogoInActionBar(boolean show) {
+        if (actionBar == null) return;
+        if (show) {
+            showTitleView(actionBarImageTitle);
+        } else {
+            // Show Text
+            showTextActionBarTitle(activity.getTitle());
+        }
+    }
+
+    public void showTextActionBarTitle(CharSequence title) {
+        TextView textView = new TextView(activity);
+        textView.setText(TextUtils.isEmpty(title) ? activity.getTitle() : title);
+        textView.setTextSize(18);
+        textView.setTypeface(null, Typeface.BOLD);
+        textView.setMaxLines(1);
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+        textView.setTextColor(colorForeground);
+        showTitleView(textView);
     }
 
     public void showTitleView(View titleView) {
@@ -166,36 +256,34 @@ public class ActionManager {
         this.rightItemsCount = 0;
         this.leftItemsCount = 0;
 
-        if (this.currentMenuID == null) return;
-
         AppConfig appConfig = AppConfig.getInstance(this.activity);
         if (appConfig.actions == null) return;
         menuContainer.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
 
         JSONArray actions = appConfig.actions.get(currentMenuID);
-        if (actions == null) return;
-
-        if (actions.length() == 0) {
+        if (actions == null || actions.length() == 0) {
             replaceLeftIcon(null);
-        } else if (actions.length() <= 2) {
-            for (int itemID = 0; itemID < actions.length(); itemID++) {
-                JSONObject entry = actions.optJSONObject(itemID);
-                addRightButton(menu, itemID, entry);
-            }
         } else {
-            for (int itemID = 0; itemID < actions.length(); itemID++) {
-                JSONObject entry = actions.optJSONObject(itemID);
-                if (itemID == 0) {
-                    addLeftButton(entry);
-                } else {
-                    addRightButton(menu, itemID, entry);
+            if (actions.length() <= 2) {
+                for (int itemID = 0; itemID < actions.length(); itemID++) {
+                    JSONObject entry = actions.optJSONObject(itemID);
+                    addRightButton(appConfig, menu, itemID, entry);
+                }
+            } else {
+                for (int itemID = 0; itemID < actions.length(); itemID++) {
+                    JSONObject entry = actions.optJSONObject(itemID);
+                    if (itemID == 0) {
+                        addLeftButton(appConfig, entry);
+                    } else {
+                        addRightButton(appConfig, menu, itemID, entry);
+                    }
                 }
             }
         }
-        setupActionBarTitleDisplay();
+        setupActionBarDisplay();
     }
 
-    private void addLeftButton(JSONObject entry) {
+    private void addLeftButton(AppConfig appConfig, JSONObject entry) {
         if (entry == null) return;
 
         String system = AppConfig.optString(entry, "system");
@@ -204,17 +292,30 @@ public class ActionManager {
 
         if (!TextUtils.isEmpty(system)) {
             if (system.equalsIgnoreCase("refresh")) {
-                Button refresh = createButtonMenu("fa-rotate-right");
+                if (TextUtils.isEmpty(icon)) {
+                    icon = "fa-rotate-right";
+                }
+                Button refresh = createButtonMenu(icon);
                 refresh.setOnClickListener(v -> this.activity.onRefresh());
                 replaceLeftIcon(refresh);
+            } else if (system.equalsIgnoreCase("share")) {
+                if (TextUtils.isEmpty(icon)) {
+                    icon = "fa-share";
+                }
+                Button share = createButtonMenu(icon);
+                share.setOnClickListener(v -> this.activity.sharePage(null, null));
+                replaceLeftIcon(share);
             } else if (system.equalsIgnoreCase("search")) {
+                if (TextUtils.isEmpty(icon)) {
+                    icon = "fa fa-search";
+                }
                 this.searchView = createSearchView(appConfig, icon, url, null, true);
                 replaceLeftIcon(this.searchView);
+            } else {
+                addLeftCustomButton(icon, url);
             }
         } else {
-            Button userButton = createButtonMenu(icon);
-            userButton.setOnClickListener(v -> this.activity.loadUrl(url));
-            replaceLeftIcon(userButton);
+            addLeftCustomButton(icon, url);
         }
 
         if (!appConfig.showNavigationMenu) {
@@ -225,7 +326,13 @@ public class ActionManager {
         leftItemsCount++;
     }
 
-    private void addRightButton(Menu menu, int itemID, JSONObject entry) {
+    private void addLeftCustomButton(String icon, String url) {
+        Button userButton = createButtonMenu(icon);
+        userButton.setOnClickListener(v -> this.activity.loadUrl(url));
+        replaceLeftIcon(userButton);
+    }
+
+    private void addRightButton(AppConfig appConfig, Menu menu, int itemID, JSONObject entry) {
         if (entry == null) return;
 
         String system = AppConfig.optString(entry, "system");
@@ -235,12 +342,12 @@ public class ActionManager {
 
         if (!TextUtils.isEmpty(system)) {
             if (system.equalsIgnoreCase("refresh")) {
-                Drawable refreshIcon;
+
                 if (TextUtils.isEmpty(icon)) {
-                    refreshIcon = new Icon(activity, "fa-rotate-right", action_button_size, colorForeground).getDrawable();
-                } else {
-                    refreshIcon = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
+                    icon = "fa-rotate-right";
                 }
+
+                Drawable refreshIcon = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
 
                 String menuLabel = !TextUtils.isEmpty(label) ? label : "Refresh";
 
@@ -249,7 +356,27 @@ public class ActionManager {
                         .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
 
                 itemToUrl.put(menuItem, ACTION_REFRESH);
+            } else if (system.equalsIgnoreCase("share")) {
+
+                if (TextUtils.isEmpty(icon)) {
+                    icon = "fa-share";
+                }
+
+                Drawable refreshIcon = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();;
+
+                String menuLabel = !TextUtils.isEmpty(label) ? label : "Share";
+
+                MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, menuLabel)
+                        .setIcon(refreshIcon)
+                        .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+                itemToUrl.put(menuItem, ACTION_SHARE);
+
             } else if (system.equalsIgnoreCase("search")) {
+
+                if (TextUtils.isEmpty(icon)) {
+                    icon = "fa fa-search";
+                }
 
                 String menuLabel = !TextUtils.isEmpty(label) ? label : "Search";
 
@@ -260,22 +387,28 @@ public class ActionManager {
                 menuItem.setActionView(searchView);
 
                 itemToUrl.put(menuItem, ACTION_SEARCH);
+            } else {
+                addRightCustomButton(menu, itemID, label, icon, url);
             }
         } else {
-            Drawable iconDrawable = null;
-            if (icon != null) {
-                iconDrawable = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
-            }
-            MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
-                    .setIcon(iconDrawable)
-                    .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-
-            if (url != null) {
-                this.itemToUrl.put(menuItem, url);
-            }
+            addRightCustomButton(menu, itemID, label, icon, url);
         }
 
         rightItemsCount++;
+    }
+
+    private void addRightCustomButton(Menu menu, int itemID, String label, String icon, String url) {
+        Drawable iconDrawable = null;
+        if (icon != null) {
+            iconDrawable = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
+        }
+        MenuItem menuItem = menu.add(Menu.NONE, itemID, Menu.NONE, label)
+                .setIcon(iconDrawable)
+                .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        if (url != null) {
+            this.itemToUrl.put(menuItem, url);
+        }
     }
 
     private void replaceLeftIcon(View view) {
@@ -283,6 +416,7 @@ public class ActionManager {
         menuContainer.removeAllViews();
         if (view != null) {
             menuContainer.addView(view);
+            menuContainer.setVisibility(View.VISIBLE);
         } else {
             menuContainer.setVisibility(View.GONE);
         }
@@ -320,13 +454,6 @@ public class ActionManager {
         }
 
         searchView.setOnSearchClickListener(view -> {
-            if (forLeftSide) {
-                activity.setMenuItemsVisible(false);
-                titleContainer.setVisibility(View.GONE);
-            } else {
-                header.setVisibility(View.GONE);
-                activity.setMenuItemsVisible(false, menuItem);
-            }
             searchViewParams.width = ActionBar.LayoutParams.MATCH_PARENT;
 
             // Need to check this otherwise the app will crash
@@ -343,7 +470,6 @@ public class ActionManager {
         });
 
         searchView.setOnCloseListener(() -> {
-            activity.setMenuItemsVisible(true);
             if (forLeftSide) {
                 titleContainer.setVisibility(View.VISIBLE);
             } else {
@@ -406,6 +532,21 @@ public class ActionManager {
             Drawable searchButtonNewIcon = new Icon(activity, icon, action_button_size, colorForeground).getDrawable();
             searchIcon.setImageDrawable(searchButtonNewIcon);
             searchIcon.setColorFilter(colorForeground);
+
+            // Handling a bug when SearchView is expanded and setting other menu
+            // visibility to false, SearchView would trigger unnecessary onClose event
+            // Solution is to hide other menus first before expanding
+            searchIcon.setOnClickListener(v -> {
+                if (forLeftSide) {
+                    activity.setMenuItemsVisible(false);
+                    titleContainer.setVisibility(View.GONE);
+                } else {
+                    header.setVisibility(View.GONE);
+                    activity.setMenuItemsVisible(false, menuItem);
+                }
+                // Expand SearchView, simulates onSearchViewClicked event
+                searchView.setIconified(false);
+            });
         }
 
         //Search view close button foreground color
@@ -418,20 +559,17 @@ public class ActionManager {
     }
 
     // Count left and right actionbar buttons to calculate side margins
-    public void setupActionBarTitleDisplay() {
+    public void setupActionBarDisplay() {
 
-        if (leftItemsCount == 0 && rightItemsCount == 0) {
-            return;
-        }
+        if (actionBar == null) return;
+
+        AppConfig appConfig = AppConfig.getInstance(activity);
 
         // Add to temporary fields so actual items count would not be affected
         int tempLeftItemsCount = leftItemsCount;
 
         // Limit right menu count to three for margin
         int tempRightItemsCount = Math.min(rightItemsCount, 3);
-
-        if (appConfig.showNavigationMenu && isRoot)
-            tempLeftItemsCount++;
 
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) titleContainer.getLayoutParams();
 
@@ -440,6 +578,10 @@ public class ActionManager {
         params.leftMargin = 0;
 
         if (isRoot) {
+            if (appConfig.showNavigationMenu) {
+                tempLeftItemsCount++;
+            }
+
             if (tempLeftItemsCount > tempRightItemsCount) {
                 int margin = tempLeftItemsCount - tempRightItemsCount;
                 params.rightMargin = ACTIONBAR_ITEM_MARGIN * margin;
@@ -448,18 +590,14 @@ public class ActionManager {
                 params.leftMargin = ACTIONBAR_ITEM_MARGIN * margin;
             }
         } else {
-            if (titleContainer.getChildAt(0) != null
-                    && titleContainer.getChildAt(0) instanceof TextView) {
-                titleContainer.setGravity(Gravity.CENTER_VERTICAL);
+            tempLeftItemsCount++;
+
+            if (tempLeftItemsCount > tempRightItemsCount) {
+                int margin = tempLeftItemsCount - tempRightItemsCount;
+                params.rightMargin = ACTIONBAR_ITEM_MARGIN * margin;
             } else {
-                tempLeftItemsCount++;
-                if (tempLeftItemsCount > tempRightItemsCount) {
-                    int margin = tempLeftItemsCount - tempRightItemsCount;
-                    params.rightMargin = ACTIONBAR_ITEM_MARGIN * margin;
-                } else {
-                    int margin = tempRightItemsCount - tempLeftItemsCount;
-                    params.leftMargin = ACTIONBAR_ITEM_MARGIN * margin;
-                }
+                int margin = tempRightItemsCount - tempLeftItemsCount;
+                params.leftMargin = ACTIONBAR_ITEM_MARGIN * margin;
             }
         }
     }
@@ -488,7 +626,7 @@ public class ActionManager {
         if (url != null) {
             switch (url) {
                 case ACTION_SHARE:
-                    this.activity.sharePage(null);
+                    this.activity.sharePage(null, null);
                     return true;
                 case ACTION_REFRESH:
                     this.activity.onRefresh();

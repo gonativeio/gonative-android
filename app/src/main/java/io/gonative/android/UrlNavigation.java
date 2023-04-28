@@ -308,12 +308,9 @@ public class UrlNavigation {
 
         // nav title image
         if (!noAction) {
-            mainActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mainActivity.showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
-                }
-            });
+            mainActivity.runOnUiThread(() ->
+                    mainActivity.getActionManager().setupTitleDisplayForUrl(url)
+            );
         }
 
         // check to see if the webview exists in pool.

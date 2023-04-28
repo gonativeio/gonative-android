@@ -14,8 +14,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.PorterDuff;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
@@ -25,7 +23,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.telephony.PhoneStateListener;
@@ -46,7 +43,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -119,6 +115,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private static final int REQUEST_WEBFORM = 300;
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int GOOGLE_SIGN_IN = 500;
+    private static final String ON_RESUME_CALLBACK = "gonative_app_resumed";
+    private boolean isActivityPaused = false;
 
     private GoNativeWebviewInterface mWebview;
     private View webviewOverlay;
@@ -140,7 +138,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private JsonMenuAdapter menuAdapter = null;
 	private ActionBarDrawerToggle mDrawerToggle;
     private AHBottomNavigation bottomNavigationView;
-    private ImageView navigationTitleImage;
 	private ConnectivityManager cm = null;
     private ProfilePicker profilePicker = null;
     private TabManager tabManager;
@@ -233,11 +230,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
-        if (appConfig.showActionBar || appConfig.showNavigationMenu)
-	    	setContentView(R.layout.activity_gonative);
-        else
-            setContentView(R.layout.activity_gonative_nonav);
-
+        setContentView(R.layout.activity_gonative);
 
         mProgress = findViewById(R.id.progress);
         this.fullScreenLayout = findViewById(R.id.fullscreen);
@@ -340,8 +333,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
             setSupportActionBar(toolbar);
         }
         // Hide action bar if showActionBar is FALSE and showNavigationMenu is FALSE
-        if (!appConfig.showActionBar && !appConfig.showNavigationMenu && toolbar != null) {
-            toolbar.setVisibility(View.GONE);
+        if (!appConfig.showActionBar && !appConfig.showNavigationMenu) {
+            getSupportActionBar().hide();
         }
 
         if (!appConfig.showLogoInSideBar && !appConfig.showAppNameInSideBar) {
@@ -367,11 +360,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         // actions in action bar
-        this.actionManager = new ActionManager(this, isRoot);
+        this.actionManager = new ActionManager(this);
+        this.actionManager.setupActionBar(isRoot);
 
         // overflow menu icon color
         if (toolbar!= null && toolbar.getOverflowIcon() != null) {
-            toolbar.getOverflowIcon().setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_ATOP);
+            toolbar.getOverflowIcon().setColorFilter(getResources().getColor(R.color.titleTextColor), PorterDuff.Mode.SRC_ATOP);
         }
 
         Intent intent = getIntent();
@@ -407,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
            showNavigationMenu();
         }
 
-		setupActionBar(url);
+        actionManager.setupTitleDisplayForUrl(url);
 
         updateStatusBarOverlay(appConfig.enableOverlayInStatusBar);
         updateStatusBarStyle(appConfig.statusBarStyle);
@@ -541,21 +535,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-    private void setupActionBar(String url) {
-        AppConfig appConfig = AppConfig.getInstance(this);
-        if (getSupportActionBar() != null) {
-
-            if (!isRoot && appConfig.showNavigationMenu) {
-                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                Drawable backArrow = ContextCompat.getDrawable(this, R.drawable.abc_ic_ab_back_material);
-                backArrow.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_ATOP);
-                getSupportActionBar().setHomeAsUpIndicator(backArrow);
-            }
-            this.actionManager.setupActionBar();
-            showLogoInActionBar(appConfig.shouldShowNavigationTitleImageForUrl(url));
-        }
-    }
-
     private String getUrlFromIntent(Intent intent) {
         if (intent == null) return null;
         // first check intent in case it was created from push notification
@@ -586,6 +565,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onPause();
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onActivityPause(this);
+        this.isActivityPaused = true;
         stopCheckingReadyStatus();
     
         if (application.mBridge.pauseWebViewOnActivityPause()) {
@@ -620,6 +600,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onActivityResume(this);
         this.mWebview.onResume();
+
+        if (isActivityPaused) {
+            this.isActivityPaused = false;
+            runJavascript(LeanUtils.createJsForCallback(ON_RESUME_CALLBACK, null));
+        }
 
         retryFailedPage();
         // register to listen for connectivity changes
@@ -784,7 +769,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     @Override
-    public void sharePage(String optionalUrl) {
+    public void sharePage(String optionalUrl, String optionalText) {
         String shareUrl;
         String currentUrl = this.mWebview.getUrl();
         if (optionalUrl == null || optionalUrl.isEmpty()) {
@@ -808,6 +793,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         Intent share = new Intent(Intent.ACTION_SEND);
         share.setType("text/plain");
         share.putExtra(Intent.EXTRA_TEXT, shareUrl);
+        if (optionalText != null) {
+            share.putExtra(Intent.EXTRA_SUBJECT, optionalText);
+        }
         startActivity(Intent.createChooser(share, getString(R.string.action_share)));
     }
 
@@ -1003,40 +991,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
-    public void showLogoInActionBar(boolean show) {
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar == null) return;
-        if (this.actionManager == null) return;
-
-        actionBar.setDisplayOptions(show ? 0 : ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
-
-        if (show) {
-            // disable text title
-            actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
-
-            if (this.navigationTitleImage == null) {
-                this.navigationTitleImage = new ImageView(this);
-                this.navigationTitleImage.setImageResource(R.drawable.ic_actionbar);
-            }
-            this.actionManager.showTitleView(navigationTitleImage);
-        } else {
-            // Show Text
-            showTextActionBarTitle(getTitle());
-        }
-    }
-
-    private void showTextActionBarTitle(CharSequence title) {
-        if (this.actionManager == null) return;
-        TextView textView = new TextView(this);
-        textView.setText(TextUtils.isEmpty(title) ? getTitle() : title);
-        textView.setTextSize(18);
-        textView.setTypeface(null, Typeface.BOLD);
-        textView.setMaxLines(1);
-        textView.setEllipsize(TextUtils.TruncateAt.END);
-        textView.setTextColor(getResources().getColor(R.color.titleTextColor));
-        this.actionManager.showTitleView(textView);
-    }
-
 	public void updatePageTitle() {
         if (AppConfig.getInstance(this).useWebpageTitle) {
             setTitle(this.mWebview.getTitle());
@@ -1123,7 +1077,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        this.actionManager.setupActionBarTitleDisplay();
+        this.actionManager.setupActionBarDisplay();
 
         GoNativeApplication application = (GoNativeApplication)getApplication();
      // Pass any configuration change to the drawer toggles
@@ -1539,6 +1493,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         setDrawerEnabled(appConfig.shouldShowSidebarForUrl(url) && sidebarNavigationEnabled);
     }
 
+    public ActionManager getActionManager() {
+        return this.actionManager;
+    }
+
     public int urlLevelForUrl(String url) {
         ArrayList<Pattern> entries = AppConfig.getInstance(this).navStructureLevelsRegex;
         if (entries != null) {
@@ -1612,9 +1570,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void setTitle(CharSequence title) {
         super.setTitle(title);
-
-        if (getSupportActionBar() != null) {
-            showTextActionBarTitle(title);
+        if (actionManager != null) {
+            actionManager.showTextActionBarTitle(title);
         }
     }
 
@@ -2258,8 +2215,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     @Override
-    public void downloadFile(String url, boolean shouldSaveToGallery) {
-        fileDownloader.downloadFile(url, shouldSaveToGallery);
+    public void downloadFile(String url, boolean shouldSaveToGallery, boolean open) {
+        fileDownloader.downloadFile(url, shouldSaveToGallery, open);
     }
 
     @Override
@@ -2414,7 +2371,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
             setupProfilePicker();
         }
         if (appConfig.showNavigationMenu) showNavigationMenu();
-        setupActionBar(url);
+
+        if (actionManager != null) {
+            actionManager.setupActionBar(isRoot);
+            actionManager.setupTitleDisplayForUrl(url);
+        }
+
         if (mDrawerToggle != null && appConfig.showNavigationMenu) {
             mDrawerToggle.syncState();
         }

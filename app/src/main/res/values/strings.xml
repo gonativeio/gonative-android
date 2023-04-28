@@ -42,4 +42,5 @@
     <string name="app_not_installed">App is not installed</string>
 	<string name="file_download_title">Download started</string>
 	<string name="file_download_finished">File downloaded</string>
+	<string name="file_download_error">Download Error</string>
 </resources>
