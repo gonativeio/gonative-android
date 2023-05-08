@@ -10,7 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 
 /**
  * Created by weiyin on 5/1/17.

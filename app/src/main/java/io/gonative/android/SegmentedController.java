@@ -14,7 +14,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 
 /**
  * Created by weiyin on 12/20/15.

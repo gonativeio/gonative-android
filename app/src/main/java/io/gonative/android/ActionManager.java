@@ -5,7 +5,6 @@ import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,7 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 
 /**
  * Created by weiyin on 11/25/14.
@@ -115,8 +114,8 @@ public class ActionManager {
         MaterialToolbar toolbar = activity.findViewById(R.id.toolbar);
         toolbar.setBackgroundColor(colorBackground);
 
-        // fix title offset when side menu (hamburger icon) is not available on setup
-        if (!appConfig.showNavigationMenu) {
+        // fix title offset when side menu hamburger icon is not yet available
+        if (appConfig.showNavigationMenu) {
             menuContainer.getLayoutParams().width = 140;
         }
     }
@@ -211,6 +210,12 @@ public class ActionManager {
         }
 
         titleContainer.addView(titleView);
+    }
+
+    // Remove title offset once sidebar hamburger menu setup is complete
+    public void cleanSidebarMenuTitleOffset() {
+        if (menuContainer == null) return;
+        menuContainer.getLayoutParams().width = 0;
     }
 
     public void checkActions(String url) {

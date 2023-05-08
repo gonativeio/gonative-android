@@ -1,5 +1,6 @@
 package io.gonative.android;
 
+import android.Manifest;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -7,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -19,10 +21,14 @@ import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
 
 /**
@@ -37,6 +43,7 @@ public class FileDownloader implements DownloadListener {
     private final MainActivity context;
     private final DownloadLocation defaultDownloadLocation;
     private final Map<String, DownloadManager.Request> pendingExternalDownloads;
+    private final ActivityResultLauncher<String> requestPermissionLauncher;
     private UrlNavigation urlNavigation;
     private String lastDownloadedUrl;
 
@@ -45,6 +52,7 @@ public class FileDownloader implements DownloadListener {
 
     private DownloadService downloadService;
     private boolean isBound = false;
+    private PreDownloadInfo preDownloadInfo;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -76,6 +84,18 @@ public class FileDownloader implements DownloadListener {
 
         Intent intent = new Intent(context, DownloadService.class);
         context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        // initialize request permission launcher
+        requestPermissionLauncher = context.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+            if (preDownloadInfo != null) {
+                if (preDownloadInfo.isBlob) {
+                    context.getFileWriterSharer().downloadBlobUrl(preDownloadInfo.url);
+                } else {
+                    startDownload(preDownloadInfo.url, preDownloadInfo.mimetype, preDownloadInfo.shouldSaveToGallery, preDownloadInfo.open);
+                }
+                preDownloadInfo = null;
+            }
+        });
     }
 
     private void registerDownloadBroadCastReceiver(Context context) {
@@ -119,6 +139,10 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
+            if (requestPostNotificationPermission(new PreDownloadInfo(url, true))) {
+                return;
+            }
+
             context.getFileWriterSharer().downloadBlobUrl(url);
             return;
         }
@@ -220,6 +244,9 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
+            if (requestPostNotificationPermission(new PreDownloadInfo(url, true))) {
+                return;
+            }
             context.getFileWriterSharer().downloadBlobUrl(url);
             return;
         }
@@ -239,8 +266,21 @@ public class FileDownloader implements DownloadListener {
 
     private void startDownload(String downloadUrl, String mimetype, boolean shouldSaveToGallery, boolean open) {
         if (isBound) {
+            if (requestPostNotificationPermission(new PreDownloadInfo(downloadUrl, mimetype, shouldSaveToGallery, open, false))) return;
             downloadService.startDownload(downloadUrl, mimetype, shouldSaveToGallery, open);
         }
+    }
+
+    // Requests Notification permission on Android 13+ for download progress info.
+    // If NOT granted, will only show Toast message
+    private boolean requestPostNotificationPermission(PreDownloadInfo preDownloadInfo) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            this.preDownloadInfo = preDownloadInfo;
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            return true;
+        }
+        return false;
     }
 
     public String getLastDownloadedUrl() {
@@ -251,10 +291,31 @@ public class FileDownloader implements DownloadListener {
         this.urlNavigation = urlNavigation;
     }
 
-    public void onDestroy() {
+    public void unbindDownloadService() {
         if (isBound) {
             context.unbindService(serviceConnection);
             isBound = false;
+        }
+    }
+
+    private static class PreDownloadInfo {
+        String url;
+        String mimetype;
+        boolean shouldSaveToGallery;
+        boolean open;
+        boolean isBlob;
+
+        public PreDownloadInfo(String url, String mimetype, boolean shouldSaveToGallery, boolean open, boolean isBlob) {
+            this.url = url;
+            this.mimetype = mimetype;
+            this.shouldSaveToGallery = shouldSaveToGallery;
+            this.open = open;
+            this.isBlob = isBlob;
+        }
+
+        public PreDownloadInfo(String url, boolean isBlob) {
+            this.url = url;
+            this.isBlob = isBlob;
         }
     }
 }

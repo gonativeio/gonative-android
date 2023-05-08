@@ -40,9 +40,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 import io.gonative.gonative_core.LeanUtils;
+import io.gonative.gonative_core.Utils;
 
 enum WebviewLoadState {
     STATE_UNKNOWN,
@@ -680,6 +681,16 @@ public class UrlNavigation {
         mainActivity.setDirectUploadImageUri(null);
 
         FileUploadIntentsCreator creator = new FileUploadIntentsCreator(mainActivity, mimetypespec, multiple);
+
+        if (creator.videosAllowed() || creator.imagesAllowed()) {
+            mainActivity.getPermission(new String[]{Manifest.permission.CAMERA}, (permissions, grantResults) -> launchChooserIntent(creator));
+            return true;
+        }
+
+        return launchChooserIntent(creator);
+    }
+
+    private boolean launchChooserIntent(FileUploadIntentsCreator creator) {
         Intent intentToSend = creator.chooserIntent();
         mainActivity.setDirectUploadImageUri(creator.getCurrentCaptureUri());
 
@@ -696,9 +707,22 @@ public class UrlNavigation {
 
     public boolean openDirectCamera(final String[] mimetypespec, final boolean multiple) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            openDirectCameraAfterPermission(mimetypespec, multiple);
+            if (!Utils.isPermissionGranted(mainActivity, Manifest.permission.CAMERA)) {
+                mainActivity.getPermission(new String[]{Manifest.permission.CAMERA}, (permissions, grantResults) -> openDirectCameraAfterPermission(mimetypespec, multiple));
+            } else {
+                openDirectCameraAfterPermission(mimetypespec, multiple);
+            }
         } else {
-            mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> openDirectCameraAfterPermission(mimetypespec, multiple));
+
+            ArrayList<String> permissionRequests = new ArrayList<>();
+            permissionRequests.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            permissionRequests.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+            if (!Utils.isPermissionGranted(mainActivity, Manifest.permission.CAMERA)) {
+                permissionRequests.add(Manifest.permission.CAMERA);
+            }
+
+            mainActivity.getPermission(permissionRequests.toArray(new String[0]), (permissions, grantResults) -> openDirectCameraAfterPermission(mimetypespec, multiple));
         }
         return true;
     }
@@ -708,6 +732,13 @@ public class UrlNavigation {
      */
     @SuppressWarnings("UnusedReturnValue")
     private boolean openDirectCameraAfterPermission(String[] mimetypespec, boolean multiple) {
+
+        // Check and verify CAMERA permission so app will not crash when using cam
+        if (!Utils.isPermissionGranted(mainActivity, Manifest.permission.CAMERA)) {
+            Toast.makeText(mainActivity, R.string.upload_camera_permission_denied, Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
         mainActivity.setDirectUploadImageUri(null);
 
         FileUploadIntentsCreator creator = new FileUploadIntentsCreator(mainActivity, mimetypespec, multiple);

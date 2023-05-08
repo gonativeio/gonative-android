@@ -18,7 +18,7 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.Map;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 import io.gonative.gonative_core.LeanUtils;
 

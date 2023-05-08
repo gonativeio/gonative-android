@@ -63,6 +63,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.webkit.WebSettingsCompat;
@@ -88,7 +89,7 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.android.widget.GoNativeDrawerLayout;
 import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
 import io.gonative.android.widget.SwipeHistoryNavigationLayout;
@@ -397,9 +398,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             Log.e(TAG, "No url specified for MainActivity");
         }
 
-        if (isRoot && appConfig.showNavigationMenu) {
-           showNavigationMenu();
-        }
+        if (isRoot) showNavigationMenu(appConfig.showNavigationMenu);
 
         actionManager.setupTitleDisplayForUrl(url);
 
@@ -498,40 +497,49 @@ public class MainActivity extends AppCompatActivity implements Observer,
         new SegmentedController(this, segmentedSpinner);
     }
 
-    private void showNavigationMenu() {
+    private void showNavigationMenu(boolean showNavigation) {
         AppConfig appConfig = AppConfig.getInstance(this);
         // do the list stuff
         mDrawerLayout = findViewById(R.id.drawer_layout);
         mDrawerView = findViewById(R.id.left_drawer);
         mDrawerList = findViewById(R.id.drawer_list);
 
-        // set shadow
-        mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+        if (showNavigation) {
 
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                R.string.drawer_open, R.string.drawer_close){
-            //Called when a drawer has settled in a completely closed state.
-            public void onDrawerClosed(View view) {
-                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            // unlock drawer
+            mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+
+            // set shadow
+            mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+
+            mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                    R.string.drawer_open, R.string.drawer_close) {
+                //Called when a drawer has settled in a completely closed state.
+                public void onDrawerClosed(View view) {
+                    invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                }
+
+                //Called when a drawer has settled in a completely open state.
+                public void onDrawerOpened(View drawerView) {
+                    invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                }
+            };
+
+            mDrawerToggle.setDrawerIndicatorEnabled(true);
+            mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.pull_to_refresh_color));
+
+            mDrawerLayout.addDrawerListener(mDrawerToggle);
+            mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
+
+            setupMenu();
+
+            // update the menu
+            if (appConfig.loginDetectionUrl != null) {
+                this.loginManager.addObserver(this);
             }
-
-            //Called when a drawer has settled in a completely open state.
-            public void onDrawerOpened(View drawerView) {
-                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-            }
-        };
-
-        mDrawerToggle.setDrawerIndicatorEnabled(true);
-        mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.pull_to_refresh_color));
-
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
-        mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
-
-        setupMenu();
-
-        // update the menu
-        if (appConfig.loginDetectionUrl != null) {
-            this.loginManager.addObserver(this);
+        } else {
+            // lock drawer so it could not be swiped
+            mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         }
     }
 
@@ -640,6 +648,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onActivityDestroy(this);
         application.getWindowManager().removeWindow(activityId);
+
+        if (fileDownloader != null) fileDownloader.unbindDownloadService();
 
         // destroy webview
         if (this.mWebview != null) {
@@ -1487,6 +1497,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (this.menuAdapter != null) {
             this.menuAdapter.autoSelectItem(url);
+        }
+
+        if (this.actionManager != null) {
+            this.actionManager.cleanSidebarMenuTitleOffset();
         }
 
         AppConfig appConfig = AppConfig.getInstance(this);
@@ -2370,7 +2384,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (appConfig.showActionBar || appConfig.showNavigationMenu) {
             setupProfilePicker();
         }
-        if (appConfig.showNavigationMenu) showNavigationMenu();
+
+        showNavigationMenu(appConfig.showNavigationMenu);
 
         if (actionManager != null) {
             actionManager.setupActionBar(isRoot);

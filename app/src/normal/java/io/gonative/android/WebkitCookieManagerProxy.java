@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
 
 // this syncs cookies between webkit (webview) and java.net classes

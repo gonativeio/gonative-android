@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import io.gonative.android.MainActivity;
 import io.gonative.android.R;
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 
 @RunWith(AndroidJUnit4.class)

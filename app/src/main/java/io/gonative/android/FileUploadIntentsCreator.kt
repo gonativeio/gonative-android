@@ -1,6 +1,7 @@
 package io.gonative.android
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -11,7 +12,8 @@ import android.os.Parcelable
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import io.gonative.android.library.AppConfig
+import io.gonative.gonative_core.AppConfig
+import io.gonative.gonative_core.Utils
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,11 +48,13 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
         }
     }
 
-    private fun imagesAllowed(): Boolean {
+    fun imagesAllowed(): Boolean {
+        if (!Utils.isPermissionGranted(context as Activity, android.Manifest.permission.CAMERA)) return false
         return mimeTypes.contains("*/*") || mimeTypes.any { it.contains("image/") }
     }
 
-    private fun videosAllowed(): Boolean {
+    fun videosAllowed(): Boolean {
+        if (!Utils.isPermissionGranted(context as Activity, android.Manifest.permission.CAMERA)) return false
         return mimeTypes.contains("*/*") || mimeTypes.any { it.contains("video/") }
     }
 

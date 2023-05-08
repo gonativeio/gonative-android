@@ -21,20 +21,12 @@
 
 # webview interfaces
 
--keepclassmembers class io.gonative.android.WebFormActivity$jsBridge {
-    <methods>;
-}
 -keepclassmembers class io.gonative.android.ProfilePicker$ProfileJsBridge {
     <methods>;
 }
 -keepclassmembers class io.gonative.android.MainActivity$StatusCheckerBridge {
     <methods>;
 }
-
--keepclassmembers class io.gonative.android.library.AppConfig$AppConfigJsBridge {
-    <methods>;
-}
-
 -keepattributes JavascriptInterface
 
 # stuff for google play services

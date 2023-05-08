@@ -11,7 +11,7 @@ import androidx.multidex.MultiDexApplication;
 import java.util.List;
 import java.util.Map;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.Bridge;
 import io.gonative.gonative_core.BridgeModule;
 

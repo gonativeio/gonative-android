@@ -21,6 +21,7 @@
 	<string name="download_in_progress">Download in progress</string>
 	<string name="download_complete">Download complete</string>
 	<string name="download_disconnected">Download connection failed.</string>
+	<string name="upload_camera_permission_denied">Camera permission denied</string>
 	<string name="file_handler_not_found">Could not find an app to open this file.</string>
 	<string name="cannot_open_file_chooser">Could not open file chooser to handle this file type.</string>
 	<string name="external_storage_explanation">Allow photo access to upload file.</string>

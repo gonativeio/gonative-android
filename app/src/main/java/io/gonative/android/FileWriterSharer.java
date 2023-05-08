@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
@@ -33,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
 
 public class FileWriterSharer {
@@ -47,6 +48,7 @@ public class FileWriterSharer {
         public String name;
         public long size;
         public String mimetype;
+        public String extension;
         public File containerDir;
         public File savedFile;
         public OutputStream fileOutputStream;
@@ -153,68 +155,45 @@ public class FileWriterSharer {
             return;
         }
 
+        MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+        String extension = mimeTypeMap.getExtensionFromMimeType(type);
+
         final FileInfo info = new FileInfo();
         info.id = identifier;
         info.name = fileName;
         info.size = fileSize;
         info.mimetype = type;
+        info.extension = extension;
 
-        if (!AppConfig.getInstance(context).downloadToPublicStorage) {
-            onFileStartAfterPermission(info, false);
-            final String js = "gonativeGotStoragePermissions()";
-            context.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    context.runJavascript(js);
-                }
-            });
-            return;
-        }
-
-        // request permissions
-        context.getPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, new MainActivity.PermissionCallback() {
-            @Override
-            public void onPermissionResult(String[] permissions, int[] grantResults) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            // request permissions
+            context.getPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> {
                 try {
                     onFileStartAfterPermission(info, grantResults[0] == PackageManager.PERMISSION_GRANTED);
                     final String js = "gonativeGotStoragePermissions()";
-                    context.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            context.runJavascript(js);
-                        }
-                    });
+                    context.runOnUiThread(() -> context.runJavascript(js));
                 } catch (IOException e) {
                     Log.e(TAG, "IO Error", e);
                 }
-            }
-        });
+            });
+        } else {
+            onFileStartAfterPermission(info, true);
+            final String js = "gonativeGotStoragePermissions()";
+            context.runOnUiThread(() -> context.runJavascript(js));
+        }
     }
 
     private void onFileStartAfterPermission(FileInfo info, boolean granted) throws IOException {
-        if (AppConfig.getInstance(context).downloadToPublicStorage && granted) {
-            // make sure we do not overwrite existing files
-            int idx = info.name.lastIndexOf(".");
-            String requestedName = null;
-            String requestedExtension = null;
-
-            if (idx == -1) {
-                requestedName = info.name;
-                requestedExtension = "";
-            }
-            else {
-                requestedName = info.name.substring(0, idx);
-                requestedExtension = info.name.substring(idx);
-            }
+        if (granted) {
 
             File downloadsDir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
             if (downloadsDir != null) {
                 int appendNum = 0;
-                File outputFile = new File(downloadsDir, requestedName + requestedExtension);
+                File outputFile = new File(downloadsDir, info.name + "." + info.extension);
                 while (outputFile.exists()) {
                     appendNum++;
-                    outputFile = new File(downloadsDir, requestedName + " (" + appendNum +
-                            ")" + requestedExtension);
+                    outputFile = new File(downloadsDir, info.name + " (" + appendNum +
+                            ")" + "." +info.extension);
                 }
 
                 info.savedFile = outputFile;
@@ -229,8 +208,7 @@ public class FileWriterSharer {
             File containerDir = new File(downloadsDir, UUID.randomUUID().toString());
             containerDir.mkdirs();
             info.containerDir = containerDir;
-            File savedFile = new File(containerDir, info.name);
-            info.savedFile = savedFile;
+            info.savedFile = new File(containerDir, info.name + "." + info.extension);
             info.savedToDownloads = false;
         }
 
@@ -292,13 +270,13 @@ public class FileWriterSharer {
     private void onFileEnd(JSONObject message) throws IOException {
         String identifier = LeanUtils.optString(message, "id");
         if (identifier == null || identifier.isEmpty()) {
-            Log.e(TAG, "Invalid identiifer " + identifier + " for fileEnd");
+            Log.e(TAG, "Invalid identifier " + identifier + " for fileEnd");
             return;
         }
 
         final FileInfo fileInfo = this.idToFileInfo.get(identifier);
         if (fileInfo == null) {
-            Log.e(TAG, "Invalid identiifer " + identifier + " for fileEnd");
+            Log.e(TAG, "Invalid identifier " + identifier + " for fileEnd");
             return;
         }
 
@@ -326,19 +304,17 @@ public class FileWriterSharer {
                     .setAutoCancel(true);
             notificationManager.notify(TAG, fileInfo.notificationId, builder.build());
 
+            Toast.makeText(context, context.getString(R.string.file_download_finished), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        context.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
-                try {
-                    context.startActivity(intent);
-                } catch (ActivityNotFoundException e) {
-                    String message = context.getResources().getString(R.string.file_handler_not_found);
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
-                }
+        context.runOnUiThread(() -> {
+            Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
+            try {
+                context.startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                String message1 = context.getResources().getString(R.string.file_handler_not_found);
+                Toast.makeText(context, message1, Toast.LENGTH_LONG).show();
             }
         });
     }

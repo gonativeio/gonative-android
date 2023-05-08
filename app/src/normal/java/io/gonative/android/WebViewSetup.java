@@ -12,7 +12,7 @@ import android.webkit.WebView;
 import java.io.File;
 import java.util.Map;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**

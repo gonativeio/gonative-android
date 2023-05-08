@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 
 /**
  * Created by weiyin on 8/8/14.

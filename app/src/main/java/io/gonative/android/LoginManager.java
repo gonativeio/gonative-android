@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Observable;
 import java.util.regex.Pattern;
 
-import io.gonative.android.library.AppConfig;
+import io.gonative.gonative_core.AppConfig;
 
 /**
  * Created by weiyin on 3/16/14.

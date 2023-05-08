@@ -145,7 +145,6 @@ dependencies {
     implementation 'com.squareup:seismic:1.0.2'
     implementation 'androidx.webkit:webkit:1.5.0'
     implementation 'androidx.core:core-splashscreen:1.0.0'
-    implementation "com.github.gonativeio:gonative-android-library:$libraryVersion"
     implementation "com.github.gonativeio:gonative-icons:$iconsVersion"
     implementation "com.github.gonativeio:gonative-android-core:$coreVersion"
     /**** end all apps ****/
