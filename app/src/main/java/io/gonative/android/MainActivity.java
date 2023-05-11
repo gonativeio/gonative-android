@@ -108,6 +108,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public static final String INTENT_TARGET_URL = "targetUrl";
     public static final String EXTRA_WEBVIEW_WINDOW_OPEN = "io.gonative.android.MainActivity.Extra.WEBVIEW_WINDOW_OPEN";
     public static final String EXTRA_NEW_ROOT_URL = "newRootUrl";
+    public static final String EXTRA_EXCESS_WINDOW_ID = "excessWindowId";
+    public static final String EXTRA_IGNORE_INTERCEPT_MAXWINDOWS = "ignoreInterceptMaxWindows";
 	public static final int REQUEST_SELECT_FILE = 100;
     private static final int REQUEST_PERMISSION_READ_EXTERNAL_STORAGE = 101;
     private static final int REQUEST_PERMISSION_GEOLOCATION = 102;
@@ -216,6 +218,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         windowManager.addNewWindow(activityId, isRoot);
         windowManager.setUrlLevels(activityId, urlLevel, parentUrlLevel);
+
+        if (appConfig.maxWindowsEnabled) {
+            windowManager.setIgnoreInterceptMaxWindows(activityId, getIntent().getBooleanExtra(EXTRA_IGNORE_INTERCEPT_MAXWINDOWS, false));
+        }
 
         if (isRoot) {
             initialRootSetup();
@@ -447,6 +453,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED.equals(intent.getAction())) {
+
+                    String excessWindowId = intent.getStringExtra(EXTRA_EXCESS_WINDOW_ID);
+                    if (!TextUtils.isEmpty(excessWindowId)) {
+                        if (excessWindowId.equals(activityId)) finish();
+                        return;
+                    }
+
                     boolean isActivityRoot = getGNWindowManager().isRoot(activityId);
                     if (!isActivityRoot) {
                         finish();
@@ -2362,53 +2375,68 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return application.mBridge.getJavaScriptBridge();
     }
 
-    public void onMaxWindowsReached(String url) {
-
-        // Set this activity as new root
-        isRoot = true;
-        GoNativeWindowManager windowManager = getGNWindowManager();
-        windowManager.setAsNewRoot(activityId);
-
-        // Reset URL levels
-        windowManager.setUrlLevels(activityId, -1, -1);
-
-        // Send broadcast to close other activity
-        Intent intent = new Intent(MainActivity.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED);
-        intent.putExtra(MainActivity.EXTRA_NEW_ROOT_URL, url);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    public boolean onMaxWindowsReached(String url) {
 
         AppConfig appConfig = AppConfig.getInstance(this);
+        GoNativeWindowManager windowManager = getGNWindowManager();
 
-        // Reload activity as root
-        initialRootSetup();
-        if (appConfig.showActionBar || appConfig.showNavigationMenu) {
-            setupProfilePicker();
-        }
+        if (appConfig.autoClose && LeanUtils.urlsMatchIgnoreTrailing(url, appConfig.getInitialUrl())) {
 
-        showNavigationMenu(appConfig.showNavigationMenu);
+            // Set this activity as new root
+            isRoot = true;
 
-        if (actionManager != null) {
-            actionManager.setupActionBar(isRoot);
-            actionManager.setupTitleDisplayForUrl(url);
-        }
+            windowManager.setAsNewRoot(activityId);
 
-        if (mDrawerToggle != null && appConfig.showNavigationMenu) {
-            mDrawerToggle.syncState();
-        }
+            // Reset URL levels
+            windowManager.setUrlLevels(activityId, -1, -1);
 
-        // Await the closure of any other activities before loading the URL
-        new Thread(() -> {
-            while(getGNWindowManager().getWindowCount() > 1) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            // Reload activity as root
+            initialRootSetup();
+            if (appConfig.showActionBar || appConfig.showNavigationMenu) {
+                setupProfilePicker();
             }
-            // Load Url
-            MainActivity.this.runOnUiThread(() -> {
+
+            showNavigationMenu(appConfig.showNavigationMenu);
+
+            if (actionManager != null) {
+                actionManager.setupActionBar(isRoot);
+                actionManager.setupTitleDisplayForUrl(url);
+            }
+
+            if (mDrawerToggle != null && appConfig.showNavigationMenu) {
+                mDrawerToggle.syncState();
+            }
+
+            windowManager.setIgnoreInterceptMaxWindows(activityId, true);
+
+            // Send broadcast to close other activity
+            Intent intent = new Intent(MainActivity.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED);
+            intent.putExtra(MainActivity.EXTRA_NEW_ROOT_URL, url);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+            // Add listener when all excess windows are closed
+            windowManager.setOnExcessWindowClosedListener(() -> {
+                // Load new URL
                 mWebview.loadUrl(url);
+                // Remove listener
+                windowManager.setOnExcessWindowClosedListener(null);
             });
-        }).start();
+
+            return true;
+        } else {
+
+            // Get excess window
+            String excessWindowId = windowManager.getExcessWindow();
+
+            // Send broadcast to close the excess window
+            Intent intent = new Intent(MainActivity.BROADCAST_RECEIVER_ACTION_WEBVIEW_LIMIT_REACHED);
+            intent.putExtra(MainActivity.EXTRA_EXCESS_WINDOW_ID, excessWindowId);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+            // Remove from window list
+            windowManager.removeWindow(excessWindowId);
+        }
+
+        return false;
     }
 }

@@ -36,6 +36,8 @@ import io.gonative.gonative_core.LeanUtils;
 
 public class DownloadService extends Service {
 
+    public static final boolean enableDownloadNotification = false; // TODO transfer to AppConfig
+
     private static final String TAG = "DownloadService";
     private static final String CHANNEL_ID = "gonative.share.downloads";
     private static final String CHANNEL_NAME = "Downloads";
@@ -48,6 +50,8 @@ public class DownloadService extends Service {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private NotificationManager notificationManager;
+    private NotificationCompat.Builder notificationBuilder;
+
     private final Map<Integer, DownloadTask> downloadTasks = new HashMap<>();
     private int notificationId = 0;
     private String userAgent;
@@ -55,9 +59,12 @@ public class DownloadService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         AppConfig appConfig = AppConfig.getInstance(this);
         this.userAgent = appConfig.userAgent;
+
+        if (enableDownloadNotification) {
+            notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        }
     }
 
     @Override
@@ -170,25 +177,10 @@ public class DownloadService extends Service {
             Log.d(TAG, "startDownload: Starting download");
             isDownloading = true;
 
-            // Create notification
-            NotificationCompat.Builder notificationBuilder =
-                    new NotificationCompat.Builder(DownloadService.this, CHANNEL_ID)
-                            .setSmallIcon(ICON_DOWNLOAD_IN_PROGRESS)
-                            .setContentTitle(getString(R.string.file_download_title))
-                            .setContentText(url)
-                            .setProgress(100, 0, true)
-                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                            .addAction(R.drawable.ic_notification, "Cancel", createCancelDownloadPendingIntent())
-                            .setOngoing(true)
-                            .setOnlyAlertOnce(true);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                int importance = NotificationManager.IMPORTANCE_DEFAULT;
-                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance);
-                notificationManager.createNotificationChannel(channel);
+            if (enableDownloadNotification) {
+                createNotification();
             }
 
-            notificationManager.notify(id, notificationBuilder.build());
             new Thread(() -> {
                 Log.d(TAG, "startDownload: Thread started");
                 try {
@@ -202,7 +194,7 @@ public class DownloadService extends Service {
                     if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                         Log.e(TAG, "Server returned HTTP " + connection.getResponseCode()
                                 + " " + connection.getResponseMessage());
-                        updateNotification(notificationBuilder, getString(R.string.download_disconnected), 0, true);
+                        updateNotification(getString(R.string.download_disconnected), 0, true);
                         isDownloading = false;
                         return;
                     }
@@ -253,17 +245,17 @@ public class DownloadService extends Service {
                         outputStream.write(buffer, 0, bytesRead);
                         bytesDownloaded += bytesRead;
                         int progress = (int) (bytesDownloaded * 100 / fileLength);
-                        updateNotification(notificationBuilder, getString(R.string.download_in_progress), progress, false);
+                        updateNotification(getString(R.string.download_in_progress), progress, false);
                     }
                     if (!isDownloading) {
                         outputFile.delete();
                     } else {
-                        updateNotification(notificationBuilder, getString(R.string.file_download_finished), 100, false);
+                        updateNotification(getString(R.string.file_download_finished), 100, false);
                     }
 
                 } catch (IOException e) {
                     Log.e(TAG, "startDownload: ", e);
-                    updateNotification(notificationBuilder, getString(R.string.file_download_error), 0, true);
+                    updateNotification(getString(R.string.file_download_error), 0, true);
                 } finally {
                     try {
                         if (inputStream != null) inputStream.close();
@@ -280,36 +272,63 @@ public class DownloadService extends Service {
             }).start();
         }
 
+        private void createNotification() {
+            if (!enableDownloadNotification || notificationManager == null) return;
+
+            // Create notification builder
+            notificationBuilder =
+                    new NotificationCompat.Builder(DownloadService.this, CHANNEL_ID)
+                            .setSmallIcon(ICON_DOWNLOAD_IN_PROGRESS)
+                            .setContentTitle(getString(R.string.file_download_title))
+                            .setContentText(url)
+                            .setProgress(100, 0, true)
+                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                            .addAction(R.drawable.ic_notification, "Cancel", createCancelDownloadPendingIntent())
+                            .setOngoing(true)
+                            .setOnlyAlertOnce(true);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance);
+                notificationManager.createNotificationChannel(channel);
+            }
+
+            notificationManager.notify(id, notificationBuilder.build());
+        }
+
         public void cancelDownload() {
             isDownloading = false;
             notificationManager.cancel(id);
             Toast.makeText(DownloadService.this, getString(R.string.download_canceled) + " " + filename, Toast.LENGTH_SHORT).show();
         }
 
-        private void updateNotification(NotificationCompat.Builder builder, String title, int progress, boolean downloadFailed) {
-            builder.setContentTitle(title)
+        private void updateNotification(String title, int progress, boolean downloadFailed) {
+            if (!enableDownloadNotification || notificationManager == null || notificationBuilder == null) return;
+
+            notificationBuilder.setContentTitle(title)
                     .setContentText(filename);
 
             if (downloadFailed) {
-                builder.setSmallIcon(ICON_DOWNLOAD_DONE)
+                notificationBuilder.setSmallIcon(ICON_DOWNLOAD_DONE)
                         .setOngoing(false)
                         .setProgress(100, progress, false);
-                removeNotificationAction(builder);
+                removeNotificationAction(notificationBuilder);
             } else if (progress < 100) {
-                builder.setProgress(100, progress, false);
+                notificationBuilder.setProgress(100, progress, false);
             } else {
-                builder.setSmallIcon(ICON_DOWNLOAD_DONE)
+                notificationBuilder.setSmallIcon(ICON_DOWNLOAD_DONE)
                         .setOngoing(false)
                         .setAutoCancel(true)
                         .setProgress(100, progress, false)
                         .setContentIntent(createOpenFilePendingIntent());
-                removeNotificationAction(builder);
+                removeNotificationAction(notificationBuilder);
             }
 
-            notificationManager.notify(id, builder.build());
+            notificationManager.notify(id, notificationBuilder.build());
         }
 
         private void removeNotificationAction(NotificationCompat.Builder builder) {
+            if (builder == null) return;
             try {
                 //Use reflection clean up old actions
                 Field f = builder.getClass().getDeclaredField("mActions");
@@ -354,7 +373,7 @@ public class DownloadService extends Service {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     return PendingIntent.getActivity(DownloadService.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
                 } else {
-                    return PendingIntent.getActivity(DownloadService.this, 0, intent, 0);
+                    return PendingIntent.getActivity(DownloadService.this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
                 }
             } catch (Exception ex) {
                 Log.e(TAG, "createOpenFilePendingIntent: ", ex);
@@ -369,7 +388,7 @@ public class DownloadService extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 return PendingIntent.getService(DownloadService.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             } else {
-                return PendingIntent.getService(DownloadService.this, 0, intent, 0);
+                return PendingIntent.getService(DownloadService.this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
             }
         }
     }

@@ -247,14 +247,20 @@ public class UrlNavigation {
         }
 
         if (appConfig.maxWindowsEnabled) {
-            String initialUrl = appConfig.getInitialUrl();
-            boolean urlMatched = LeanUtils.urlsMatchIgnoreTrailing(url, initialUrl);
-            if (appConfig.autoClose &&
-                    appConfig.numWindows > 0 &&
-                    mainActivity.getGNWindowManager().getWindowCount() > appConfig.numWindows &&
-                    urlMatched) {
-                mainActivity.onMaxWindowsReached(url);
-                return true;
+
+            GoNativeWindowManager windowManager = mainActivity.getGNWindowManager();
+
+            // To prevent consecutive calls and handle MaxWindows correctly
+            // Checks for a flag indicating if the Activity was created from CreateNewWindow OR NavLevels
+            // and avoid triggering MaxWindows during this initial intercept
+            boolean ignoreInterceptMaxWindows = windowManager.isIgnoreInterceptMaxWindows(mainActivity.getActivityId());
+
+            if (ignoreInterceptMaxWindows) {
+                windowManager.setIgnoreInterceptMaxWindows(mainActivity.getActivityId(), false);
+            } else if (appConfig.numWindows > 0 && windowManager.getWindowCount() >= appConfig.numWindows) {
+                if (mainActivity.onMaxWindowsReached(url)) {
+                    return true;
+                }
             }
         }
 
@@ -270,6 +276,11 @@ public class UrlNavigation {
                 intent.putExtra("url", url);
                 intent.putExtra("parentUrlLevel", currentLevel);
                 intent.putExtra("postLoadJavascript", mainActivity.postLoadJavascript);
+
+                if (appConfig.maxWindowsEnabled) {
+                    intent.putExtra(MainActivity.EXTRA_IGNORE_INTERCEPT_MAXWINDOWS, true);
+                }
+
                 mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
 
                 mainActivity.postLoadJavascript = null;
@@ -760,7 +771,7 @@ public class UrlNavigation {
     @SuppressLint("SetJavaScriptEnabled")
     public void createNewWindow(WebView webView, Message resultMsg) {
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
-        if (appConfig.maxWindowsEnabled && appConfig.autoClose && appConfig.numWindows > 0 && mainActivity.getGNWindowManager().getWindowCount() > appConfig.numWindows) {
+        if (appConfig.maxWindowsEnabled && appConfig.numWindows > 0 && mainActivity.getGNWindowManager().getWindowCount() >= appConfig.numWindows) {
             // All of these just to get new url
             WebView newWebView = new WebView(webView.getContext());
             WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
@@ -769,26 +780,30 @@ public class UrlNavigation {
             newWebView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
-                    if (LeanUtils.urlsMatchIgnoreTrailing(url, appConfig.getInitialUrl())) {
-                        mainActivity.onMaxWindowsReached(url);
-                    } else {
+                    if (!mainActivity.onMaxWindowsReached(url)) {
                         Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
                         intent.putExtra("isRoot", false);
                         intent.putExtra("url", url);
+                        intent.putExtra(MainActivity.EXTRA_IGNORE_INTERCEPT_MAXWINDOWS, true);
                         mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
                     }
                 }
             });
             return;
         }
-        createNewWindow(resultMsg);
+        createNewWindow(resultMsg, appConfig.maxWindowsEnabled);
     }
 
-    private void createNewWindow(Message resultMsg) {
+    private void createNewWindow(Message resultMsg, boolean maxWindowsEnabled) {
         ((GoNativeApplication) mainActivity.getApplication()).setWebviewMessage(resultMsg);
         Intent intent = new Intent(mainActivity.getBaseContext(), MainActivity.class);
         intent.putExtra("isRoot", false);
         intent.putExtra(MainActivity.EXTRA_WEBVIEW_WINDOW_OPEN, true);
+
+        if (maxWindowsEnabled) {
+            intent.putExtra(MainActivity.EXTRA_IGNORE_INTERCEPT_MAXWINDOWS, true);
+        }
+
         // need to use startActivityForResult instead of startActivity because of singleTop launch mode
         mainActivity.startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
     }

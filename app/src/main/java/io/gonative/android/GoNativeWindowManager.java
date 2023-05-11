@@ -2,14 +2,15 @@ package io.gonative.android;
 
 import android.text.TextUtils;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class GoNativeWindowManager {
-    private final Map<String, ActivityWindow> windows;
+    private final LinkedHashMap<String, ActivityWindow> windows;
+    private ExcessWindowsClosedListener excessWindowsClosedListener;
 
     public GoNativeWindowManager() {
-        windows = new HashMap<>();
+        windows = new LinkedHashMap<>();
     }
 
     public void addNewWindow(String activityId, boolean isRoot) {
@@ -18,6 +19,14 @@ public class GoNativeWindowManager {
 
     public void removeWindow(String activityId) {
         this.windows.remove(activityId);
+
+        if (excessWindowsClosedListener != null && windows.size() <= 1) {
+            excessWindowsClosedListener.onAllExcessWindowClosed();
+        }
+    }
+
+    public void setOnExcessWindowClosedListener(ExcessWindowsClosedListener listener) {
+        this.excessWindowsClosedListener = listener;
     }
 
     public ActivityWindow getActivityWindowInfo(String activityId) {
@@ -80,8 +89,33 @@ public class GoNativeWindowManager {
         }
     }
 
+    public void setIgnoreInterceptMaxWindows(String activityId, boolean ignore) {
+        ActivityWindow window = windows.get(activityId);
+        if (window != null) {
+            window.ignoreInterceptMaxWindows = ignore;
+        }
+    }
+
+    public boolean isIgnoreInterceptMaxWindows(String activityId) {
+        ActivityWindow window = windows.get(activityId);
+        if (window != null) {
+            return window.ignoreInterceptMaxWindows;
+        }
+        return false;
+    }
+
     public int getWindowCount() {
         return windows.size();
+    }
+
+    // Returns ID of the next window after root as Excess window
+    public String getExcessWindow() {
+        for (Map.Entry<String, ActivityWindow> entry : windows.entrySet()) {
+            ActivityWindow window = entry.getValue();
+            if (window.isRoot) continue;
+            return window.id;
+        }
+        return null;
     }
 
     public static class ActivityWindow {
@@ -89,6 +123,7 @@ public class GoNativeWindowManager {
         private boolean isRoot;
         private int urlLevel;
         private int parentUrlLevel;
+        private boolean ignoreInterceptMaxWindows;
 
         ActivityWindow(String id, boolean isRoot) {
             this.id = id;
@@ -109,5 +144,10 @@ public class GoNativeWindowManager {
                     "urlLevel=" + urlLevel + "\n" +
                     "parentUrlLevel=" + parentUrlLevel;
         }
+    }
+
+
+    interface ExcessWindowsClosedListener {
+        void onAllExcessWindowClosed();
     }
 }

@@ -274,6 +274,8 @@ public class FileDownloader implements DownloadListener {
     // Requests Notification permission on Android 13+ for download progress info.
     // If NOT granted, will only show Toast message
     private boolean requestPostNotificationPermission(PreDownloadInfo preDownloadInfo) {
+        if (!DownloadService.enableDownloadNotification) return false;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             this.preDownloadInfo = preDownloadInfo;

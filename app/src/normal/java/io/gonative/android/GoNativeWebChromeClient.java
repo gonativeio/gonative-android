@@ -19,6 +19,8 @@ import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
+
 import java.util.ArrayList;
 
 import io.gonative.gonative_core.AppConfig;
@@ -48,8 +50,10 @@ class GoNativeWebChromeClient extends WebChromeClient {
 
     @Override
     public boolean onJsAlert(WebView view, String url, String message, JsResult result){
-        Toast.makeText(mainActivity, message, Toast.LENGTH_LONG).show();
-        result.confirm();
+        new AlertDialog.Builder(mainActivity)
+                .setMessage(message)
+                .setPositiveButton(R.string.ok, (dialog, which) -> result.confirm())
+                .setOnDismissListener(dialog -> result.cancel()).show();
         return true;
     }
 
