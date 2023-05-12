@@ -404,7 +404,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             Log.e(TAG, "No url specified for MainActivity");
         }
 
-        if (isRoot) showNavigationMenu(appConfig.showNavigationMenu);
+        showNavigationMenu(isRoot && appConfig.showNavigationMenu);
 
         actionManager.setupTitleDisplayForUrl(url);
 
@@ -530,11 +530,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 //Called when a drawer has settled in a completely closed state.
                 public void onDrawerClosed(View view) {
                     invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                    mDrawerLayout.setDisableTouch(appConfig.swipeGestures && canGoBack());
                 }
 
                 //Called when a drawer has settled in a completely open state.
                 public void onDrawerOpened(View drawerView) {
                     invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                    mDrawerLayout.setDisableTouch(false);
                 }
             };
 
@@ -542,7 +544,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
             mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.pull_to_refresh_color));
 
             mDrawerLayout.addDrawerListener(mDrawerToggle);
-            mDrawerLayout.setDisableTouch(appConfig.swipeGestures);
 
             setupMenu();
 
@@ -1499,6 +1500,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (this.menuAdapter != null) {
             this.menuAdapter.autoSelectItem(url);
+        }
+
+        // When current URL canGoBack and swipeGestures are enabled, disable touch events on DrawerLayout
+        if (this.mDrawerLayout != null && this.mDrawerLayout.getDrawerLockMode(GravityCompat.START) != DrawerLayout.LOCK_MODE_LOCKED_CLOSED) {
+            AppConfig appConfig = AppConfig.getInstance(this);
+            mDrawerLayout.setDisableTouch(appConfig.swipeGestures && canGoBack());
         }
     }
 

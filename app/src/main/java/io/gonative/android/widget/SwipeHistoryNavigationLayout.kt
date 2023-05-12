@@ -15,6 +15,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import io.gonative.android.R
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -61,6 +62,11 @@ class SwipeHistoryNavigationLayout : FrameLayout {
      */
     private var swipeablePer = 15 / 100f
 
+    /**
+     * Swipe distance threshold.
+     */
+    private var swipeThreshold = 30f
+
     private var firstTouchX: Int = Int.MIN_VALUE
     private var isSwipingLeftEdge = false
     private var isSwipingRightEdge = false
@@ -70,6 +76,10 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     private var oldDeltaX: Float = Float.NaN
     private var deltaX: Float = Float.NaN
     private var isSwipeReachesLimit = false
+
+    private var pointX = 0f
+    private var pointY = 0f
+    private var inMotion = false
 
     @JvmOverloads
     constructor(
@@ -174,6 +184,10 @@ class SwipeHistoryNavigationLayout : FrameLayout {
 
         when (ev?.action) {
             MotionEvent.ACTION_DOWN -> {
+                inMotion = false
+                pointX = ev.x
+                pointY = ev.y
+
                 if (isLeftEdge(ev.x) && swipeNavListener.canSwipeLeftEdge()) {
                     isSwipingLeftEdge = true
                     firstTouchX = ev.x.toInt()
@@ -185,17 +199,31 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                 }
             }
             MotionEvent.ACTION_MOVE -> {
+
+                val diffX = abs(pointX - ev.x)
+                val diffY = abs(pointY - ev.y)
+
                 if (isTouchInProgress) {
                     return true
                 }
 
-                if ((isSwipingLeftEdge || isSwipingRightEdge) && ev.x.toInt() != firstTouchX) {
-                    isTouchInProgress = true
-                    parent.requestDisallowInterceptTouchEvent(true)
-                    return true
+                return if ((diffX > swipeThreshold || diffY > swipeThreshold) && !inMotion) {
+                    inMotion = true
+                    val angle = atan2(diffY, diffX)
+                    if (angle > Math.PI/6) {
+                        false
+                    } else {
+                        isTouchInProgress = true
+                        parent.requestDisallowInterceptTouchEvent(true)
+                        true
+                    }
+                } else {
+                    false
                 }
             }
             MotionEvent.ACTION_UP -> {
+                pointX = 0f
+                pointY = 0f
                 if (isTouchInProgress) {
                     return true
                 }
@@ -213,11 +241,10 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                 lastTouchX = ev.x
                 oldDeltaX = deltaX
                 deltaX = abs(lastTouchX - firstTouchX)
-                val mDrawerLayout = findViewById<GoNativeDrawerLayout>(R.id.drawer_layout)
 
-                if (isSwipingLeftEdge && swipeNavListener.isSwipeEnabled()) {
+                if (isSwipingLeftEdge && swipeNavListener.isSwipeEnabled() && (deltaX >= swipeThreshold)) {
                     moveLeftHandle()
-                } else if (isSwipingRightEdge && swipeNavListener.isSwipeEnabled()) {
+                } else if (isSwipingRightEdge && swipeNavListener.isSwipeEnabled() && (deltaX >= swipeThreshold)) {
                     if (swipeNavListener.canSwipeRightEdge()) {
                         moveRightHandle()
                     } else if (deltaX > oldDeltaX) {
@@ -268,14 +295,14 @@ class SwipeHistoryNavigationLayout : FrameLayout {
 
     private fun moveLeftHandle() {
         leftHandleView.let {
-            val value = deltaX - firstTouchX - iconWidth
+            val value = (deltaX - swipeThreshold) - firstTouchX - iconWidth
             it.translationX = min(value, swipeableWidth - iconWidth)
         }
     }
 
     private fun moveRightHandle() {
         rightHandleView.let {
-            val value = firstTouchX - deltaX + iconWidth / 2
+            val value = firstTouchX - (deltaX - swipeThreshold) + iconWidth / 2
             it.translationX = max(value, width - swipeableWidth)
         }
     }
