@@ -23,5 +23,5 @@
 
     <color name="pull_to_refresh_color">#1e496e</color>
 
-    <color name="splash_background">#1e496e</color>
+    <color name="splash_background">#FFFFFF</color>
 </resources>
