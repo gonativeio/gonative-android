@@ -1,9 +1,6 @@
 package io.gonative.android;
 
 import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,8 +13,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.FileProvider;
 
 import org.json.JSONException;
@@ -32,7 +27,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
@@ -41,7 +35,8 @@ public class FileWriterSharer {
     private static final String TAG = FileWriterSharer.class.getSimpleName();
     private static final long MAX_SIZE = 1024 * 1024 * 1024; // 1 gigabyte
     private static final String BASE64TAG = ";base64,";
-    private static final String DOWNLOAD_CHANNEL_ID = "download_notifications";
+    private final FileDownloader.DownloadLocation defaultDownloadLocation;
+    private boolean open = false;
 
     private static class FileInfo{
         public String id;
@@ -49,12 +44,9 @@ public class FileWriterSharer {
         public long size;
         public String mimetype;
         public String extension;
-        public File containerDir;
         public File savedFile;
         public OutputStream fileOutputStream;
         public long bytesWritten;
-        public boolean savedToDownloads;
-        public int notificationId;
     }
 
     private class JavascriptBridge {
@@ -93,14 +85,11 @@ public class FileWriterSharer {
         this.context = context;
         this.idToFileInfo = new HashMap<>();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = context.getString(R.string.download_channel_name);
-            String description = context.getString(R.string.download_channel_description);
-            int importance = NotificationManager.IMPORTANCE_LOW;
-            NotificationChannel channel = new NotificationChannel(DOWNLOAD_CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
+        AppConfig appConfig = AppConfig.getInstance(this.context);
+        if (appConfig.downloadToPublicStorage) {
+            this.defaultDownloadLocation = FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS;
+        } else {
+            this.defaultDownloadLocation = FileDownloader.DownloadLocation.PRIVATE_INTERNAL;
         }
     }
 
@@ -108,10 +97,12 @@ public class FileWriterSharer {
         return javascriptBridge;
     }
 
-    public void downloadBlobUrl(String url) {
+    public void downloadBlobUrl(String url, boolean open) {
         if (url == null || !url.startsWith("blob:")) {
             return;
         }
+
+        this.open = open;
 
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -186,39 +177,27 @@ public class FileWriterSharer {
     private void onFileStartAfterPermission(FileInfo info, boolean granted) throws IOException {
         if (granted) {
 
-            File downloadsDir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File downloadsDir;
+            if (defaultDownloadLocation == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
+                downloadsDir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            } else {
+                downloadsDir =  context.getFilesDir();
+            }
+
             if (downloadsDir != null) {
                 int appendNum = 0;
                 File outputFile = new File(downloadsDir, info.name + "." + info.extension);
                 while (outputFile.exists()) {
                     appendNum++;
-                    outputFile = new File(downloadsDir, info.name + " (" + appendNum +
+                    outputFile = new File(downloadsDir, info.name + "(" + appendNum +
                             ")" + "." +info.extension);
                 }
 
                 info.savedFile = outputFile;
             }
-
-            info.savedToDownloads = true;
         }
 
-        if (info.savedFile == null) {
-            File cacheDir = context.getCacheDir();
-            File downloadsDir = new File(cacheDir, "downloads");
-            File containerDir = new File(downloadsDir, UUID.randomUUID().toString());
-            containerDir.mkdirs();
-            info.containerDir = containerDir;
-            info.savedFile = new File(containerDir, info.name + "." + info.extension);
-            info.savedToDownloads = false;
-        }
-
-        // show notification
-        info.notificationId = UUID.randomUUID().hashCode();
-        showProgressNotification(info);
-
-        OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(info.savedFile));
-
-        info.fileOutputStream = outputStream;
+        info.fileOutputStream = new BufferedOutputStream(new FileOutputStream(info.savedFile));
         info.bytesWritten = 0;
 
         this.idToFileInfo.put(info.id, info);
@@ -263,8 +242,6 @@ public class FileWriterSharer {
 
         fileInfo.fileOutputStream.write(chunk);
         fileInfo.bytesWritten += chunk.length;
-
-        showProgressNotification(fileInfo);
     }
 
     private void onFileEnd(JSONObject message) throws IOException {
@@ -282,41 +259,19 @@ public class FileWriterSharer {
 
         fileInfo.fileOutputStream.close();
 
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-        notificationManager.cancel(TAG, fileInfo.notificationId);
-
-        if (fileInfo.savedToDownloads) {
-            // create notification
-            Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent,
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
-                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                            : PendingIntent.FLAG_UPDATE_CURRENT
-            );
-            String description = context.getString(R.string.download_complete) + " • " +
-                    android.text.format.Formatter.formatShortFileSize(context, fileInfo.size);
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DOWNLOAD_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setContentTitle(fileInfo.savedFile.getName())
-                    .setContentText(description)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setContentIntent(pendingIntent)
-                    .setAutoCancel(true);
-            notificationManager.notify(TAG, fileInfo.notificationId, builder.build());
-
+        if (open) {
+            context.runOnUiThread(() -> {
+                Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
+                try {
+                    context.startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    String message1 = context.getResources().getString(R.string.file_handler_not_found);
+                    Toast.makeText(context, message1, Toast.LENGTH_LONG).show();
+                }
+            });
+        } else {
             Toast.makeText(context, context.getString(R.string.file_download_finished), Toast.LENGTH_SHORT).show();
-            return;
         }
-
-        context.runOnUiThread(() -> {
-            Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
-            try {
-                context.startActivity(intent);
-            } catch (ActivityNotFoundException e) {
-                String message1 = context.getResources().getString(R.string.file_handler_not_found);
-                Toast.makeText(context, message1, Toast.LENGTH_LONG).show();
-            }
-        });
     }
 
     private Intent getIntentToOpenFile(File file, String mimetype) {
@@ -341,16 +296,5 @@ public class FileWriterSharer {
             return;
         }
         this.nextFileName = name;
-    }
-
-    private void showProgressNotification(FileInfo info) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DOWNLOAD_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(info.savedFile.getName())
-                .setContentText(context.getString(R.string.download_in_progress))
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setProgress((int)info.size / 1000, (int)info.bytesWritten / 1000, false);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-        notificationManager.notify(TAG, info.notificationId, builder.build());
     }
 }

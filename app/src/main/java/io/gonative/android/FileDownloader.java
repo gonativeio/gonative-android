@@ -1,22 +1,15 @@
 package io.gonative.android;
 
 import android.Manifest;
-import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
-import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
@@ -25,31 +18,25 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.gonative.gonative_core.AppConfig;
-import io.gonative.gonative_core.LeanUtils;
 
 /**
  * Created by weiyin on 6/24/14.
  */
 public class FileDownloader implements DownloadListener {
-    private enum DownloadLocation {
+    public enum DownloadLocation {
         PUBLIC_DOWNLOADS, PRIVATE_INTERNAL
     }
 
     private static final String TAG = FileDownloader.class.getName();
     private final MainActivity context;
     private final DownloadLocation defaultDownloadLocation;
-    private final Map<String, DownloadManager.Request> pendingExternalDownloads;
-    private final ActivityResultLauncher<String> requestPermissionLauncher;
+    private final ActivityResultLauncher<String[]> requestPermissionLauncher;
     private UrlNavigation urlNavigation;
     private String lastDownloadedUrl;
-
-    private DownloadManager downloadManager;
-    private final Map<Long, String> pendingDownloadNotification;
-
     private DownloadService downloadService;
     private boolean isBound = false;
     private PreDownloadInfo preDownloadInfo;
@@ -71,8 +58,6 @@ public class FileDownloader implements DownloadListener {
 
     FileDownloader(MainActivity context) {
         this.context = context;
-        this.pendingExternalDownloads = new HashMap<>();
-        this.pendingDownloadNotification = new HashMap<>();
 
         AppConfig appConfig = AppConfig.getInstance(this.context);
         if (appConfig.downloadToPublicStorage) {
@@ -80,47 +65,27 @@ public class FileDownloader implements DownloadListener {
         } else {
             this.defaultDownloadLocation = DownloadLocation.PRIVATE_INTERNAL;
         }
-        registerDownloadBroadCastReceiver(context);
 
         Intent intent = new Intent(context, DownloadService.class);
         context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         // initialize request permission launcher
-        requestPermissionLauncher = context.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-            if (preDownloadInfo != null) {
+        requestPermissionLauncher = context.registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), isGranted -> {
+
+            if (isGranted.containsKey(Manifest.permission.WRITE_EXTERNAL_STORAGE) && Boolean.FALSE.equals(isGranted.get(Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
+                Toast.makeText(context, "Unable to save download, storage permission denied", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (preDownloadInfo != null && isBound) {
                 if (preDownloadInfo.isBlob) {
-                    context.getFileWriterSharer().downloadBlobUrl(preDownloadInfo.url);
+                    context.getFileWriterSharer().downloadBlobUrl(preDownloadInfo.url, preDownloadInfo.open);
                 } else {
-                    startDownload(preDownloadInfo.url, preDownloadInfo.mimetype, preDownloadInfo.shouldSaveToGallery, preDownloadInfo.open);
+                    downloadService.startDownload(preDownloadInfo.url, preDownloadInfo.mimetype, preDownloadInfo.shouldSaveToGallery, preDownloadInfo.open, defaultDownloadLocation);
                 }
                 preDownloadInfo = null;
             }
         });
-    }
-
-    private void registerDownloadBroadCastReceiver(Context context) {
-        if (context == null) return;
-        BroadcastReceiver onDownloadComplete = new BroadcastReceiver() {
-            public void onReceive(Context ctx, Intent intent) {
-                long dwnId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-                if (dwnId == -1 || downloadManager == null) {
-                    return;
-                }
-                Cursor cursor = downloadManager.query(new DownloadManager.Query().setFilterById(dwnId));
-                if(cursor.moveToFirst()) {
-                    int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                    int status = cursor.getInt(columnIndex);
-                    String filename = getDownloadFilename(dwnId);
-                    if (TextUtils.isEmpty(filename)) return;
-                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                        Toast.makeText(ctx, ctx.getString(R.string.file_download_finished) + ": " + filename, Toast.LENGTH_SHORT).show();
-                    } else if (status == DownloadManager.STATUS_FAILED) {
-                        Toast.makeText(ctx, ctx.getString(R.string.download_canceled) + ": " + filename, Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        };
-        context.getApplicationContext().registerReceiver(onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
     @Override
@@ -139,16 +104,12 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
-            if (requestPostNotificationPermission(new PreDownloadInfo(url, true))) {
+            if (requestRequiredPermission(new PreDownloadInfo(url, true))) {
                 return;
             }
 
-            context.getFileWriterSharer().downloadBlobUrl(url);
+            context.getFileWriterSharer().downloadBlobUrl(url, false);
             return;
-        }
-
-        if (userAgent == null) {
-            userAgent = AppConfig.getInstance(context).userAgent;
         }
 
         lastDownloadedUrl = url;
@@ -166,75 +127,7 @@ public class FileDownloader implements DownloadListener {
             }
         }
 
-        if (this.defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                try {
-                    Uri uri = Uri.parse(url);
-                    DownloadManager.Request request = new DownloadManager.Request(uri);
-                    request.addRequestHeader("User-Agent", userAgent);
-
-                    // set cookies
-                    CookieManager cookieManager = android.webkit.CookieManager.getInstance();
-                    String cookie = cookieManager.getCookie(url);
-                    if (cookie != null) {
-                        request.addRequestHeader("Cookie", cookie);
-                    }
-
-                    request.allowScanningByMediaScanner();
-                    String guessedName = LeanUtils.guessFileName(url, contentDisposition, mimetype);
-                    request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, guessedName);
-                    request.setMimeType(mimetype);
-                    request.setTitle(context.getResources().getString(R.string.file_download_title) + " " + guessedName);
-                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                    enqueueBackgroundDownload(guessedName, request);
-
-                } catch (Exception e) {
-                    Log.e(TAG, e.getMessage(), e);
-                    Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
-                }
-
-                return;
-            } else {
-                Log.w(TAG, "External storage is not mounted. Downloading internally.");
-            }
-        }
-
         startDownload(url, mimetype, false, false);
-    }
-
-    private void enqueueBackgroundDownload(String filename, DownloadManager.Request request) {
-        this.pendingExternalDownloads.put(filename, request);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            this.context.getExternalStorageWritePermission();
-        }else {
-            gotExternalStoragePermissions(true);
-        }
-    }
-
-    public void gotExternalStoragePermissions(boolean granted) {
-        if (granted) {
-            if (this.downloadManager == null) {
-                this.downloadManager = (DownloadManager) this.context.getSystemService(Context.DOWNLOAD_SERVICE);
-                if (downloadManager == null) {
-                    Log.e(TAG, "Error getting system download manager");
-                    return;
-                }
-            }
-            for (Map.Entry<String, DownloadManager.Request> set : this.pendingExternalDownloads.entrySet()) {
-                long downloadId = downloadManager.enqueue(set.getValue());
-                this.pendingDownloadNotification.put(downloadId, set.getKey());
-            }
-            this.pendingExternalDownloads.clear();
-        }
-    }
-
-    private String getDownloadFilename(long dwnId) {
-        String filename = null;
-        if (pendingDownloadNotification.containsKey(dwnId)) {
-            filename = pendingDownloadNotification.get(dwnId);
-            pendingDownloadNotification.remove(dwnId);
-        }
-        return filename;
     }
 
     public void downloadFile(String url, boolean shouldSaveToGallery, boolean open) {
@@ -244,10 +137,10 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
-            if (requestPostNotificationPermission(new PreDownloadInfo(url, true))) {
+            if (requestRequiredPermission(new PreDownloadInfo(url, true))) {
                 return;
             }
-            context.getFileWriterSharer().downloadBlobUrl(url);
+            context.getFileWriterSharer().downloadBlobUrl(url, open);
             return;
         }
 
@@ -266,20 +159,25 @@ public class FileDownloader implements DownloadListener {
 
     private void startDownload(String downloadUrl, String mimetype, boolean shouldSaveToGallery, boolean open) {
         if (isBound) {
-            if (requestPostNotificationPermission(new PreDownloadInfo(downloadUrl, mimetype, shouldSaveToGallery, open, false))) return;
-            downloadService.startDownload(downloadUrl, mimetype, shouldSaveToGallery, open);
+            if (requestRequiredPermission(new PreDownloadInfo(downloadUrl, mimetype, shouldSaveToGallery, open, false))) return;
+            downloadService.startDownload(downloadUrl, mimetype, shouldSaveToGallery, open, defaultDownloadLocation);
         }
     }
 
-    // Requests Notification permission on Android 13+ for download progress info.
-    // If NOT granted, will only show Toast message
-    private boolean requestPostNotificationPermission(PreDownloadInfo preDownloadInfo) {
-        if (!DownloadService.enableDownloadNotification) return false;
+    // Requests required permission depending on device's SDK version
+    private boolean requestRequiredPermission(PreDownloadInfo preDownloadInfo) {
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        List<String> permissions = new ArrayList<>();
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED &&
+                defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+
+        if (permissions.size() > 0) {
             this.preDownloadInfo = preDownloadInfo;
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            requestPermissionLauncher.launch(permissions.toArray(new String[] {}));
             return true;
         }
         return false;

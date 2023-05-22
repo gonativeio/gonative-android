@@ -1727,11 +1727,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     this.geolocationPermissionCallback = null;
                 }
                 break;
-            case REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    this.fileDownloader.gotExternalStoragePermissions(true);
-                }
-                break;
             case REQUEST_PERMISSION_GENERIC:
                 Iterator<PermissionsCallbackPair> it = pendingPermissionRequests.iterator();
                 while (it.hasNext()) {
@@ -1829,25 +1824,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         ActivityCompat.requestPermissions(this, new String[]{
                 Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
         }, REQUEST_PERMISSION_GEOLOCATION);
-    }
-
-    public void getExternalStorageWritePermission() {
-        // check external storage permission
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                Toast.makeText(this, R.string.request_permission_explanation_storage, Toast.LENGTH_LONG).show();
-            }
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
-        } else {
-            this.fileDownloader.gotExternalStoragePermissions(true);
-        }
     }
 
     public void getPermission(String[] permissions, PermissionCallback callback) {

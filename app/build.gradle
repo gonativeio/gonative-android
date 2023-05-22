@@ -10,6 +10,8 @@ ext {
     onesignalAppId = ""
     adMobAppId = ""
     googleServiceInvalid = "false"
+    auth0Domain = ""
+    auth0Scheme = ""
 }
 
 task parseAppConfig {
@@ -43,6 +45,14 @@ task parseAppConfig {
         }
         if (parsedJson.services.braze.androidEndpointKey) {
             gradle.ext.set("braze_endpoint_key", parsedJson.services.braze.androidEndpointKey)
+        }
+    }
+    if (parsedJson.services.auth0) {
+        if (parsedJson.services.auth0.domain) {
+            auth0Domain = parsedJson.services.auth0.domain
+        }
+        if (parsedJson.services.auth0.scheme) {
+            auth0Scheme = parsedJson.services.auth0.scheme
         }
     }
 }
@@ -79,7 +89,8 @@ android {
                                 onesignal_google_project_number: "",
                                 admob_app_id: adMobAppId,
                                 facebook_app_id: fbAppId,
-                                facebook_client_token: fbClientToken ]
+                                facebook_client_token: fbClientToken,
+                                auth0Domain: auth0Domain, auth0Scheme: auth0Scheme ]
     }
 
     compileOptions {

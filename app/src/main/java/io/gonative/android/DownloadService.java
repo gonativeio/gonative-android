@@ -1,14 +1,10 @@
 package io.gonative.android;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,17 +13,14 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,24 +29,15 @@ import io.gonative.gonative_core.LeanUtils;
 
 public class DownloadService extends Service {
 
-    public static final boolean enableDownloadNotification = false; // TODO transfer to AppConfig
-
     private static final String TAG = "DownloadService";
-    private static final String CHANNEL_ID = "gonative.share.downloads";
-    private static final String CHANNEL_NAME = "Downloads";
     private static final String EXTRA_DOWNLOAD_ID = "download_id";
     private static final String ACTION_CANCEL_DOWNLOAD = "action_cancel_download";
     private static final int BUFFER_SIZE = 4096;
-    private static final int ICON_DOWNLOAD_IN_PROGRESS = android.R.drawable.stat_sys_download;
-    private static final int ICON_DOWNLOAD_DONE = android.R.drawable.stat_sys_download_done;
     private static final int timeout = 5; // in seconds
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    private NotificationManager notificationManager;
-    private NotificationCompat.Builder notificationBuilder;
-
     private final Map<Integer, DownloadTask> downloadTasks = new HashMap<>();
-    private int notificationId = 0;
+    private int downloadId = 0;
     private String userAgent;
 
     @Override
@@ -61,10 +45,6 @@ public class DownloadService extends Service {
         super.onCreate();
         AppConfig appConfig = AppConfig.getInstance(this);
         this.userAgent = appConfig.userAgent;
-
-        if (enableDownloadNotification) {
-            notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        }
     }
 
     @Override
@@ -88,8 +68,8 @@ public class DownloadService extends Service {
         }
     }
 
-    public void startDownload(String url, String mimetype, boolean shouldSaveToGallery, boolean open) {
-        DownloadTask downloadTask = new DownloadTask(url, mimetype, shouldSaveToGallery, open);
+    public void startDownload(String url, String mimetype, boolean shouldSaveToGallery, boolean open, FileDownloader.DownloadLocation location) {
+        DownloadTask downloadTask = new DownloadTask(url, mimetype, shouldSaveToGallery, open, location);
         downloadTasks.put(downloadTask.getId(), downloadTask);
         downloadTask.startDownload();
     }
@@ -102,6 +82,7 @@ public class DownloadService extends Service {
     }
 
     public void handleDownloadUri(File file, String mimeType, boolean shouldSaveToGallery, boolean open, String filename) {
+
         Uri uri = FileProvider.getUriForFile(DownloadService.this, DownloadService.this.getApplicationContext().getPackageName() + ".fileprovider", file);
         if (shouldSaveToGallery) {
             addFileToGallery(uri);
@@ -155,14 +136,16 @@ public class DownloadService extends Service {
         private String mimetype;
         private final boolean saveToGallery;
         private final boolean openOnFinish;
+        private final FileDownloader.DownloadLocation location;
 
-        public DownloadTask(String url, String mimetype, boolean saveToGallery, boolean open) {
-            this.id = notificationId++;
+        public DownloadTask(String url, String mimetype, boolean saveToGallery, boolean open, FileDownloader.DownloadLocation location) {
+            this.id = downloadId++;
             this.url = url;
             this.mimetype = mimetype;
             this.isDownloading = false;
             this.saveToGallery = saveToGallery;
             this.openOnFinish = open;
+            this.location = location;
         }
 
         public int getId() {
@@ -176,11 +159,6 @@ public class DownloadService extends Service {
         public void startDownload() {
             Log.d(TAG, "startDownload: Starting download");
             isDownloading = true;
-
-            if (enableDownloadNotification) {
-                createNotification();
-            }
-
             new Thread(() -> {
                 Log.d(TAG, "startDownload: Thread started");
                 try {
@@ -194,10 +172,12 @@ public class DownloadService extends Service {
                     if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                         Log.e(TAG, "Server returned HTTP " + connection.getResponseCode()
                                 + " " + connection.getResponseMessage());
-                        updateNotification(getString(R.string.download_disconnected), 0, true);
                         isDownloading = false;
                         return;
                     }
+
+                    double fileSizeInMB = connection.getContentLength() / 1048576.0;
+                    Log.d(TAG, "startDownload: File size in MB: " + fileSizeInMB);
 
                     // guess file name and extension
                     if (connection.getHeaderField("Content-Type") != null)
@@ -218,15 +198,15 @@ public class DownloadService extends Service {
                         extension = guessedName.substring(pos + 1);
                     }
 
-                    handler.post(() -> {
-                        Toast.makeText(DownloadService.this, "Downloading " + filename, Toast.LENGTH_SHORT).show();
-                    });
-
                     File downloadDir;
-                    if (saveToGallery) {
-                        downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                    if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
+                        if (saveToGallery) {
+                            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                        } else {
+                            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                        }
                     } else {
-                        downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                        downloadDir = getFilesDir();
                     }
 
                     // check and update filename if already exist
@@ -245,17 +225,13 @@ public class DownloadService extends Service {
                         outputStream.write(buffer, 0, bytesRead);
                         bytesDownloaded += bytesRead;
                         int progress = (int) (bytesDownloaded * 100 / fileLength);
-                        updateNotification(getString(R.string.download_in_progress), progress, false);
+                        Log.d(TAG, "startDownload: Download progress: " + progress);
                     }
                     if (!isDownloading) {
                         outputFile.delete();
-                    } else {
-                        updateNotification(getString(R.string.file_download_finished), 100, false);
                     }
-
                 } catch (IOException e) {
                     Log.e(TAG, "startDownload: ", e);
-                    updateNotification(getString(R.string.file_download_error), 0, true);
                 } finally {
                     try {
                         if (inputStream != null) inputStream.close();
@@ -272,73 +248,9 @@ public class DownloadService extends Service {
             }).start();
         }
 
-        private void createNotification() {
-            if (!enableDownloadNotification || notificationManager == null) return;
-
-            // Create notification builder
-            notificationBuilder =
-                    new NotificationCompat.Builder(DownloadService.this, CHANNEL_ID)
-                            .setSmallIcon(ICON_DOWNLOAD_IN_PROGRESS)
-                            .setContentTitle(getString(R.string.file_download_title))
-                            .setContentText(url)
-                            .setProgress(100, 0, true)
-                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                            .addAction(R.drawable.ic_notification, "Cancel", createCancelDownloadPendingIntent())
-                            .setOngoing(true)
-                            .setOnlyAlertOnce(true);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                int importance = NotificationManager.IMPORTANCE_DEFAULT;
-                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance);
-                notificationManager.createNotificationChannel(channel);
-            }
-
-            notificationManager.notify(id, notificationBuilder.build());
-        }
-
         public void cancelDownload() {
             isDownloading = false;
-            notificationManager.cancel(id);
             Toast.makeText(DownloadService.this, getString(R.string.download_canceled) + " " + filename, Toast.LENGTH_SHORT).show();
-        }
-
-        private void updateNotification(String title, int progress, boolean downloadFailed) {
-            if (!enableDownloadNotification || notificationManager == null || notificationBuilder == null) return;
-
-            notificationBuilder.setContentTitle(title)
-                    .setContentText(filename);
-
-            if (downloadFailed) {
-                notificationBuilder.setSmallIcon(ICON_DOWNLOAD_DONE)
-                        .setOngoing(false)
-                        .setProgress(100, progress, false);
-                removeNotificationAction(notificationBuilder);
-            } else if (progress < 100) {
-                notificationBuilder.setProgress(100, progress, false);
-            } else {
-                notificationBuilder.setSmallIcon(ICON_DOWNLOAD_DONE)
-                        .setOngoing(false)
-                        .setAutoCancel(true)
-                        .setProgress(100, progress, false)
-                        .setContentIntent(createOpenFilePendingIntent());
-                removeNotificationAction(notificationBuilder);
-            }
-
-            notificationManager.notify(id, notificationBuilder.build());
-        }
-
-        private void removeNotificationAction(NotificationCompat.Builder builder) {
-            if (builder == null) return;
-            try {
-                //Use reflection clean up old actions
-                Field f = builder.getClass().getDeclaredField("mActions");
-                f.setAccessible(true);
-                f.set(builder, new ArrayList<NotificationCompat.Action>());
-            } catch (NoSuchFieldException e) {
-                // no field
-            } catch (IllegalAccessException e) {
-                // wrong types
-            }
         }
 
         public String getUniqueFileName(String fileName, File dir) {
@@ -361,35 +273,6 @@ public class DownloadService extends Service {
             }
 
             return file.getName();
-        }
-
-        private PendingIntent createOpenFilePendingIntent() {
-            if (outputFile == null || !outputFile.exists()) return null;
-            try {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                Uri uri = FileProvider.getUriForFile(DownloadService.this, getApplicationContext().getPackageName() + ".fileprovider", outputFile);
-                intent.setDataAndType(uri, mimetype);
-                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    return PendingIntent.getActivity(DownloadService.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-                } else {
-                    return PendingIntent.getActivity(DownloadService.this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-                }
-            } catch (Exception ex) {
-                Log.e(TAG, "createOpenFilePendingIntent: ", ex);
-            }
-            return null;
-        }
-
-        private PendingIntent createCancelDownloadPendingIntent() {
-            Intent intent = new Intent(DownloadService.this, DownloadService.class);
-            intent.setAction(ACTION_CANCEL_DOWNLOAD);
-            intent.putExtra(EXTRA_DOWNLOAD_ID, id);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                return PendingIntent.getService(DownloadService.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-            } else {
-                return PendingIntent.getService(DownloadService.this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-            }
         }
     }
 }

@@ -207,7 +207,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                     return true
                 }
 
-                return if ((diffX > swipeThreshold || diffY > swipeThreshold) && !inMotion) {
+                return if ((isSwipingLeftEdge || isSwipingRightEdge) && ((diffX > swipeThreshold) || (diffY > swipeThreshold)) && !inMotion) {
                     inMotion = true
                     val angle = atan2(diffY, diffX)
                     if (angle > Math.PI/6) {

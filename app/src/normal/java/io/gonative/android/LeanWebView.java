@@ -145,8 +145,8 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
             int steps = 0;
             for (int i = history.getCurrentIndex() - 1; i >= 0; i--) {
                 WebHistoryItem temp = history.getItemAtIndex(i);
-                if (!temp.getUrl().equals(UrlNavigation.OFFLINE_PAGE_URL) &&
-                    !urlEqualsIgnoreSlash(temp.getUrl(), currentUrl)) {
+
+                if (!temp.getUrl().equals(UrlNavigation.OFFLINE_PAGE_URL)) {
                     item = temp;
                     steps = i - history.getCurrentIndex();
                     break;
@@ -161,12 +161,9 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
             if (mClient.shouldOverrideUrlLoading(this, item.getUrl())) {
                 return;
             }
-
             super.goBackOrForward(steps);
-            return;
         } catch (Exception ignored) {
             super.goBack();
-            return;
         }
     }
 
