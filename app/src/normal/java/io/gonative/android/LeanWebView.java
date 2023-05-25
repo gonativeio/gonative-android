@@ -139,8 +139,7 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
     public void goBack() {
         try {
             WebBackForwardList history = copyBackForwardList();
-            String currentUrl = getUrl();
-            // find first non-offline item that is not equal to current url
+            // find first non-offline item
             WebHistoryItem item = null;
             int steps = 0;
             for (int i = history.getCurrentIndex() - 1; i >= 0; i--) {
@@ -165,6 +164,39 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
         } catch (Exception ignored) {
             super.goBack();
         }
+    }
+
+    @Override
+    public boolean canGoForward() {
+        WebBackForwardList history = copyBackForwardList();
+
+        // Checks if the next forward item is the offline page
+        WebHistoryItem item = history.getItemAtIndex(history.getCurrentIndex() + 1);
+        if (item != null && UrlNavigation.OFFLINE_PAGE_URL.equals(item.getUrl())) {
+            // return true if the item after the offline page is not null, otherwise, return false
+            WebHistoryItem itemAfterOfflinePage = history.getItemAtIndex(history.getCurrentIndex() + 2);
+            return itemAfterOfflinePage != null;
+        }
+
+        return super.canGoForward();
+    }
+
+    @Override
+    public void goForward() {
+        WebBackForwardList history = copyBackForwardList();
+
+        // Checks if the next forward item is the offline page
+        WebHistoryItem item = history.getItemAtIndex(history.getCurrentIndex() + 1);
+        if (item != null && UrlNavigation.OFFLINE_PAGE_URL.equals(item.getUrl())) {
+            // If item next to the offline page is not null, load the item
+            WebHistoryItem itemAfterOfflinePage = history.getItemAtIndex(history.getCurrentIndex() + 2);
+            if (itemAfterOfflinePage != null) {
+                goBackOrForward(2);
+            }
+            return;
+        }
+
+        super.goForward();
     }
 
     private boolean urlEqualsIgnoreSlash(String url1, String url2) {

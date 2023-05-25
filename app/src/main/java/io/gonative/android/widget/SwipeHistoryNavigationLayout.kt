@@ -5,7 +5,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.AttributeSet
+import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -26,6 +31,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
 
     // Styleable properties
     private val iconWidth: Float = resources.getDimension(R.dimen.handle_icon_size)
+    private val iconWidthInDp: Float = iconWidth / (context.resources.displayMetrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
     private val backgroundDrawable: Drawable?
     private val leftEdgeDrawable: Drawable?
     private val rightEdgeDrawable: Drawable?
@@ -81,6 +87,8 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     private var pointY = 0f
     private var inMotion = false
 
+    private var vibrator: Vibrator
+
     @JvmOverloads
     constructor(
         context: Context,
@@ -135,6 +143,14 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         )
         rightEdgeEffect = EdgeEffect(context)
         setWillNotDraw(false)
+
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator;
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
     }
 
     @SuppressLint("RtlHardcoded")
@@ -192,7 +208,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                     isSwipingLeftEdge = true
                     firstTouchX = ev.x.toInt()
                     leftEdgeGrabbed()
-                } else if (isRightEdge(ev.x)) {
+                } else if (isRightEdge(ev.x) && swipeNavListener.canSwipeRightEdge()) {
                     isSwipingRightEdge = true
                     firstTouchX = width
                     rightEdgeGrabbed()
@@ -254,8 +270,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                     }
                 }
 
-//                val rightOffset = isSwipingRightEdge.let { +iconWidth }
-                if (deltaX > swipeableWidth) { // + rightOffset) {
+                if (deltaX > (swipeableWidth + swipeThreshold + iconWidthInDp)) {
                     if (!isSwipeReachesLimit) {
                         isSwipeReachesLimit = true
                         swipeReachesLimit()
@@ -365,6 +380,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
             rightHandleView.animateActive()
             rightHandleView.animateShowText()
         }
+        vibrate()
     }
 
     private fun leaveHandle() {
@@ -410,6 +426,15 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         }
     }
 
+    private fun vibrate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } else {
+                vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(50, 40), intArrayOf(0, 50), -1))
+            }
+        }
+    }
 
     var swipeNavListener: OnSwipeNavListener = object : OnSwipeNavListener {
         override fun canSwipeLeftEdge(): Boolean = true

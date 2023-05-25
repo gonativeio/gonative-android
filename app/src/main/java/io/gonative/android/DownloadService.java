@@ -94,7 +94,8 @@ public class DownloadService extends Service {
                 if (shouldSaveToGallery) {
                     Toast.makeText(this, "Image saved to Gallery", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, filename + " downloaded", Toast.LENGTH_SHORT).show();
+                    String downloadCompleteMessage = String.format(this.getString(R.string.file_download_finished_with_name), filename);
+                    Toast.makeText(this, downloadCompleteMessage, Toast.LENGTH_SHORT).show();
                 }
             });
         }

@@ -255,11 +255,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
         swipeNavLayout.setSwipeNavListener(new SwipeHistoryNavigationLayout.OnSwipeNavListener() {
             @Override
             public boolean canSwipeLeftEdge() {
+                if (mWebview.getMaxHorizontalScroll() > 0) {
+                    if (mWebview.getScrollX() > 0) return false;
+                }
                 return canGoBack();
             }
     
             @Override
             public boolean canSwipeRightEdge() {
+                if (mWebview.getMaxHorizontalScroll() > 0) {
+                    if (mWebview.getScrollX() < mWebview.getMaxHorizontalScroll()) return false;
+                }
                 return canGoForward();
             }
     

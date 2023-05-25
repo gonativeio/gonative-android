@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import io.gonative.gonative_core.AppConfig;
@@ -270,7 +271,10 @@ public class FileWriterSharer {
                 }
             });
         } else {
-            Toast.makeText(context, context.getString(R.string.file_download_finished), Toast.LENGTH_SHORT).show();
+            String downloadCompleteMessage = fileInfo.name != null && !fileInfo.name.isEmpty()
+                    ? String.format(context.getString(R.string.file_download_finished_with_name), fileInfo.name + '.' + fileInfo.extension)
+                    : context.getString(R.string.file_download_finished);
+            Toast.makeText(context, downloadCompleteMessage, Toast.LENGTH_SHORT).show();
         }
     }
 
