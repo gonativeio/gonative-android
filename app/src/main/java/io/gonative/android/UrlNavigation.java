@@ -33,6 +33,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -41,7 +45,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GoNativeActivity;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
+import io.gonative.gonative_core.IOUtils;
 import io.gonative.gonative_core.LeanUtils;
 import io.gonative.gonative_core.Utils;
 
@@ -68,6 +74,7 @@ public class UrlNavigation {
     private MainActivity mainActivity;
     private String profilePickerExec;
     private String currentWebviewUrl;
+    private String JSBridgeScript;
     private HtmlIntercept htmlIntercept;
     private Handler startLoadTimeout = new Handler();
 
@@ -548,8 +555,27 @@ public class UrlNavigation {
             runGonativeDeviceInfo("gonative_device_info");
         }
 
-        mainActivity.injectJSBridgeLibrary(currentWebviewUrl);
+        injectJSBridgeLibrary(currentWebviewUrl);
         ((GoNativeApplication) mainActivity.getApplication()).mBridge.onPageFinish(mainActivity, doNativeBridge);
+    }
+
+    private void injectJSBridgeLibrary(String currentWebviewUrl) {
+        if(!LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity)) return;
+
+        try {
+            if(JSBridgeScript == null) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream is = new BufferedInputStream(mainActivity.getAssets().open("GoNativeJSBridgeLibrary.js"));
+                IOUtils.copy(is, baos);
+                JSBridgeScript = baos.toString();
+            }
+            mainActivity.runJavascript(JSBridgeScript);
+            ((GoNativeApplication) mainActivity.getApplication()).mBridge.injectJSLibraries(mainActivity);
+            // call the user created function that needs library access on page finished.
+            mainActivity.runJavascript(LeanUtils.createJsForCallback("gonative_library_ready", null));
+        } catch (Exception e) {
+            Log.d(TAG, "GoNative JSBridgeLibrary Injection Error:- " + e.getMessage());
+        }
     }
 
     public void onFormResubmission(GoNativeWebviewInterface view, Message dontResend, Message resend) {

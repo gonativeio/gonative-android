@@ -2354,10 +2354,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return this.restoreBrightnessOnNavigation;
     }
 
-    public void injectJSBridgeLibrary(String currentWebviewUrl) {
-        GoNativeApplication application = (GoNativeApplication)getApplication();
-        application.mBridge.injectJSBridgeLibrary(currentWebviewUrl, this);
-    }
+
 
     public Object getJavascriptBridge() {
         GoNativeApplication application = (GoNativeApplication)getApplication();
