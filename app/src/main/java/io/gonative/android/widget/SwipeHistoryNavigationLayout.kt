@@ -5,10 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.Gravity
@@ -87,8 +83,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     private var pointY = 0f
     private var inMotion = false
 
-    private var vibrator: Vibrator
-
     @JvmOverloads
     constructor(
         context: Context,
@@ -143,14 +137,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         )
         rightEdgeEffect = EdgeEffect(context)
         setWillNotDraw(false)
-
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator;
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
     }
 
     @SuppressLint("RtlHardcoded")
@@ -380,7 +366,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
             rightHandleView.animateActive()
             rightHandleView.animateShowText()
         }
-        vibrate()
     }
 
     private fun leaveHandle() {
@@ -423,16 +408,6 @@ class SwipeHistoryNavigationLayout : FrameLayout {
         if (needsInvalidate) {
             // Keep animating
             ViewCompat.postInvalidateOnAnimation(this);
-        }
-    }
-
-    private fun vibrate() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-            } else {
-                vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(50, 40), intArrayOf(0, 50), -1))
-            }
         }
     }
 

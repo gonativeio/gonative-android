@@ -199,6 +199,7 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManger.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
         } else {
+            @Suppress("DEPRECATION")
             packageManger.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
         }
     }

@@ -41,8 +41,8 @@
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent">
 
-                    <io.gonative.android.LeanWebView
-                        android:id="@+id/webview"
+                    <io.gonative.android.widget.WebViewContainerView
+                        android:id="@+id/webviewContainer"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
 

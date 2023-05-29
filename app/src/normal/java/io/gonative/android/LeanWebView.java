@@ -278,6 +278,16 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
         restoreState(inBundle);
     }
 
+    @Override
+    public int getWebViewScrollY() {
+        return getScrollY();
+    }
+
+    @Override
+    public int getWebViewScrollX() {
+        return getScrollX();
+    }
+
     public interface OnSwipeListener {
         void onSwipeLeft();
         void onSwipeRight();

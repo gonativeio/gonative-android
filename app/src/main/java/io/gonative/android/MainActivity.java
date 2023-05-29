@@ -93,6 +93,7 @@ import io.gonative.gonative_core.AppConfig;
 import io.gonative.android.widget.GoNativeDrawerLayout;
 import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
 import io.gonative.android.widget.SwipeHistoryNavigationLayout;
+import io.gonative.android.widget.WebViewContainerView;
 import io.gonative.gonative_core.GoNativeActivity;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 import io.gonative.gonative_core.LeanUtils;
@@ -121,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private static final String ON_RESUME_CALLBACK = "gonative_app_resumed";
     private boolean isActivityPaused = false;
 
+    private WebViewContainerView mWebviewContainer;
     private GoNativeWebviewInterface mWebview;
     private View webviewOverlay;
     boolean isPoolWebview = false;
@@ -245,7 +247,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         swipeRefreshLayout = findViewById(R.id.swipe_refresh);
         swipeRefreshLayout.setEnabled(appConfig.pullToRefresh);
         swipeRefreshLayout.setOnRefreshListener(this);
-        swipeRefreshLayout.setCanChildScrollUpCallback(() -> mWebview.getScrollY() > 0);
+        swipeRefreshLayout.setCanChildScrollUpCallback(() -> mWebview.getWebViewScrollY() > 0);
 
         if (isAndroidGestureEnabled()) {
             appConfig.swipeGestures = false;
@@ -315,8 +317,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         swipeNavLayout.setBackgroundColor(getResources().getColor(R.color.swipe_nav_background));
 
         this.webviewOverlay = findViewById(R.id.webviewOverlay);
-        this.mWebview = findViewById(R.id.webview);
-        setupWebview(this.mWebview);
+        this.mWebviewContainer = this.findViewById(R.id.webviewContainer);
+        this.mWebview = this.mWebviewContainer.getWebview();
+        this.mWebviewContainer.setupWebview(this, isRoot);
 
         // profile picker
         if (isRoot && (appConfig.showActionBar || appConfig.showNavigationMenu)) {
@@ -895,11 +898,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	public void clearWebviewCache() {
         mWebview.clearCache(true);
     }
-	// configures webview settings
-	private void setupWebview(GoNativeWebviewInterface wv){
-        WebViewSetup.setupWebviewForActivity(wv, this);
-	}
 
+    @Override
     public void hideWebview() {
         GoNativeApplication application = (GoNativeApplication)getApplication();
         application.mBridge.onHideWebview(this);
@@ -945,6 +945,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         injectJSviaJavascript();
     }
 
+    @Override
     public void showWebview() {
         this.isFirstHideWebview = false;
         startedLoading = false;
@@ -1033,6 +1034,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @Override
 	public void updateMenu(){
         this.loginManager.checkLogin();
 	}
@@ -1334,7 +1336,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     // isBack means the webview is being switched in as part of back navigation behavior. If isBack=false,
     // then we will save the state of the old one switched out.
     public void switchToWebview(GoNativeWebviewInterface newWebview, boolean isPoolWebview, boolean isBack) {
-        setupWebview(newWebview);
+        this.mWebviewContainer.setupWebview(this, isRoot);
 
         // scroll to top
         ((View)newWebview).scrollTo(0, 0);
@@ -1488,6 +1490,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     // onPageFinished
+    @Override
     public void checkNavigationForPage(String url) {
         // don't change anything on navigation if the url that just finished was a file download
         if (url.equals(this.fileDownloader.getLastDownloadedUrl())) return;
@@ -1516,6 +1519,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     // onPageStarted
+    @Override
     public void checkPreNavigationForPage(String url) {
         if (this.tabManager != null) {
             this.tabManager.autoSelectTab(url);
@@ -1537,6 +1541,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return this.actionManager;
     }
 
+    @Override
+    public void setupTitleDisplayForUrl(String url) {
+        if (this.actionManager == null) return;
+        this.actionManager.setupTitleDisplayForUrl(url);
+    }
+
+    @Override
     public int urlLevelForUrl(String url) {
         ArrayList<Pattern> entries = AppConfig.getInstance(this).navStructureLevelsRegex;
         if (entries != null) {
@@ -1552,6 +1563,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return -1;
     }
 
+    @Override
     public String titleForUrl(String url) {
         ArrayList<HashMap<String,Object>> entries = AppConfig.getInstance(this).navTitles;
         String title = null;
@@ -1579,14 +1591,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return !isRoot;
     }
 
+    @Override
     public int getParentUrlLevel() {
         return getGNWindowManager().getParentUrlLevel(activityId);
     }
 
+    @Override
     public int getUrlLevel() {
         return getGNWindowManager().getUrlLevel(activityId);
     }
 
+    @Override
     public void setUrlLevel(int urlLevel) {
         getGNWindowManager().setUrlLevel(activityId, urlLevel);
     }
@@ -1615,6 +1630,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
     }
 
+    @Override
     public void startCheckingReadyStatus() {
         statusChecker.run();
     }
@@ -1768,6 +1784,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     public GoNativeWindowManager getGNWindowManager() {
         return ((GoNativeApplication) getApplication()).getWindowManager();
+    }
+
+    @Override
+    public int getWindowCount() {
+        return getGNWindowManager().getWindowCount();
     }
 
     public void setUploadMessage(ValueCallback<Uri> mUploadMessage) {
@@ -2063,6 +2084,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
             Log.d(TAG, "Dark mode feature is not supported");
             return;
         }
+
+        if (mWebview.getSettings() == null) {
+            return;
+        }
+
         ConfigPreferences configPreferences = new ConfigPreferences(this);
         String currentAppTheme = configPreferences.getAppTheme();
         if (TextUtils.isEmpty(appTheme)) {
@@ -2361,8 +2387,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return application.mBridge.getJavaScriptBridge();
     }
 
-    public boolean onMaxWindowsReached(String url) {
 
+    @Override      
+    public boolean onMaxWindowsReached(String url) {
         AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeWindowManager windowManager = getGNWindowManager();
 
