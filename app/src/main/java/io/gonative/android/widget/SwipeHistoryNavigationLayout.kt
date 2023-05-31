@@ -62,12 +62,17 @@ class SwipeHistoryNavigationLayout : FrameLayout {
     /**
      * Ratio of swipeable width to screen width..
      */
-    private var swipeablePer = 15 / 100f
+    private var swipeablePer = 16 / 100f
 
     /**
-     * Swipe distance threshold.
+     * Swipe distance threshold before triggering.
      */
-    private var swipeThreshold = 30f
+    private var swipeTriggerThreshold = 80f
+
+    /**
+     * Swipe distance threshold from edge to calculate diagonal motion.
+     */
+    private var swipeEdgeThreshold = 30f
 
     private var firstTouchX: Int = Int.MIN_VALUE
     private var isSwipingLeftEdge = false
@@ -209,7 +214,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                     return true
                 }
 
-                return if ((isSwipingLeftEdge || isSwipingRightEdge) && ((diffX > swipeThreshold) || (diffY > swipeThreshold)) && !inMotion) {
+                return if ((isSwipingLeftEdge || isSwipingRightEdge) && ((diffX > swipeEdgeThreshold) || (diffY > swipeEdgeThreshold)) && !inMotion) {
                     inMotion = true
                     val angle = atan2(diffY, diffX)
                     if (angle > Math.PI/6) {
@@ -244,9 +249,9 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                 oldDeltaX = deltaX
                 deltaX = abs(lastTouchX - firstTouchX)
 
-                if (isSwipingLeftEdge && swipeNavListener.isSwipeEnabled() && (deltaX >= swipeThreshold)) {
+                if (isSwipingLeftEdge && swipeNavListener.isSwipeEnabled() && (deltaX >= swipeEdgeThreshold)) {
                     moveLeftHandle()
-                } else if (isSwipingRightEdge && swipeNavListener.isSwipeEnabled() && (deltaX >= swipeThreshold)) {
+                } else if (isSwipingRightEdge && swipeNavListener.isSwipeEnabled() && (deltaX >= swipeEdgeThreshold)) {
                     if (swipeNavListener.canSwipeRightEdge()) {
                         moveRightHandle()
                     } else if (deltaX > oldDeltaX) {
@@ -256,7 +261,7 @@ class SwipeHistoryNavigationLayout : FrameLayout {
                     }
                 }
 
-                if (deltaX > (swipeableWidth + swipeThreshold + iconWidthInDp)) {
+                if (deltaX > (swipeableWidth + swipeTriggerThreshold + iconWidthInDp)) {
                     if (!isSwipeReachesLimit) {
                         isSwipeReachesLimit = true
                         swipeReachesLimit()
@@ -296,14 +301,14 @@ class SwipeHistoryNavigationLayout : FrameLayout {
 
     private fun moveLeftHandle() {
         leftHandleView.let {
-            val value = (deltaX - swipeThreshold) - firstTouchX - iconWidth
+            val value = (deltaX - swipeEdgeThreshold) - firstTouchX - iconWidth
             it.translationX = min(value, swipeableWidth - iconWidth)
         }
     }
 
     private fun moveRightHandle() {
         rightHandleView.let {
-            val value = firstTouchX - (deltaX - swipeThreshold) + iconWidth / 2
+            val value = firstTouchX - (deltaX - swipeEdgeThreshold) + iconWidth / 2
             it.translationX = max(value, width - swipeableWidth)
         }
     }

@@ -2,6 +2,7 @@ package io.gonative.android;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -26,7 +27,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import io.gonative.gonative_core.AppConfig;
@@ -46,6 +46,7 @@ public class FileWriterSharer {
         public String mimetype;
         public String extension;
         public File savedFile;
+        public Uri savedUri;
         public OutputStream fileOutputStream;
         public long bytesWritten;
     }
@@ -157,7 +158,7 @@ public class FileWriterSharer {
         info.mimetype = type;
         info.extension = extension;
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && defaultDownloadLocation == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
             // request permissions
             context.getPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> {
                 try {
@@ -176,31 +177,23 @@ public class FileWriterSharer {
     }
 
     private void onFileStartAfterPermission(FileInfo info, boolean granted) throws IOException {
-        if (granted) {
-
-            File downloadsDir;
-            if (defaultDownloadLocation == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
-                downloadsDir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            } else {
-                downloadsDir =  context.getFilesDir();
-            }
-
-            if (downloadsDir != null) {
-                int appendNum = 0;
-                File outputFile = new File(downloadsDir, info.name + "." + info.extension);
-                while (outputFile.exists()) {
-                    appendNum++;
-                    outputFile = new File(downloadsDir, info.name + "(" + appendNum +
-                            ")" + "." +info.extension);
+        if (granted && defaultDownloadLocation == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentResolver contentResolver = context.getApplicationContext().getContentResolver();
+                Uri uri = FileDownloader.createExternalFileUri(contentResolver, info.name, info.mimetype, Environment.DIRECTORY_DOWNLOADS);
+                if (uri != null) {
+                    info.fileOutputStream = contentResolver.openOutputStream(uri);
+                    info.savedUri = uri;
                 }
-
-                info.savedFile = outputFile;
+            } else {
+                info.savedFile = FileDownloader.createOutputFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), info.name, info.extension);
+                info.fileOutputStream = new BufferedOutputStream(new FileOutputStream(info.savedFile));
             }
+        } else {
+            info.savedFile = FileDownloader.createOutputFile(context.getFilesDir(), info.name, info.extension);
+            info.fileOutputStream = new BufferedOutputStream(new FileOutputStream(info.savedFile));
         }
-
-        info.fileOutputStream = new BufferedOutputStream(new FileOutputStream(info.savedFile));
         info.bytesWritten = 0;
-
         this.idToFileInfo.put(info.id, info);
     }
 
@@ -262,7 +255,12 @@ public class FileWriterSharer {
 
         if (open) {
             context.runOnUiThread(() -> {
-                Intent intent = getIntentToOpenFile(fileInfo.savedFile, fileInfo.mimetype);
+                if (fileInfo.savedUri == null && fileInfo.savedFile != null) {
+                    fileInfo.savedUri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".fileprovider", fileInfo.savedFile);
+                }
+                if (fileInfo.savedUri == null) return;
+
+                Intent intent = getIntentToOpenFile(fileInfo.savedUri, fileInfo.mimetype);
                 try {
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
@@ -278,17 +276,9 @@ public class FileWriterSharer {
         }
     }
 
-    private Intent getIntentToOpenFile(File file, String mimetype) {
-        Uri content;
-        try {
-            content = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".fileprovider", file);
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Unable to get content url from FileProvider", e);
-            return null;
-        }
-
+    private Intent getIntentToOpenFile(Uri uri, String mimetype) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(content, mimetype);
+        intent.setDataAndType(uri, mimetype);
         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
     }

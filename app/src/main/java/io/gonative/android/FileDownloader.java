@@ -2,12 +2,17 @@ package io.gonative.android;
 
 import android.Manifest;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.DownloadListener;
@@ -18,8 +23,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import io.gonative.gonative_core.AppConfig;
 
@@ -196,6 +203,47 @@ public class FileDownloader implements DownloadListener {
             context.unbindService(serviceConnection);
             isBound = false;
         }
+    }
+
+    public static Uri createExternalFileUri(ContentResolver contentResolver, String filename, String mimetype, String environment) {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimetype);
+
+        if (Objects.equals(environment, Environment.DIRECTORY_PICTURES)) {
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+            return contentResolver.insert(MediaStore.Images.Media.getContentUri("external"), contentValues);
+        } else if (Objects.equals(environment, Environment.DIRECTORY_DOWNLOADS)) {
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+            return contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues);
+        }
+        return null;
+    }
+
+    public static File createOutputFile(File dir, String filename, String extension) {
+        return new File(dir, FileDownloader.getUniqueFileName(filename + "." + extension, dir));
+    }
+
+    public static String getUniqueFileName(String fileName, File dir) {
+        File file = new File(dir, fileName);
+
+        if (!file.exists()) {
+            return fileName;
+        }
+
+        int count = 1;
+        String nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        String ext = fileName.substring(fileName.lastIndexOf('.'));
+        String newFileName = nameWithoutExt + "_" + count + ext;
+        file = new File(dir, newFileName);
+
+        while (file.exists()) {
+            count++;
+            newFileName = nameWithoutExt + "_" + count + ext;
+            file = new File(dir, newFileName);
+        }
+
+        return file.getName();
     }
 
     private static class PreDownloadInfo {

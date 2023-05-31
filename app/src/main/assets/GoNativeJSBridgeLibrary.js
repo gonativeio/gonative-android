@@ -338,3 +338,12 @@ gonative.android.audio = {
         addCommand("gonative://audio/requestFocus", params);
     }
 };
+
+gonative.android.swipeGestures = {
+    enable: function() {
+        addCommand("gonative://swipeGestures/enable");
+    },
+    disable: function() {
+        addCommand("gonative://swipeGestures/disable");
+    }
+}

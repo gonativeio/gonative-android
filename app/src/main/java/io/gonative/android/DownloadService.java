@@ -2,9 +2,11 @@ package io.gonative.android;
 
 import android.app.Service;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -81,23 +83,31 @@ public class DownloadService extends Service {
         }
     }
 
-    public void handleDownloadUri(File file, String mimeType, boolean shouldSaveToGallery, boolean open, String filename) {
+    public void handleDownloadUri(FileDownloader.DownloadLocation location, Uri uri, String mimeType, boolean shouldSaveToGallery, boolean open, String filename) {
+        if (uri == null) return;
+        if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
 
-        Uri uri = FileProvider.getUriForFile(DownloadService.this, DownloadService.this.getApplicationContext().getPackageName() + ".fileprovider", file);
-        if (shouldSaveToGallery) {
-            addFileToGallery(uri);
-        }
-        if (open) {
-            viewFile(uri, mimeType);
+            if (shouldSaveToGallery) {
+                addFileToGallery(uri);
+            }
+
+            if (open) {
+                viewFile(uri, mimeType);
+            } else {
+                handler.post(() -> {
+                    if (shouldSaveToGallery) {
+                        Toast.makeText(this, R.string.file_download_finished_gallery, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, String.format(this.getString(R.string.file_download_finished_with_name), filename), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         } else {
-            handler.post(() -> {
-                if (shouldSaveToGallery) {
-                    Toast.makeText(this, "Image saved to Gallery", Toast.LENGTH_SHORT).show();
-                } else {
-                    String downloadCompleteMessage = String.format(this.getString(R.string.file_download_finished_with_name), filename);
-                    Toast.makeText(this, downloadCompleteMessage, Toast.LENGTH_SHORT).show();
-                }
-            });
+            if (open) {
+                viewFile(uri, mimeType);
+            } else {
+                handler.post(() -> Toast.makeText(this, String.format(this.getString(R.string.file_download_finished_with_name), filename), Toast.LENGTH_SHORT).show());
+            }
         }
     }
 
@@ -132,6 +142,7 @@ public class DownloadService extends Service {
         private InputStream inputStream;
         private FileOutputStream outputStream;
         private File outputFile = null;
+        private Uri downloadUri;
         private String filename;
         private String extension;
         private String mimetype;
@@ -199,24 +210,32 @@ public class DownloadService extends Service {
                         extension = guessedName.substring(pos + 1);
                     }
 
-                    File downloadDir;
                     if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
-                        if (saveToGallery) {
-                            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            ContentResolver contentResolver = getApplicationContext().getContentResolver();
+                            if (saveToGallery) {
+                                downloadUri = FileDownloader.createExternalFileUri(contentResolver, filename, mimetype, Environment.DIRECTORY_PICTURES);
+                            } else {
+                                downloadUri = FileDownloader.createExternalFileUri(contentResolver, filename, mimetype, Environment.DIRECTORY_DOWNLOADS);
+                            }
+                            if (downloadUri != null) {
+                                outputStream = (FileOutputStream) contentResolver.openOutputStream(downloadUri);
+                            }
                         } else {
-                            downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                            if (saveToGallery) {
+                                outputFile = FileDownloader.createOutputFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), filename, extension);
+                            } else {
+                                outputFile = FileDownloader.createOutputFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename, extension);
+                            }
+                            outputStream = new FileOutputStream(outputFile);
                         }
                     } else {
-                        downloadDir = getFilesDir();
+                        outputFile = FileDownloader.createOutputFile(getFilesDir(), filename, extension);
+                        outputStream = new FileOutputStream(outputFile);
                     }
-
-                    // check and update filename if already exist
-                    filename = getUniqueFileName(filename + "." + extension, downloadDir);
 
                     int fileLength = connection.getContentLength();
                     inputStream = connection.getInputStream();
-                    outputFile = new File(downloadDir, filename);
-                    outputStream = new FileOutputStream(outputFile);
 
                     byte[] buffer = new byte[BUFFER_SIZE];
                     int bytesRead;
@@ -228,8 +247,9 @@ public class DownloadService extends Service {
                         int progress = (int) (bytesDownloaded * 100 / fileLength);
                         Log.d(TAG, "startDownload: Download progress: " + progress);
                     }
-                    if (!isDownloading) {
+                    if (!isDownloading && outputFile != null) {
                         outputFile.delete();
+                        outputFile = null;
                     }
                 } catch (IOException e) {
                     Log.e(TAG, "startDownload: ", e);
@@ -242,9 +262,10 @@ public class DownloadService extends Service {
                         Log.e(TAG, "startDownload: ", e);
                     }
                     isDownloading = false;
-
-                    if (outputStream != null && outputFile != null && outputFile.exists())
-                        handleDownloadUri(outputFile, mimetype, saveToGallery, openOnFinish, filename);
+                    if (downloadUri == null && outputFile != null) {
+                        downloadUri = FileProvider.getUriForFile(DownloadService.this, DownloadService.this.getApplicationContext().getPackageName() + ".fileprovider", outputFile);
+                    }
+                    handleDownloadUri(location, downloadUri, mimetype, saveToGallery, openOnFinish, filename);
                 }
             }).start();
         }
@@ -252,28 +273,6 @@ public class DownloadService extends Service {
         public void cancelDownload() {
             isDownloading = false;
             Toast.makeText(DownloadService.this, getString(R.string.download_canceled) + " " + filename, Toast.LENGTH_SHORT).show();
-        }
-
-        public String getUniqueFileName(String fileName, File dir) {
-            File file = new File(dir, fileName);
-
-            if (!file.exists()) {
-                return fileName;
-            }
-
-            int count = 1;
-            String nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-            String ext = fileName.substring(fileName.lastIndexOf('.'));
-            String newFileName = nameWithoutExt + "_" + count + ext;
-            file = new File(dir, newFileName);
-
-            while (file.exists()) {
-                count++;
-                newFileName = nameWithoutExt + "_" + count + ext;
-                file = new File(dir, newFileName);
-            }
-
-            return file.getName();
         }
     }
 }

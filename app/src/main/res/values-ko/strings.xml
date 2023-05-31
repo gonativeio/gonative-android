@@ -12,4 +12,5 @@
     <string name="file_download_finished_with_name">다운로드한 파일: %1$s</string>
     <string name="download_canceled">다운로드 취소됨</string>
     <string name="file_download_error">다운로드 오류</string>
+    <string name="file_download_finished_gallery">갤러리에 저장된 이미지</string>
 </resources>
