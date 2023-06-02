@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
@@ -37,6 +39,7 @@ public class FileWriterSharer {
     private static final long MAX_SIZE = 1024 * 1024 * 1024; // 1 gigabyte
     private static final String BASE64TAG = ";base64,";
     private final FileDownloader.DownloadLocation defaultDownloadLocation;
+    private String downloadFilename;
     private boolean open = false;
 
     private static class FileInfo{
@@ -99,11 +102,12 @@ public class FileWriterSharer {
         return javascriptBridge;
     }
 
-    public void downloadBlobUrl(String url, boolean open) {
+    public void downloadBlobUrl(String url, String filename, boolean open) {
         if (url == null || !url.startsWith("blob:")) {
             return;
         }
 
+        this.downloadFilename = filename;
         this.open = open;
 
         try {
@@ -126,13 +130,31 @@ public class FileWriterSharer {
             return;
         }
 
-        String fileName = LeanUtils.optString(message, "name");
-        if (fileName == null || fileName.isEmpty()) {
-            if (this.nextFileName != null) {
-                fileName = this.nextFileName;
-                this.nextFileName = null;
+        String fileName;
+        String extension = null;
+        String type = null;
+
+        if (!TextUtils.isEmpty(downloadFilename)) {
+            extension = FileDownloader.getFilenameExtension(downloadFilename);
+            if (!TextUtils.isEmpty(extension)) {
+                if (Objects.equals(extension, downloadFilename)) {
+                    fileName = "download";
+                } else {
+                    fileName = downloadFilename.substring(0, downloadFilename.length() - (extension.length() + 1));
+                }
+                type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
             } else {
-                fileName = "download";
+                fileName = downloadFilename;
+            }
+        } else {
+            fileName = LeanUtils.optString(message, "name");
+            if (fileName == null || fileName.isEmpty()) {
+                if (this.nextFileName != null) {
+                    fileName = this.nextFileName;
+                    this.nextFileName = null;
+                } else {
+                    fileName = "download";
+                }
             }
         }
 
@@ -142,14 +164,18 @@ public class FileWriterSharer {
             return;
         }
 
-        String type = LeanUtils.optString(message, "type");
-        if (type == null || type.isEmpty()) {
-            Log.e(TAG, "Invalid file type");
-            return;
+        if (TextUtils.isEmpty(type)) {
+            type = LeanUtils.optString(message, "type");
+            if (TextUtils.isEmpty(type)) {
+                Log.e(TAG, "Invalid file type");
+                return;
+            }
         }
 
-        MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
-        String extension = mimeTypeMap.getExtensionFromMimeType(type);
+        if (TextUtils.isEmpty(extension)) {
+            MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+            extension = mimeTypeMap.getExtensionFromMimeType(type);
+        }
 
         final FileInfo info = new FileInfo();
         info.id = identifier;

@@ -67,20 +67,10 @@ class FileUploadIntentsCreator(val context: Context, val mimeTypeSpecs: Array<St
 
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val imageFileName = "IMG_$timeStamp.jpg"
+        val storageDir = this.context.filesDir
+        val captureFile = File(storageDir, imageFileName)
 
-        currentCaptureUri = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            val resolver: ContentResolver = context.contentResolver
-            val contentValues = ContentValues()
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName)
-            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/*")
-            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-        } else {
-            val storageDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES)
-            val captureFile = File(storageDir, imageFileName)
-            FileProvider.getUriForFile(context, context.applicationContext.packageName + ".fileprovider", captureFile);
-        }
+        currentCaptureUri = FileProvider.getUriForFile(context, context.applicationContext.packageName + ".fileprovider", captureFile);
 
         val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         val resolveList: List<ResolveInfo> = listOfAvailableAppsForIntent(captureIntent)

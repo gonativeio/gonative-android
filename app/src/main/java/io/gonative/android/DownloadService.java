@@ -11,7 +11,9 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -25,6 +27,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.LeanUtils;
@@ -70,8 +73,8 @@ public class DownloadService extends Service {
         }
     }
 
-    public void startDownload(String url, String mimetype, boolean shouldSaveToGallery, boolean open, FileDownloader.DownloadLocation location) {
-        DownloadTask downloadTask = new DownloadTask(url, mimetype, shouldSaveToGallery, open, location);
+    public void startDownload(String url, String filename, String mimetype, boolean shouldSaveToGallery, boolean open, FileDownloader.DownloadLocation location) {
+        DownloadTask downloadTask = new DownloadTask(url, filename, mimetype, shouldSaveToGallery, open, location);
         downloadTasks.put(downloadTask.getId(), downloadTask);
         downloadTask.startDownload();
     }
@@ -150,9 +153,10 @@ public class DownloadService extends Service {
         private final boolean openOnFinish;
         private final FileDownloader.DownloadLocation location;
 
-        public DownloadTask(String url, String mimetype, boolean saveToGallery, boolean open, FileDownloader.DownloadLocation location) {
+        public DownloadTask(String url, String filename, String mimetype, boolean saveToGallery, boolean open, FileDownloader.DownloadLocation location) {
             this.id = downloadId++;
             this.url = url;
+            this.filename = filename;
             this.mimetype = mimetype;
             this.isDownloading = false;
             this.saveToGallery = saveToGallery;
@@ -191,23 +195,36 @@ public class DownloadService extends Service {
                     double fileSizeInMB = connection.getContentLength() / 1048576.0;
                     Log.d(TAG, "startDownload: File size in MB: " + fileSizeInMB);
 
-                    // guess file name and extension
                     if (connection.getHeaderField("Content-Type") != null)
                         mimetype = connection.getHeaderField("Content-Type");
-                    String guessedName = LeanUtils.guessFileName(url.toString(),
-                            connection.getHeaderField("Content-Disposition"),
-                            mimetype);
-                    int pos = guessedName.lastIndexOf('.');
 
-                    if (pos == -1) {
-                        filename = guessedName;
-                        extension = "";
-                    } else if (pos == 0) {
-                        filename = "download";
-                        extension = guessedName.substring(1);
+                    if (!TextUtils.isEmpty(filename)) {
+                       extension = FileDownloader.getFilenameExtension(filename);
+                       if (TextUtils.isEmpty(extension)) {
+                           extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimetype);
+                       } else if (Objects.equals(filename, extension)) {
+                           filename = "download";
+                       } else {
+                           filename = filename.substring(0, filename.length() - (extension.length() + 1));
+                           mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+                       }
                     } else {
-                        filename = guessedName.substring(0, pos);
-                        extension = guessedName.substring(pos + 1);
+                        // guess file name and extension
+                        String guessedName = LeanUtils.guessFileName(url,
+                                connection.getHeaderField("Content-Disposition"),
+                                mimetype);
+                        int pos = guessedName.lastIndexOf('.');
+
+                        if (pos == -1) {
+                            filename = guessedName;
+                            extension = "";
+                        } else if (pos == 0) {
+                            filename = "download";
+                            extension = guessedName.substring(1);
+                        } else {
+                            filename = guessedName.substring(0, pos);
+                            extension = guessedName.substring(pos + 1);
+                        }
                     }
 
                     if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
@@ -265,7 +282,7 @@ public class DownloadService extends Service {
                     if (downloadUri == null && outputFile != null) {
                         downloadUri = FileProvider.getUriForFile(DownloadService.this, DownloadService.this.getApplicationContext().getPackageName() + ".fileprovider", outputFile);
                     }
-                    handleDownloadUri(location, downloadUri, mimetype, saveToGallery, openOnFinish, filename);
+                    handleDownloadUri(location, downloadUri, mimetype, saveToGallery, openOnFinish, filename + "." + extension);
                 }
             }).start();
         }

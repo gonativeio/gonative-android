@@ -13,6 +13,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
@@ -76,6 +77,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.OutputStream;
 import java.net.CookieHandler;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -89,6 +92,7 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import io.gonative.android.files.CapturedImageSaver;
 import io.gonative.gonative_core.AppConfig;
 import io.gonative.android.widget.GoNativeDrawerLayout;
 import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
@@ -1218,32 +1222,16 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
             // from camera
             if (this.directUploadImageUri != null) {
-                // check if we have external storage permissions
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) !=
-                            PackageManager.PERMISSION_GRANTED) {
-                        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                                Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                            Toast.makeText(this, R.string.external_storage_explanation, Toast.LENGTH_LONG).show();
-                        }
-
-                        ActivityCompat.requestPermissions(this,
-                                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                                REQUEST_PERMISSION_READ_EXTERNAL_STORAGE);
-                        // wait for the onRequestPermissionsResult callback
-                        return;
-                    }
-                }
-
-
+                Uri currentCaptureUri = new CapturedImageSaver().saveCapturedBitmap(this, this.directUploadImageUri);
                 if (mUploadMessage != null) {
-                    mUploadMessage.onReceiveValue(this.directUploadImageUri);
+                    mUploadMessage.onReceiveValue(currentCaptureUri);
                     mUploadMessage = null;
                 }
                 if (uploadMessageLP != null) {
-                    uploadMessageLP.onReceiveValue(new Uri[]{this.directUploadImageUri});
+                    uploadMessageLP.onReceiveValue(new Uri[]{currentCaptureUri});
                     uploadMessageLP = null;
                 }
+                getContentResolver().delete(this.directUploadImageUri, null, null);
                 this.directUploadImageUri = null;
 
                 return;
@@ -1716,27 +1704,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         ((GoNativeApplication) getApplication()).mBridge.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
         switch (requestCode) {
-            case REQUEST_PERMISSION_READ_EXTERNAL_STORAGE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (this.directUploadImageUri == null) {
-                        cancelFileUpload();
-                        return;
-                    }
-
-                    if (mUploadMessage != null) {
-                        mUploadMessage.onReceiveValue(this.directUploadImageUri);
-                        mUploadMessage = null;
-                    }
-                    if (uploadMessageLP != null) {
-                        uploadMessageLP.onReceiveValue(new Uri[]{this.directUploadImageUri});
-                        uploadMessageLP = null;
-                    }
-
-                    this.directUploadImageUri = null;
-                } else {
-                    cancelFileUpload();
-                }
-                break;
             case REQUEST_PERMISSION_GEOLOCATION:
                 if (this.geolocationPermissionCallback != null) {
                     if (grantResults.length >= 2 &&
@@ -2257,8 +2224,8 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     @Override
-    public void downloadFile(String url, boolean shouldSaveToGallery, boolean open) {
-        fileDownloader.downloadFile(url, shouldSaveToGallery, open);
+    public void downloadFile(String url, String filename, boolean shouldSaveToGallery, boolean open) {
+        fileDownloader.downloadFile(url, filename, shouldSaveToGallery, open);
     }
 
     @Override

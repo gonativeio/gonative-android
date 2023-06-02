@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.LeanUtils;
 
 /**
  * Created by weiyin on 6/24/14.
@@ -86,9 +87,9 @@ public class FileDownloader implements DownloadListener {
 
             if (preDownloadInfo != null && isBound) {
                 if (preDownloadInfo.isBlob) {
-                    context.getFileWriterSharer().downloadBlobUrl(preDownloadInfo.url, preDownloadInfo.open);
+                    context.getFileWriterSharer().downloadBlobUrl(preDownloadInfo.url, preDownloadInfo.filename, preDownloadInfo.open);
                 } else {
-                    downloadService.startDownload(preDownloadInfo.url, preDownloadInfo.mimetype, preDownloadInfo.shouldSaveToGallery, preDownloadInfo.open, defaultDownloadLocation);
+                    downloadService.startDownload(preDownloadInfo.url, preDownloadInfo.filename, preDownloadInfo.mimetype, preDownloadInfo.shouldSaveToGallery, preDownloadInfo.open, defaultDownloadLocation);
                 }
                 preDownloadInfo = null;
             }
@@ -110,12 +111,18 @@ public class FileDownloader implements DownloadListener {
             });
         }
 
+        // get filename from content disposition
+        String guessFilename = null;
+        if (!TextUtils.isEmpty(contentDisposition)) {
+             guessFilename = LeanUtils.guessFileName(url, contentDisposition, mimetype);
+        }
+
         if (url.startsWith("blob:") && context != null) {
-            if (requestRequiredPermission(new PreDownloadInfo(url, true))) {
+            if (requestRequiredPermission(new PreDownloadInfo(url, guessFilename, true))) {
                 return;
             }
 
-            context.getFileWriterSharer().downloadBlobUrl(url, false);
+            context.getFileWriterSharer().downloadBlobUrl(url, guessFilename, false);
             return;
         }
 
@@ -134,20 +141,20 @@ public class FileDownloader implements DownloadListener {
             }
         }
 
-        startDownload(url, mimetype, false, false);
+        startDownload(url, guessFilename,  mimetype, false, false);
     }
 
-    public void downloadFile(String url, boolean shouldSaveToGallery, boolean open) {
+    public void downloadFile(String url, String filename, boolean shouldSaveToGallery, boolean open) {
         if (TextUtils.isEmpty(url)) {
             Log.d(TAG, "downloadFile: Url empty!");
             return;
         }
 
         if (url.startsWith("blob:") && context != null) {
-            if (requestRequiredPermission(new PreDownloadInfo(url, true))) {
+            if (requestRequiredPermission(new PreDownloadInfo(url, filename, true))) {
                 return;
             }
-            context.getFileWriterSharer().downloadBlobUrl(url, open);
+            context.getFileWriterSharer().downloadBlobUrl(url, filename, open);
             return;
         }
 
@@ -161,13 +168,13 @@ public class FileDownloader implements DownloadListener {
             }
         }
 
-        startDownload(url, mimetype, shouldSaveToGallery, open);
+        startDownload(url, filename, mimetype, shouldSaveToGallery, open);
     }
 
-    private void startDownload(String downloadUrl, String mimetype, boolean shouldSaveToGallery, boolean open) {
+    private void startDownload(String downloadUrl, String filename, String mimetype, boolean shouldSaveToGallery, boolean open) {
         if (isBound) {
-            if (requestRequiredPermission(new PreDownloadInfo(downloadUrl, mimetype, shouldSaveToGallery, open, false))) return;
-            downloadService.startDownload(downloadUrl, mimetype, shouldSaveToGallery, open, defaultDownloadLocation);
+            if (requestRequiredPermission(new PreDownloadInfo(downloadUrl, filename, mimetype, shouldSaveToGallery, open, false))) return;
+            downloadService.startDownload(downloadUrl, filename, mimetype, shouldSaveToGallery, open, defaultDownloadLocation);
         }
     }
 
@@ -246,23 +253,37 @@ public class FileDownloader implements DownloadListener {
         return file.getName();
     }
 
+    public static String getFilenameExtension(String name) {
+        int pos = name.lastIndexOf('.');
+        if (pos == -1) {
+            return null;
+        } else if (pos == 0) {
+            return name;
+        } else {
+            return name.substring(pos + 1);
+        }
+    }
+
     private static class PreDownloadInfo {
         String url;
+        String filename;
         String mimetype;
         boolean shouldSaveToGallery;
         boolean open;
         boolean isBlob;
 
-        public PreDownloadInfo(String url, String mimetype, boolean shouldSaveToGallery, boolean open, boolean isBlob) {
+        public PreDownloadInfo(String url, String filename, String mimetype, boolean shouldSaveToGallery, boolean open, boolean isBlob) {
             this.url = url;
+            this.filename = filename;
             this.mimetype = mimetype;
             this.shouldSaveToGallery = shouldSaveToGallery;
             this.open = open;
             this.isBlob = isBlob;
         }
 
-        public PreDownloadInfo(String url, boolean isBlob) {
+        public PreDownloadInfo(String url, String filename, boolean isBlob) {
             this.url = url;
+            this.filename = filename;
             this.isBlob = isBlob;
         }
     }
