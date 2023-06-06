@@ -20,7 +20,6 @@ import java.util.Map;
 
 import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
-import io.gonative.gonative_core.LeanUtils;
 
 /**
  * Created by weiyin on 1/29/16.
@@ -66,7 +65,7 @@ public class HtmlIntercept {
             if (!protocol.equalsIgnoreCase("http") && !protocol.equalsIgnoreCase("https")) return null;
 
             HttpURLConnection connection = (HttpURLConnection)parsedUrl.openConnection();
-            connection.setInstanceFollowRedirects(true);
+            connection.setInstanceFollowRedirects(false);
             String customUserAgent = appConfig.userAgentForUrl(parsedUrl.toString());
             if (customUserAgent != null) {
                 connection.setRequestProperty("User-Agent", customUserAgent);
@@ -97,11 +96,21 @@ public class HtmlIntercept {
                 // We cannot pass headers in webresourceresponse until Android API 21, and we cannot return null
                 // or else the webview will handle the request entirely without intercept
                 String location = connection.getHeaderField("Location");
+
+                // validate location as URL
+                try {
+                    new URL(location);
+                } catch (MalformedURLException ex) {
+                    URL base = new URL(url);
+                    location = new URL(base, location).toString();
+                }
+
                 if (!TextUtils.isEmpty(location)) {
                     this.redirectedUrl = url;
                     MainActivity mainActivity = (MainActivity) context;
                     WebView webView = (WebView) mainActivity.getWebView();
-                    webView.post(() -> webView.loadUrl(location));
+                    String finalLocation = location; // needed, for this should be effectively final
+                    webView.post(() -> webView.loadUrl(finalLocation));
                 }
                 return new WebResourceResponse("text/html", "utf-8", new ByteArrayInputStream("".getBytes()));
             }

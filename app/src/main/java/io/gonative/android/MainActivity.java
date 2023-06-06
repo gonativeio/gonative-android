@@ -13,7 +13,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
@@ -77,8 +76,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.OutputStream;
 import java.net.CookieHandler;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -124,6 +121,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
     public static final int REQUEST_WEB_ACTIVITY = 400;
     public static final int GOOGLE_SIGN_IN = 500;
     private static final String ON_RESUME_CALLBACK = "gonative_app_resumed";
+
+    private static final String SAVED_STATE_ACTIVITY_ID = "activityId";
+    private static final String SAVED_STATE_IS_ROOT = "isRoot";
+    private static final String SAVED_STATE_URL_LEVEL = "urlLevel";
+    private static final String SAVED_STATE_PARENT_URL_LEVEL = "parentUrlLevel";
+    private static final String SAVED_STATE_SCROLL_X = "scrollX";
+    private static final String SAVED_STATE_SCROLL_Y = "scrollY";
+    private static final String SAVED_STATE_WEBVIEW_STATE = "webViewState";
+
     private boolean isActivityPaused = false;
 
     private WebViewContainerView mWebviewContainer;
@@ -197,7 +203,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
-        this.activityId = UUID.randomUUID().toString();
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
         GoNativeWindowManager windowManager = application.getWindowManager();
@@ -216,9 +221,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         super.onCreate(savedInstanceState);
 
-        isRoot = getIntent().getBooleanExtra("isRoot", true);
+        this.activityId = UUID.randomUUID().toString();
+        this.isRoot = getIntent().getBooleanExtra("isRoot", true);
         int urlLevel = getIntent().getIntExtra("urlLevel", -1);
         int parentUrlLevel = getIntent().getIntExtra("parentUrlLevel", -1);
+
+        if (savedInstanceState != null) {
+            this.activityId = savedInstanceState.getString(SAVED_STATE_ACTIVITY_ID, activityId);
+            this.isRoot = savedInstanceState.getBoolean(SAVED_STATE_IS_ROOT, isRoot);
+            urlLevel = savedInstanceState.getInt(SAVED_STATE_URL_LEVEL, urlLevel);
+            parentUrlLevel = savedInstanceState.getInt(SAVED_STATE_PARENT_URL_LEVEL, parentUrlLevel);
+        }
 
         application.mBridge.onActivityCreate(this, isRoot);
 
@@ -325,6 +338,21 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.mWebview = this.mWebviewContainer.getWebview();
         this.mWebviewContainer.setupWebview(this, isRoot);
 
+        boolean isWebViewStateRestored = false;
+        if (savedInstanceState != null) {
+            Bundle webViewStateBundle = savedInstanceState.getBundle(SAVED_STATE_WEBVIEW_STATE);
+            if (webViewStateBundle != null) {
+                // Restore page and history
+                mWebview.restoreStateFromBundle(webViewStateBundle);
+                isWebViewStateRestored = true;
+            }
+
+            // Restore scroll state
+            int scrollX = savedInstanceState.getInt(SAVED_STATE_SCROLL_X, 0);
+            int scrollY = savedInstanceState.getInt(SAVED_STATE_SCROLL_Y, 0);
+            mWebview.scrollTo(scrollX, scrollY);
+        }
+
         // profile picker
         if (isRoot && (appConfig.showActionBar || appConfig.showNavigationMenu)) {
             setupProfilePicker();
@@ -388,33 +416,39 @@ public class MainActivity extends AppCompatActivity implements Observer,
             toolbar.getOverflowIcon().setColorFilter(getResources().getColor(R.color.titleTextColor), PorterDuff.Mode.SRC_ATOP);
         }
 
-        Intent intent = getIntent();
         // load url
-        String url = getUrlFromIntent(intent);
+        String url;
 
-        if (url == null && savedInstanceState != null) url = savedInstanceState.getString("url");
-        if (url == null && isRoot) url = appConfig.getInitialUrl();
-        // url from intent (hub and spoke nav)
-        if (url == null) url = intent.getStringExtra("url");
-
-        if (url != null) {
-
-            // let plugins add query params to url before loading to WebView
-            Map<String, String> queries = application.mBridge.getInitialUrlQueryItems(this, isRoot);
-            if (queries != null && !queries.isEmpty()) {
-                Uri.Builder builder = Uri.parse(url).buildUpon();
-                for (Map.Entry<String, String> entry : queries.entrySet()) {
-                    builder.appendQueryParameter(entry.getKey(), entry.getValue());
-                }
-                url = builder.build().toString();
-            }
-
-            this.initialUrl = url;
-            this.mWebview.loadUrl(url);
-        } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)){
-            // no worries, loadUrl will be called when this new web view is passed back to the message
+        if (isWebViewStateRestored) {
+            // WebView already has loaded URL when function mWebview.restoreStateFromBundle() was called
+            url = mWebview.getUrl();
         } else {
-            Log.e(TAG, "No url specified for MainActivity");
+            Intent intent = getIntent();
+            url = getUrlFromIntent(intent);
+
+            if (url == null && isRoot) url = appConfig.getInitialUrl();
+            // url from intent (hub and spoke nav)
+            if (url == null) url = intent.getStringExtra("url");
+
+            if (url != null) {
+
+                // let plugins add query params to url before loading to WebView
+                Map<String, String> queries = application.mBridge.getInitialUrlQueryItems(this, isRoot);
+                if (queries != null && !queries.isEmpty()) {
+                    Uri.Builder builder = Uri.parse(url).buildUpon();
+                    for (Map.Entry<String, String> entry : queries.entrySet()) {
+                        builder.appendQueryParameter(entry.getKey(), entry.getValue());
+                    }
+                    url = builder.build().toString();
+                }
+
+                this.initialUrl = url;
+                this.mWebview.loadUrl(url);
+            } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
+                // no worries, loadUrl will be called when this new web view is passed back to the message
+            } else {
+                Log.e(TAG, "No url specified for MainActivity");
+            }
         }
 
         showNavigationMenu(isRoot && appConfig.showNavigationMenu);
@@ -738,8 +772,19 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     protected void onSaveInstanceState (Bundle outState) {
-        outState.putString("url", mWebview.getUrl());
-        outState.putInt("urlLevel", getGNWindowManager().getUrlLevel(activityId));
+        // Saves current WebView's history and URL or loaded page state
+        Bundle webViewOutState = new Bundle();
+        mWebview.saveStateToBundle(webViewOutState);
+        outState.putBundle(SAVED_STATE_WEBVIEW_STATE, webViewOutState);
+
+        // Save other WebView data
+        outState.putString(SAVED_STATE_ACTIVITY_ID, activityId);
+        outState.putBoolean(SAVED_STATE_IS_ROOT, getGNWindowManager().isRoot(activityId));
+        outState.putInt(SAVED_STATE_URL_LEVEL, getGNWindowManager().getUrlLevel(activityId));
+        outState.putInt(SAVED_STATE_PARENT_URL_LEVEL, getGNWindowManager().getParentUrlLevel(activityId));
+        outState.putInt(SAVED_STATE_SCROLL_X, mWebview.getWebViewScrollX());
+        outState.putInt(SAVED_STATE_SCROLL_Y, mWebview.getWebViewScrollY());
+
         super.onSaveInstanceState(outState);
     }
 
@@ -1498,12 +1543,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (this.menuAdapter != null) {
             this.menuAdapter.autoSelectItem(url);
         }
-
-        // When current URL canGoBack and swipeGestures are enabled, disable touch events on DrawerLayout
-        if (this.mDrawerLayout != null && this.mDrawerLayout.getDrawerLockMode(GravityCompat.START) != DrawerLayout.LOCK_MODE_LOCKED_CLOSED) {
-            AppConfig appConfig = AppConfig.getInstance(this);
-            mDrawerLayout.setDisableTouch(appConfig.swipeGestures && canGoBack());
-        }
     }
 
     // onPageStarted
@@ -1523,6 +1562,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         AppConfig appConfig = AppConfig.getInstance(this);
         setDrawerEnabled(appConfig.shouldShowSidebarForUrl(url) && sidebarNavigationEnabled);
+
+        // When current URL canGoBack and swipeGestures are enabled, disable touch events on DrawerLayout
+        if (this.mDrawerLayout != null && this.mDrawerLayout.getDrawerLockMode(GravityCompat.START) != DrawerLayout.LOCK_MODE_LOCKED_CLOSED) {
+            mDrawerLayout.setDisableTouch(appConfig.swipeGestures && canGoBack());
+        }
     }
 
     public ActionManager getActionManager() {

@@ -288,6 +288,11 @@ public class LeanWebView extends WebView implements GoNativeWebviewInterface {
         return getScrollX();
     }
 
+    @Override
+    public void scrollTo(int scrollX, int scrollY) {
+        super.scrollTo(scrollX, scrollY);
+    }
+
     public interface OnSwipeListener {
         void onSwipeLeft();
         void onSwipeRight();
