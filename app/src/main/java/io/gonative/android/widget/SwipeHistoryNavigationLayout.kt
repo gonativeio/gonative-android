@@ -231,6 +231,8 @@ class SwipeHistoryNavigationLayout : FrameLayout {
             MotionEvent.ACTION_UP -> {
                 pointX = 0f
                 pointY = 0f
+                isSwipingLeftEdge = false
+                isSwipingRightEdge = false
                 if (isTouchInProgress) {
                     return true
                 }
