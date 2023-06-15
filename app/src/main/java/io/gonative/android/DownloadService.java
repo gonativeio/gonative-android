@@ -150,7 +150,7 @@ public class DownloadService extends Service {
         private String extension;
         private String mimetype;
         private final boolean saveToGallery;
-        private final boolean openOnFinish;
+        private boolean openOnFinish;
         private final FileDownloader.DownloadLocation location;
 
         public DownloadTask(String url, String filename, String mimetype, boolean saveToGallery, boolean open, FileDownloader.DownloadLocation location) {
@@ -192,6 +192,8 @@ public class DownloadService extends Service {
                         return;
                     }
 
+                    String contentDisposition = connection.getHeaderField("Content-Disposition");
+
                     double fileSizeInMB = connection.getContentLength() / 1048576.0;
                     Log.d(TAG, "startDownload: File size in MB: " + fileSizeInMB);
 
@@ -211,7 +213,7 @@ public class DownloadService extends Service {
                     } else {
                         // guess file name and extension
                         String guessedName = LeanUtils.guessFileName(url,
-                                connection.getHeaderField("Content-Disposition"),
+                                contentDisposition,
                                 mimetype);
                         int pos = guessedName.lastIndexOf('.');
 
@@ -226,6 +228,11 @@ public class DownloadService extends Service {
                             extension = guessedName.substring(pos + 1);
                         }
                     }
+
+                    if (location == FileDownloader.DownloadLocation.PRIVATE_INTERNAL &&
+                            !TextUtils.isEmpty(contentDisposition) &&
+                            contentDisposition.startsWith("inline"))
+                        this.openOnFinish = true;
 
                     if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

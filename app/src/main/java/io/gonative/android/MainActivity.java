@@ -42,7 +42,6 @@ import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -129,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private static final String SAVED_STATE_SCROLL_X = "scrollX";
     private static final String SAVED_STATE_SCROLL_Y = "scrollY";
     private static final String SAVED_STATE_WEBVIEW_STATE = "webViewState";
+    private static final String SAVED_STATE_IGNORE_THEME_SETUP = "ignoreThemeSetup";
 
     private boolean isActivityPaused = false;
 
@@ -200,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private boolean restoreBrightnessOnNavigation = false;
     private ActivityResultLauncher<String> requestPermissionLauncher;
     private String deviceInfoCallback = "";
+    private boolean flagThemeConfigurationChange = false;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -218,6 +219,41 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         this.hideWebviewAlpha  = appConfig.hideWebviewAlpha;
+
+        // App theme setup
+        ConfigPreferences configPreferences = new ConfigPreferences(this);
+        String appTheme = configPreferences.getAppTheme();
+
+        if (TextUtils.isEmpty(appTheme)) {
+            if (!TextUtils.isEmpty(appConfig.androidTheme)) {
+                appTheme = appConfig.androidTheme;
+            } else {
+                appTheme = "light"; // default is 'light' to support apps with no night assets provided
+            }
+            configPreferences.setAppTheme(appTheme);
+        }
+
+        boolean ignoreThemeUpdate = false;
+        if (savedInstanceState != null) {
+            ignoreThemeUpdate = savedInstanceState.getBoolean(SAVED_STATE_IGNORE_THEME_SETUP, false);
+        }
+
+        if (ignoreThemeUpdate) {
+            // Ignore app theme setup cause its already called from function setupAppTheme()
+            Log.d("GNDebug", "onCreate: configuration change from setupAppTheme(), ignoring theme setup");
+        } else {
+            if ("light".equals(appTheme)) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            } else if ("dark".equals(appTheme)) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            } else if ("auto".equals(appTheme)) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+            } else {
+                // default
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                configPreferences.setAppTheme("light");
+            }
+        }
 
         super.onCreate(savedInstanceState);
 
@@ -337,6 +373,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.mWebviewContainer = this.findViewById(R.id.webviewContainer);
         this.mWebview = this.mWebviewContainer.getWebview();
         this.mWebviewContainer.setupWebview(this, isRoot);
+        setupWebviewTheme(appTheme);
 
         boolean isWebViewStateRestored = false;
         if (savedInstanceState != null) {
@@ -520,7 +557,6 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         application.mBridge.onSendInstallationInfo(this, Installation.getInfo(this), mWebview.getUrl());
 
-        setupAppTheme(null);
         validateGoogleService();
 
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -784,6 +820,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
         outState.putInt(SAVED_STATE_PARENT_URL_LEVEL, getGNWindowManager().getParentUrlLevel(activityId));
         outState.putInt(SAVED_STATE_SCROLL_X, mWebview.getWebViewScrollX());
         outState.putInt(SAVED_STATE_SCROLL_Y, mWebview.getWebViewScrollY());
+        if (flagThemeConfigurationChange) {
+            outState.putBoolean(SAVED_STATE_IGNORE_THEME_SETUP, true);
+        }
 
         super.onSaveInstanceState(outState);
     }
@@ -2088,9 +2127,27 @@ public class MainActivity extends AppCompatActivity implements Observer,
     /**
      * @param appTheme set to null if will use sharedPreferences
      */
-    @SuppressLint("RequiresFeature")
+
     @Override
     public void setupAppTheme(String appTheme) {
+        ConfigPreferences preferences = new ConfigPreferences(this);
+        preferences.setAppTheme(appTheme);
+
+        // Updating app theme on runtime triggers a configuration change and recreates the app
+        // To prevent consecutive calls, ignore theme setup on onCreate() by enabling this flag
+        flagThemeConfigurationChange = true;
+
+        if ("light".equals(appTheme)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        } else if ("dark".equals(appTheme)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
+    }
+
+    @SuppressLint("RequiresFeature")
+    private void setupWebviewTheme(String appTheme) {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
             Log.d(TAG, "Dark mode feature is not supported");
             return;
@@ -2100,31 +2157,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
             return;
         }
 
-        ConfigPreferences configPreferences = new ConfigPreferences(this);
-        String currentAppTheme = configPreferences.getAppTheme();
-        if (TextUtils.isEmpty(appTheme)) {
-            appTheme = currentAppTheme; // null provided, take from preference
-        }
-        if (TextUtils.isEmpty(appTheme)) {
-            final AppConfig appConfig = AppConfig.getInstance(this);
-            if (appConfig.androidTheme != null) {
-                appTheme = appConfig.androidTheme;
-            } else {
-                appTheme = "light"; // default is 'light' to support apps with no night assets provided
-            }
-        }
-        Log.d(TAG, "use app theme = " + appTheme);
-        
-        configPreferences.setAppTheme(appTheme); //save preference before the asynchronous config change
-        
         if ("dark".equals(appTheme)) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
             WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_ON);
         } else if ("light".equals(appTheme)) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_OFF);
         } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
             switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
                 case Configuration.UI_MODE_NIGHT_YES:
                     WebSettingsCompat.setForceDark(this.mWebview.getSettings(), WebSettingsCompat.FORCE_DARK_ON);
@@ -2135,11 +2172,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     break;
             }
 
-            WebSettings settings = this.mWebview.getSettings();
             // Force dark on if supported, and only use theme from web
             if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
                 WebSettingsCompat.setForceDarkStrategy(
-                        settings,
+                        this.mWebview.getSettings(),
                         WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY
                 );
             }

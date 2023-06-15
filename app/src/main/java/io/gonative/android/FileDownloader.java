@@ -118,11 +118,16 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
-            if (requestRequiredPermission(new PreDownloadInfo(url, guessFilename, true))) {
+
+            boolean openAfterDownload = defaultDownloadLocation == DownloadLocation.PRIVATE_INTERNAL &&
+                    !TextUtils.isEmpty(contentDisposition) &&
+                    contentDisposition.startsWith("inline");
+
+            if (requestRequiredPermission(new PreDownloadInfo(url, guessFilename, true, openAfterDownload))) {
                 return;
             }
 
-            context.getFileWriterSharer().downloadBlobUrl(url, guessFilename, false);
+            context.getFileWriterSharer().downloadBlobUrl(url, guessFilename, openAfterDownload);
             return;
         }
 
@@ -151,7 +156,7 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
-            if (requestRequiredPermission(new PreDownloadInfo(url, filename, true))) {
+            if (requestRequiredPermission(new PreDownloadInfo(url, filename, true, open))) {
                 return;
             }
             context.getFileWriterSharer().downloadBlobUrl(url, filename, open);
@@ -281,10 +286,11 @@ public class FileDownloader implements DownloadListener {
             this.isBlob = isBlob;
         }
 
-        public PreDownloadInfo(String url, String filename, boolean isBlob) {
+        public PreDownloadInfo(String url, String filename, boolean isBlob, boolean open) {
             this.url = url;
             this.filename = filename;
             this.isBlob = isBlob;
+            this.open = open;
         }
     }
 }
