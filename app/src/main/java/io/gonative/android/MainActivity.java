@@ -2311,7 +2311,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     public void selectTab(int tabNumber) {
         if (tabManager == null) return;
-        tabManager.selectTabNumber(tabNumber);
+        tabManager.selectTabNumber(tabNumber, false);
     }
 
     @Override

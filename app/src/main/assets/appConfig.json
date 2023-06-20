@@ -239,7 +239,7 @@
   },
   "permissions": {
     "usesGeolocation": false,
-    "androidDownloadToPublicStorage": false,
+    "androidDownloadToPublicStorage": true,
     "enableWebRTC": false
   },
   "performance": {

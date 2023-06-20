@@ -190,15 +190,16 @@ gonative.screen = {
 };
 
 gonative.navigationMaxWindows = {
-    set: function (maxWindows){
+    set: function (maxWindows, autoClose){
         var params = {
             data: maxWindows,
+            autoClose: autoClose,
             persist: true
         };
         addCommand("gonative://navigationMaxWindows/set", params);
     },
-    setCurrent: function(maxWindows){
-        var params = {data: maxWindows};
+    setCurrent: function(maxWindows, autoClose){
+        var params = {data: maxWindows, autoClose: autoClose};
         addCommand("gonative://navigationMaxWindows/set", params);
     }
 }

@@ -43,6 +43,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
     private Map<JSONObject, List<Pattern>> tabRegexCache = new HashMap<>(); // regex for each tab to auto-select
     private boolean useJavascript; // do not use tabs from config
     AppConfig appConfig;
+    private boolean performAction = true;
 
 
     @SuppressWarnings("unused")
@@ -197,7 +198,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         }
 
         if (selectedNumber > -1) {
-            selectTabNumber(selectedNumber);
+            selectTabNumber(selectedNumber, true);
         }
     }
 
@@ -314,11 +315,11 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
         }
     }
 
-    public void selectTabNumber(int tabNumber) {
+    public void selectTabNumber(int tabNumber, boolean performAction) {
         if (tabNumber < 0 || tabNumber >= bottomNavigationView.getItemsCount()) {
             return;
         }
-
+        this.performAction = performAction;
         this.bottomNavigationView.setCurrentItem(tabNumber);
     }
 
@@ -329,6 +330,11 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
 
             String url = entry.optString("url");
             String javascript = entry.optString("javascript");
+
+            if (!performAction) {
+                performAction = true;
+                return true;
+            }
 
             if (!TextUtils.isEmpty(url)) {
                 if (!TextUtils.isEmpty(javascript)) mainActivity.loadUrlAndJavascript(url, javascript, true);

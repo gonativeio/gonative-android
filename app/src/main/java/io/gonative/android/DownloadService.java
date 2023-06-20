@@ -149,7 +149,7 @@ public class DownloadService extends Service {
         private String filename;
         private String extension;
         private String mimetype;
-        private final boolean saveToGallery;
+        private boolean saveToGallery;
         private boolean openOnFinish;
         private final FileDownloader.DownloadLocation location;
 
@@ -227,6 +227,11 @@ public class DownloadService extends Service {
                             filename = guessedName.substring(0, pos);
                             extension = guessedName.substring(pos + 1);
                         }
+
+                        if (!TextUtils.isEmpty(extension)) {
+                            // Update mimetype based on final filename extension
+                            mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+                        }
                     }
 
                     if (location == FileDownloader.DownloadLocation.PRIVATE_INTERNAL &&
@@ -237,10 +242,11 @@ public class DownloadService extends Service {
                     if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             ContentResolver contentResolver = getApplicationContext().getContentResolver();
-                            if (saveToGallery) {
+                            if (saveToGallery && mimetype.contains("image")) {
                                 downloadUri = FileDownloader.createExternalFileUri(contentResolver, filename, mimetype, Environment.DIRECTORY_PICTURES);
                             } else {
                                 downloadUri = FileDownloader.createExternalFileUri(contentResolver, filename, mimetype, Environment.DIRECTORY_DOWNLOADS);
+                                saveToGallery = false;
                             }
                             if (downloadUri != null) {
                                 outputStream = (FileOutputStream) contentResolver.openOutputStream(downloadUri);
@@ -254,6 +260,7 @@ public class DownloadService extends Service {
                             outputStream = new FileOutputStream(outputFile);
                         }
                     } else {
+                        this.openOnFinish = true;
                         outputFile = FileDownloader.createOutputFile(getFilesDir(), filename, extension);
                         outputStream = new FileOutputStream(outputFile);
                     }

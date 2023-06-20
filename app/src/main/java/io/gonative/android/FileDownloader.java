@@ -119,9 +119,7 @@ public class FileDownloader implements DownloadListener {
 
         if (url.startsWith("blob:") && context != null) {
 
-            boolean openAfterDownload = defaultDownloadLocation == DownloadLocation.PRIVATE_INTERNAL &&
-                    !TextUtils.isEmpty(contentDisposition) &&
-                    contentDisposition.startsWith("inline");
+            boolean openAfterDownload = defaultDownloadLocation == DownloadLocation.PRIVATE_INTERNAL;
 
             if (requestRequiredPermission(new PreDownloadInfo(url, guessFilename, true, openAfterDownload))) {
                 return;
@@ -156,6 +154,11 @@ public class FileDownloader implements DownloadListener {
         }
 
         if (url.startsWith("blob:") && context != null) {
+
+            if (defaultDownloadLocation == DownloadLocation.PRIVATE_INTERNAL) {
+                open = true;
+            }
+
             if (requestRequiredPermission(new PreDownloadInfo(url, filename, true, open))) {
                 return;
             }
