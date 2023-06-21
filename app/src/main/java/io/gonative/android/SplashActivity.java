@@ -22,7 +22,7 @@ import androidx.core.splashscreen.SplashScreen;
 import io.gonative.gonative_core.AppConfig;
 
 public class SplashActivity extends AppCompatActivity {
-    private static final int REQUEST_PERMISSIONS_WEBRTC = 100;
+    private static final int REQUEST_STARTUP_PERMISSIONS = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,21 +36,6 @@ public class SplashActivity extends AppCompatActivity {
         setContentView(R.layout.splash_screen);
 
         HashSet<String> permissionsToRequest = new HashSet<>();
-
-        // Get permissions for webRTC.
-        // We *could* get permissions for regular webview when the web page requests, but there is
-        // bug where the entire app will crash if we ask for permissions at that point
-        if (config.enableWebRTC) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
-                permissionsToRequest.add(Manifest.permission.CAMERA);
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED){
-                permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.MODIFY_AUDIO_SETTINGS) != PackageManager.PERMISSION_GRANTED){
-                permissionsToRequest.add(Manifest.permission.MODIFY_AUDIO_SETTINGS);
-            }
-        }
 
         if (LeanWebView.isCrosswalk()) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED){
@@ -66,7 +51,7 @@ public class SplashActivity extends AppCompatActivity {
         } else {
             ActivityCompat.requestPermissions(this,
                     permissionsToRequest.toArray(new String[]{}),
-                    REQUEST_PERMISSIONS_WEBRTC);
+                    REQUEST_STARTUP_PERMISSIONS);
         }
     }
 
