@@ -240,7 +240,7 @@ public class DownloadService extends Service {
                         this.openOnFinish = true;
 
                     if (location == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                             ContentResolver contentResolver = getApplicationContext().getContentResolver();
                             if (saveToGallery && mimetype.contains("image")) {
                                 downloadUri = FileDownloader.createExternalFileUri(contentResolver, filename, mimetype, Environment.DIRECTORY_PICTURES);

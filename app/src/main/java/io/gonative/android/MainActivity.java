@@ -2202,9 +2202,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 // 0 : Navigation is displaying with 3 buttons
                 // 1 : Navigation is displaying with 2 button(Android P navigation mode)
                 // 2 : Full screen gesture(Gesture on android Q)
-                if (getResources().getInteger(resourceId) == 2) {
-                    return true;
-                }
+                return getResources().getInteger(resourceId) == 2;
             }
             return false;
         } catch (Resources.NotFoundException ex) {

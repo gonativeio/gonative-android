@@ -191,7 +191,7 @@ public class FileDownloader implements DownloadListener {
 
         List<String> permissions = new ArrayList<>();
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED &&
                 defaultDownloadLocation == DownloadLocation.PUBLIC_DOWNLOADS) {
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);

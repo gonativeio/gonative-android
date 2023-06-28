@@ -204,7 +204,7 @@ public class FileWriterSharer {
 
     private void onFileStartAfterPermission(FileInfo info, boolean granted) throws IOException {
         if (granted && defaultDownloadLocation == FileDownloader.DownloadLocation.PUBLIC_DOWNLOADS) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                 ContentResolver contentResolver = context.getApplicationContext().getContentResolver();
                 Uri uri = FileDownloader.createExternalFileUri(contentResolver, info.name, info.mimetype, Environment.DIRECTORY_DOWNLOADS);
                 if (uri != null) {
