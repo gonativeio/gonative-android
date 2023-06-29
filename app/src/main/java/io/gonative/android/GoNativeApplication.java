@@ -27,11 +27,16 @@ public class GoNativeApplication extends MultiDexApplication {
     private Message webviewMessage;
     private ValueCallback webviewValueCallback;
     private GoNativeWindowManager goNativeWindowManager;
+    private List<BridgeModule> plugins;
     private final static String TAG = GoNativeApplication.class.getSimpleName();
     public final Bridge mBridge = new Bridge(this) {
         @Override
         protected List<BridgeModule> getPlugins() {
-            return new PackageList(GoNativeApplication.this).getPackages();
+            if (GoNativeApplication.this.plugins == null) {
+                GoNativeApplication.this.plugins = new PackageList(GoNativeApplication.this).getPackages();
+            }
+
+            return  GoNativeApplication.this.plugins;
         }
     };
 
