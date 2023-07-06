@@ -624,7 +624,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             };
 
             mDrawerToggle.setDrawerIndicatorEnabled(true);
-            mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.pull_to_refresh_color));
+            mDrawerToggle.getDrawerArrowDrawable().setColor(getResources().getColor(R.color.titleTextColor));
 
             mDrawerLayout.addDrawerListener(mDrawerToggle);
 
@@ -1940,11 +1940,32 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     private void setScreenOrientationPreference() {
         AppConfig appConfig = AppConfig.getInstance(this);
-        if (appConfig.forceScreenOrientation == null) return;
+        if (appConfig.forceScreenOrientation != null) {
+            setDeviceOrientation(appConfig.forceScreenOrientation);
+            return;
+        }
 
-        switch (appConfig.forceScreenOrientation) {
+        if (getResources().getBoolean(R.bool.isTablet)) {
+            if (appConfig.tabletScreenOrientation != null) {
+                setDeviceOrientation(appConfig.tabletScreenOrientation);
+                return;
+            }
+        } else {
+            if (appConfig.phoneScreenOrientation != null) {
+                setDeviceOrientation(appConfig.phoneScreenOrientation);
+                return;
+            }
+        }
+
+        if (!appConfig.androidFullScreen) {
+            setDeviceOrientation(AppConfig.ScreenOrientations.UNSPECIFIED);
+        }
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    private void setDeviceOrientation(AppConfig.ScreenOrientations orientation) {
+        switch (orientation) {
             case UNSPECIFIED:
-                if(appConfig.androidFullScreen) return;
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 break;
             case PORTRAIT:

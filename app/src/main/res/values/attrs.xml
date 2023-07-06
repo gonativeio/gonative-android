@@ -30,4 +30,6 @@
         <attr name="pstsTextSelectedAlpha" format="float" />
     </declare-styleable>
 
+    <bool name="isTablet">false</bool>
+
 </resources>

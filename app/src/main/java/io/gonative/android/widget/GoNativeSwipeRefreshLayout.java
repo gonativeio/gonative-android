@@ -684,7 +684,7 @@ public class GoNativeSwipeRefreshLayout extends ViewGroup implements NestedScrol
         }
         
         if (!isEnabled() || mReturningToStart || canChildScrollUp()
-                || mRefreshing || mNestedScrollInProgress) {
+                || mRefreshing || mNestedScrollInProgress || ev.getPointerCount() > 1) {
             // Fail fast if we're not in a state where a swipe is possible
             return false;
         }
