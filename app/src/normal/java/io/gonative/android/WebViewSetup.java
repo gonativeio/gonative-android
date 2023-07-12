@@ -13,6 +13,7 @@ import java.io.File;
 import java.util.Map;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.CacheMode;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**
@@ -111,7 +112,8 @@ public class WebViewSetup {
         }
 
         webSettings.setDomStorageEnabled(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        webSettings.setCacheMode(appConfig.cacheMode.webSettingsCacheMode());
+
         webSettings.setDatabaseEnabled(true);
 
         webSettings.setSaveFormData(false);
