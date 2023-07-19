@@ -924,9 +924,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
         this.mWebview.stopLoading();
 
         // log out by clearing all cookies and going to home page
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.removeAllCookies(aBoolean -> Log.d(TAG, "removeAllCookies: onReceiveValue callback: " + aBoolean));
-        AsyncTask.THREAD_POOL_EXECUTOR.execute(() -> CookieManager.getInstance().flush());
+        clearWebviewCookies();
  
         updateMenu(false);
         this.loginManager.checkLogin();
@@ -985,6 +983,13 @@ public class MainActivity extends AppCompatActivity implements Observer,
 	@Override
 	public void clearWebviewCache() {
         mWebview.clearCache(true);
+    }
+
+    @Override
+    public void clearWebviewCookies() {
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.removeAllCookies(aBoolean -> Log.d(TAG, "clearWebviewCookies: onReceiveValue callback: " + aBoolean));
+        AsyncTask.THREAD_POOL_EXECUTOR.execute(cookieManager::flush);
     }
 
     @Override
@@ -2453,6 +2458,28 @@ public class MainActivity extends AppCompatActivity implements Observer,
         return application.mBridge.getJavaScriptBridge();
     }
 
+    @Override
+    public void closeCurrentWindow() {
+        if (!getGNWindowManager().isRoot(activityId)) {
+            this.finish();
+        }
+    }
+
+    @Override
+    public void openNewWindow(String url) {
+        if (TextUtils.isEmpty(url)) return;
+        AppConfig appConfig = AppConfig.getInstance(this);
+
+        // Check maxWindows conditions
+        if (appConfig.maxWindowsEnabled && appConfig.numWindows > 0 && getGNWindowManager().getWindowCount() >= appConfig.numWindows && onMaxWindowsReached(url))
+            return;
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("isRoot", false);
+        intent.putExtra("url", url);
+        intent.putExtra(MainActivity.EXTRA_IGNORE_INTERCEPT_MAXWINDOWS, true);
+        startActivityForResult(intent, MainActivity.REQUEST_WEB_ACTIVITY);
+    }
 
     @Override      
     public boolean onMaxWindowsReached(String url) {

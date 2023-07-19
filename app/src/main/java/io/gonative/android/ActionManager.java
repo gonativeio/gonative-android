@@ -115,7 +115,7 @@ public class ActionManager {
         toolbar.setBackgroundColor(colorBackground);
 
         // fix title offset when side menu hamburger icon is not yet available
-        if (appConfig.showNavigationMenu) {
+        if (appConfig.showNavigationMenu && isRoot) {
             menuContainer.getLayoutParams().width = 140;
         }
     }

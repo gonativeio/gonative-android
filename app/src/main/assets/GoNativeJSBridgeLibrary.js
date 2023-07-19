@@ -125,6 +125,9 @@ gonative.webview = {
     clearCache: function(){
         addCommand("gonative://webview/clearCache");
     },
+    clearCookies: function(){
+        addCommand("gonative://webview/clearCookies");
+    },
     reload: function (){
         addCommand("gonative://webview/reload");
     }
@@ -204,6 +207,16 @@ gonative.navigationMaxWindows = {
     }
 }
 
+gonative.window = {
+    open: function (urlString) {
+        var params = {url: urlString};
+        addCommand("gonative://window/open", params);
+    },
+    close: function () {
+        addCommand("gonative://window/close");
+    }
+}
+
 gonative.connectivity = {
     get: function (params){
         return addCommandCallback("gonative://connectivity/get", params);
@@ -240,50 +253,6 @@ gonative.clipboard = {
         return addCommandCallback("gonative://clipboard/get", params);
     }
 };
-
-///////////////////////////////
-////     iOS Exclusive     ////
-///////////////////////////////
-
-gonative.ios = {};
-
-gonative.ios.window = {
-    open: function (urlString){
-        var params = {url: urlString};
-        addCommand("gonative://window/open", params);
-    }
-};
-
-gonative.ios.geoLocation = {
-    requestLocation: function (){
-        addCommand("gonative://geolocationShim/requestLocation");
-    },
-    startWatchingLocation: function (){
-        addCommand("gonative://geolocationShim/startWatchingLocation");
-    },
-    stopWatchingLocation: function (){
-        addCommand("gonative://geolocationShim/stopWatchingLocation");
-    }
-};
-
-gonative.ios.attconsent = {
-    request: function (params){
-        return addCommandCallback("gonative://ios/attconsent/request", params);
-    },
-    status: function (params){
-        return addCommandCallback("gonative://ios/attconsent/status", params);
-    }
-};
-
-gonative.ios.backgroundAudio = {
-    start: function(){
-        addCommand("gonative://backgroundAudio/start");
-    },
-    end: function(){
-        addCommand("gonative://backgroundAudio/end");
-    }
-};
-
 
 //////////////////////////////////////
 ////   Webpage Helper Functions   ////
