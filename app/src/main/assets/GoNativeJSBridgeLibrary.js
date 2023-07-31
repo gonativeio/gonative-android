@@ -282,11 +282,11 @@ function gonative_match_statusbar_to_body_background_color() {
 gonative.android = {};
 
 gonative.android.geoLocation = {
-    promptAndroidLocationServices: function(){
-        addCommand("gonative://geoLocation/promptAndroidLocationServices");
+    promptLocationServices: function(){
+        addCommand("gonative://geoLocation/promptLocationServices");
     },
-    isAndroidLocationServicesEnabled: function(params) {
-        return addCommandCallback("gonative://geoLocation/isAndroidLocationServicesEnabled", params);
+    isLocationServicesEnabled: function(params) {
+        return addCommandCallback("gonative://geoLocation/isLocationServicesEnabled", params);
     }
 };
 
