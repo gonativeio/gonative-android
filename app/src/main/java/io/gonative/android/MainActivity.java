@@ -1890,10 +1890,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void getRuntimeGeolocationPermission(final GeolocationPermissionCallback callback) {
-        int checkFine = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
-        int checkCoarse = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
-
-        if (checkFine == PackageManager.PERMISSION_GRANTED && checkCoarse == PackageManager.PERMISSION_GRANTED) {
+        if (isLocationServiceEnabled()) {
             callback.onResult(true);
         }
 
@@ -2418,28 +2415,14 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     public void promptLocationService() {
-        getRuntimeGeolocationPermission(granted -> {
-            if (!granted) return;
-            if (!isLocationServiceEnabled()) {
-                new AlertDialog.Builder(this)
-                        .setMessage(R.string.location_services_not_enabled)
-                        .setPositiveButton(R.string.ok, (dialogInterface, i) -> startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)))
-                        .setNegativeButton(R.string.no_thanks, null)
-                        .show();
-            }
-        });
+        getRuntimeGeolocationPermission(granted -> Log.d(TAG, "promptLocationService: " + granted));
     }
 
+    @Override
     public boolean isLocationServiceEnabled() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            LocationManager lm = getSystemService(LocationManager.class);
-            return lm.isLocationEnabled();
-        } else {
-            // This is Deprecated in API 28
-            int mode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE,
-                    Settings.Secure.LOCATION_MODE_OFF);
-            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
-        }
+        int checkFine = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
+        int checkCoarse = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
+        return checkFine == PackageManager.PERMISSION_GRANTED && checkCoarse == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override

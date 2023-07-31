@@ -284,6 +284,9 @@ gonative.android = {};
 gonative.android.geoLocation = {
     promptAndroidLocationServices: function(){
         addCommand("gonative://geoLocation/promptAndroidLocationServices");
+    },
+    isAndroidLocationServicesEnabled: function(params) {
+        return addCommandCallback("gonative://geoLocation/isAndroidLocationServicesEnabled", params);
     }
 };
 
