@@ -89,7 +89,7 @@ public class GoNativeWebviewClient extends WebViewClient{
     @Override
     public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
         handler.cancel();
-        urlNavigation.onReceivedSslError(error);
+        urlNavigation.onReceivedSslError(error, view.getUrl());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

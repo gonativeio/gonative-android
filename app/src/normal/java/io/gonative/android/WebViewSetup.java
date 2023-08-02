@@ -4,16 +4,14 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Message;
-import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import java.io.File;
 import java.util.Map;
 
 import io.gonative.gonative_core.AppConfig;
-import io.gonative.gonative_core.CacheMode;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**
@@ -25,7 +23,7 @@ public class WebViewSetup {
     @SuppressLint("JavascriptInterface")
     public static void setupWebviewForActivity(GoNativeWebviewInterface webview, MainActivity activity) {
         if (!(webview instanceof LeanWebView)) {
-            Log.e(TAG, "Expected webview to be of class LeanWebView and not " + webview.getClass().getName());
+            GNLog.getInstance().logError(TAG, "Expected webview to be of class LeanWebView and not " + webview.getClass().getName());
             return;
         }
 
@@ -79,7 +77,7 @@ public class WebViewSetup {
     @SuppressLint("SetJavaScriptEnabled")
     public static void setupWebview(GoNativeWebviewInterface webview, Context context) {
         if (!(webview instanceof LeanWebView)) {
-            Log.e(TAG, "Expected webview to be of class LeanWebView and not " + webview.getClass().getName());
+            GNLog.getInstance().logError(TAG, "Expected webview to be of class LeanWebView and not " + webview.getClass().getName());
             return;
         }
 

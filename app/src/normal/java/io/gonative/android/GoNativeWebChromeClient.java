@@ -17,13 +17,13 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 
 /**
 * Created by weiyin on 2/2/15.
@@ -271,7 +271,7 @@ class GoNativeWebChromeClient extends WebChromeClient {
                     Log.w("[console.warn]", consoleMessage.message());
                     break;
                 case ERROR:
-                    Log.e("[console.error]", consoleMessage.message());
+                    GNLog.getInstance().logError("[console.error]", consoleMessage.message(), new Exception(consoleMessage.message()), GNLog.TYPE_WEB_CONSOLE);
                     break;
             }
         }

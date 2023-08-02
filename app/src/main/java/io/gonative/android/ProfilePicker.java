@@ -1,7 +1,6 @@
 package io.gonative.android;
 
 import androidx.annotation.NonNull;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
@@ -15,6 +14,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 5/9/14.
@@ -74,7 +75,7 @@ public class ProfilePicker implements AdapterView.OnItemSelectedListener {
             });
 
         } catch (JSONException e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
     }
 

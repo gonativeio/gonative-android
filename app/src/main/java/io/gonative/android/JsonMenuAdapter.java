@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
-import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +25,7 @@ import org.json.JSONObject;
 
 import io.gonative.android.icons.Icon;
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 4/14/14.
@@ -118,7 +118,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             if (!section.isNull(s))
                 value = section.getString(s).trim();
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
 
         return value;
@@ -132,7 +132,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             if (!sublink.isNull(s))
                 value = sublink.getString(s).trim();
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
 
         return value;
@@ -163,7 +163,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
             JSONObject section = (JSONObject) menuItems.get(groupPosition);
             return section.optBoolean("isGrouping", false);
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
             return false;
         }
     }
@@ -184,7 +184,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 count = 0;
             }
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
         return count;
     }
@@ -360,7 +360,7 @@ public class JsonMenuAdapter extends BaseExpandableListAdapter
                 return true; // tell android that we have handled it
             }
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
 
         return false;

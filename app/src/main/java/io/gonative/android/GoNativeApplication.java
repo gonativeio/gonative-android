@@ -1,7 +1,6 @@
 package io.gonative.android;
 
 import android.os.Message;
-import android.util.Log;
 import android.webkit.ValueCallback;
 import android.widget.Toast;
 
@@ -14,6 +13,7 @@ import java.util.Map;
 import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.Bridge;
 import io.gonative.gonative_core.BridgeModule;
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 9/2/15.
@@ -43,7 +43,6 @@ public class GoNativeApplication extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
-
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
         mBridge.onApplicationCreate(this);
@@ -51,7 +50,7 @@ public class GoNativeApplication extends MultiDexApplication {
         AppConfig appConfig = AppConfig.getInstance(this);
         if (appConfig.configError != null) {
             Toast.makeText(this, "Invalid appConfig json", Toast.LENGTH_LONG).show();
-            Log.e(TAG, "AppConfig error", appConfig.configError);
+            GNLog.getInstance().logError(TAG, "AppConfig error", appConfig.configError);
         }
 
         this.loginManager = new LoginManager(this);

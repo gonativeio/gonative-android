@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -29,6 +28,8 @@ import androidx.core.view.NestedScrollingParentHelper;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.ListViewCompat;
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
+
+import io.gonative.gonative_core.GNLog;
 
 /**
  * The SwipeRefreshLayout should be used whenever the user can refresh the
@@ -705,7 +706,7 @@ public class GoNativeSwipeRefreshLayout extends ViewGroup implements NestedScrol
             
             case MotionEvent.ACTION_MOVE:
                 if (mActivePointerId == INVALID_POINTER) {
-                    Log.e(LOG_TAG, "Got ACTION_MOVE event but don't have an active pointer id.");
+                    GNLog.getInstance().logError(LOG_TAG, "Got ACTION_MOVE event but don't have an active pointer id.");
                     return false;
                 }
                 
@@ -1019,7 +1020,7 @@ public class GoNativeSwipeRefreshLayout extends ViewGroup implements NestedScrol
             case MotionEvent.ACTION_MOVE: {
                 pointerIndex = ev.findPointerIndex(mActivePointerId);
                 if (pointerIndex < 0) {
-                    Log.e(LOG_TAG, "Got ACTION_MOVE event but have an invalid active pointer id.");
+                    GNLog.getInstance().logError(LOG_TAG, "Got ACTION_MOVE event but have an invalid active pointer id.");
                     return false;
                 }
                 
@@ -1050,7 +1051,7 @@ public class GoNativeSwipeRefreshLayout extends ViewGroup implements NestedScrol
             case MotionEvent.ACTION_POINTER_DOWN: {
                 pointerIndex = ev.getActionIndex();
                 if (pointerIndex < 0) {
-                    Log.e(LOG_TAG,
+                    GNLog.getInstance().logError(LOG_TAG,
                             "Got ACTION_POINTER_DOWN event but have an invalid action index.");
                     return false;
                 }
@@ -1065,7 +1066,7 @@ public class GoNativeSwipeRefreshLayout extends ViewGroup implements NestedScrol
             case MotionEvent.ACTION_UP: {
                 pointerIndex = ev.findPointerIndex(mActivePointerId);
                 if (pointerIndex < 0) {
-                    Log.e(LOG_TAG, "Got ACTION_UP event but don't have an active pointer id.");
+                    GNLog.getInstance().logError(LOG_TAG, "Got ACTION_UP event but don't have an active pointer id.");
                     return false;
                 }
                 

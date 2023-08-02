@@ -2,7 +2,7 @@
 buildscript {
     ext {
         kotlin_version = '1.8.21'
-        coreVersion = '1.5.30'
+        coreVersion = '1.5.31'
         iconsVersion = '1.2.0'
     }
     repositories {
@@ -17,8 +17,9 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:7.4.2'
         classpath 'gradle.plugin.com.onesignal:onesignal-gradle-plugin:0.14.0'
-        //[enabled by builder] classpath 'com.google.gms:google-services:4.3.13'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        //[enabled by builder] classpath 'com.google.gms:google-services:4.3.13'
+        //[enabled by builder] classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.7'
     }
 }
 
@@ -29,6 +30,5 @@ allprojects {
         maven { url 'https://jitpack.io' }
         jcenter()
         maven { url("$rootDir/maven") }
-        //[moxo-plugin: enabled by builder]
     }
 }

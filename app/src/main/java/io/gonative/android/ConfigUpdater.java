@@ -2,7 +2,6 @@ package io.gonative.android;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 8/8/14.
@@ -49,7 +49,7 @@ public class ConfigUpdater {
             try {
                 json.put("event", "launch");
             } catch (JSONException e) {
-                Log.e(TAG, e.getMessage(), e);
+                GNLog.getInstance().logError(TAG, e.getMessage(), e);
                 return null;
             }
 
@@ -67,7 +67,7 @@ public class ConfigUpdater {
                 connection.getResponseCode();
                 connection.disconnect();
             } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
+                GNLog.getInstance().logError(TAG, e.getMessage(), e);
             }
 
             return null;

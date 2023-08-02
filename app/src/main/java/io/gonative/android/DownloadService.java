@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.LeanUtils;
 
 public class DownloadService extends Service {
@@ -126,7 +127,7 @@ public class DownloadService extends Service {
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             });
         } catch (Exception ex) {
-            Log.e(TAG, "viewFile: Exception: ", ex);
+            GNLog.getInstance().logError(TAG, "viewFile: Exception:", ex);
         }
     }
 
@@ -186,7 +187,7 @@ public class DownloadService extends Service {
                     connection.connect();
 
                     if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                        Log.e(TAG, "Server returned HTTP " + connection.getResponseCode()
+                        GNLog.getInstance().logError(TAG, "Server returned HTTP " + connection.getResponseCode()
                                 + " " + connection.getResponseMessage());
                         isDownloading = false;
                         return;
@@ -283,14 +284,14 @@ public class DownloadService extends Service {
                         outputFile = null;
                     }
                 } catch (IOException e) {
-                    Log.e(TAG, "startDownload: ", e);
+                    GNLog.getInstance().logError(TAG, "startDownload: ", e);
                 } finally {
                     try {
                         if (inputStream != null) inputStream.close();
                         if (outputStream != null) outputStream.close();
                         if (connection != null) connection.disconnect();
                     } catch (IOException e) {
-                        Log.e(TAG, "startDownload: ", e);
+                        GNLog.getInstance().logError(TAG, "startDownload: ", e);
                     }
                     isDownloading = false;
                     if (downloadUri == null && outputFile != null) {

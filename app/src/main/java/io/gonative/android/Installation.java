@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
@@ -25,6 +24,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 8/8/14.
@@ -68,7 +68,7 @@ public class Installation {
             info.put("appVersion", packageInfo.versionName);
             info.put("appVersionCode", packageInfo.versionCode);
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
 
         String distribution;

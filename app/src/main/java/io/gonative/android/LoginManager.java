@@ -2,7 +2,6 @@ package io.gonative.android;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -14,6 +13,7 @@ import java.util.Observable;
 import java.util.regex.Pattern;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 3/16/14.
@@ -92,7 +92,7 @@ public class LoginManager extends Observable {
                 return finalUrl;
 
             } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
+                GNLog.getInstance().logError(TAG, e.getMessage(), e);
                 return null;
             }
         }

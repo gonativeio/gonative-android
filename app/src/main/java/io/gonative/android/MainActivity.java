@@ -94,6 +94,7 @@ import io.gonative.android.widget.GoNativeDrawerLayout;
 import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
 import io.gonative.android.widget.SwipeHistoryNavigationLayout;
 import io.gonative.android.widget.WebViewContainerView;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.GoNativeActivity;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 import io.gonative.gonative_core.LeanUtils;
@@ -184,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private LoginManager loginManager;
     private RegistrationManager registrationManager;
     private ConnectivityChangeReceiver connectivityReceiver;
+    private KeyboardManager keyboardManager;
     private BroadcastReceiver navigationTitlesChangedReceiver;
     private BroadcastReceiver navigationLevelsChangedReceiver;
     private BroadcastReceiver webviewLimitReachedReceiver;
@@ -484,7 +486,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             } else if (intent.getBooleanExtra(EXTRA_WEBVIEW_WINDOW_OPEN, false)) {
                 // no worries, loadUrl will be called when this new web view is passed back to the message
             } else {
-                Log.e(TAG, "No url specified for MainActivity");
+                GNLog.getInstance().logError(TAG, "No url specified for MainActivity");
             }
         }
 
@@ -494,7 +496,9 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         updateStatusBarOverlay(appConfig.enableOverlayInStatusBar);
         updateStatusBarStyle(appConfig.statusBarStyle);
-        
+
+        this.keyboardManager = new KeyboardManager(this, this.findViewById(android.R.id.content));
+
         // style sidebar
         if (mDrawerView != null) {
             mDrawerView.setBackgroundColor(getResources().getColor(R.color.sidebarBackground));
@@ -1085,7 +1089,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     "})()";
             runJavascript(js);
         } catch (Exception e) {
-            Log.e(TAG, "Error injecting customCSS via javascript", e);
+            GNLog.getInstance().logError(TAG, "Error injecting customCSS via javascript", e);
         }
     }
 
@@ -1111,7 +1115,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                     "})()";
             runJavascript(js);
         } catch (Exception e) {
-            Log.e(TAG, "Error injecting customJS via javascript", e);
+            GNLog.getInstance().logError(TAG, "Error injecting customJS via javascript", e);
         }
     }
 
@@ -1142,7 +1146,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             else
                 menuAdapter.update("default");
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
     }
 
@@ -1180,7 +1184,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             menuAdapter.update("default");
             mDrawerList.setAdapter(menuAdapter);
         } catch (Exception e) {
-            Log.e(TAG, "Error setting up menu", e);
+            GNLog.getInstance().logError(TAG, "Error setting up menu", e);
         }
 
         mDrawerList.setOnGroupClickListener(menuAdapter);
@@ -1890,7 +1894,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     }
 
     public void getRuntimeGeolocationPermission(final GeolocationPermissionCallback callback) {
-        if (isLocationServiceEnabled()) {
+        if (isLocationPermissionGranted()) {
             callback.onResult(true);
         }
 
@@ -2032,12 +2036,12 @@ public class MainActivity extends AppCompatActivity implements Observer,
         try {
             TelephonyManager telephonyManager = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
             if (telephonyManager == null) {
-                Log.e(TAG, "Error getting system telephony manager");
+                GNLog.getInstance().logError(TAG, "Error getting system telephony manager");
             } else {
                 telephonyManager.listen(this.phoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error listening for signal strength", e);
+            GNLog.getInstance().logError(TAG, "Error listening for signal strength", e);
         }
 
     }
@@ -2100,7 +2104,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             String js = LeanUtils.createJsForCallback(callback, data);
             runJavascript(js);
         } catch (JSONException e) {
-            Log.e(TAG, "JSON error sending connectivity", e);
+            GNLog.getInstance().logError(TAG, "JSON error sending connectivity", e);
         }
     }
 
@@ -2209,10 +2213,10 @@ public class MainActivity extends AppCompatActivity implements Observer,
         try {
             if (BuildConfig.GOOGLE_SERVICE_INVALID) {
                 Toast.makeText(this, R.string.google_service_required, Toast.LENGTH_LONG).show();
-                Log.w(TAG, "validateGoogleService: " + R.string.google_service_required);
+                GNLog.getInstance().logError(TAG, "validateGoogleService: " + R.string.google_service_required, null, GNLog.TYPE_TOAST_ERROR);
             }
         } catch (NullPointerException ex) {
-            Log.w(TAG, "validateGoogleService: " + ex.getMessage());
+            GNLog.getInstance().logError(TAG, "validateGoogleService: " + ex.getMessage(), null, GNLog.TYPE_TOAST_ERROR);
         }
     }
 
@@ -2229,7 +2233,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
             }
             return false;
         } catch (Resources.NotFoundException ex) {
-            Log.e(TAG, "isAndroidGestureEnabled: ", ex);
+            GNLog.getInstance().logError(TAG, "isAndroidGestureEnabled: ", ex);
             return false;
         }
     }
@@ -2273,7 +2277,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                         View decor = getWindow().getDecorView();
                         decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
                     } else {
-                        Log.e(TAG, "updateStatusBarStyle: Current mode is undefined");
+                        GNLog.getInstance().logError(TAG, "updateStatusBarStyle: Current mode is undefined");
                     }
                     break;
             }
@@ -2389,7 +2393,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
                 try { // try converting json string from url to json object
                     customData = new JSONObject(data.optString("customData"));
                 } catch (JSONException e){
-                    Log.e(TAG, "GoNative Registration JSONException:- " + e.getMessage());
+                    GNLog.getInstance().logError(TAG, "GoNative Registration JSONException:- " + e.getMessage(), e);
                 }
             }
             if(customData != null){
@@ -2420,9 +2424,25 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
     @Override
     public boolean isLocationServiceEnabled() {
-        int checkFine = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
-        int checkCoarse = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
-        return checkFine == PackageManager.PERMISSION_GRANTED && checkCoarse == PackageManager.PERMISSION_GRANTED;
+
+        if (!isLocationPermissionGranted()) {
+            return false;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManager lm = getSystemService(LocationManager.class);
+            return lm.isLocationEnabled();
+        } else {
+            // This is Deprecated in API 28
+            int mode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
+            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
+        }
+    }
+
+    private boolean isLocationPermissionGranted() {
+            int checkFine = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
+            int checkCoarse = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
+            return checkFine == PackageManager.PERMISSION_GRANTED && checkCoarse == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -2527,5 +2547,17 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         return false;
+    }
+
+    @Override
+    public void getKeyboardInfo(String callback) {
+        if (keyboardManager == null || TextUtils.isEmpty(callback)) return;
+        runJavascript(LeanUtils.createJsForCallback(callback, keyboardManager.getKeyboardData()));
+    }
+
+    @Override
+    public void addKeyboardListener(String callback) {
+        if (keyboardManager == null) return;
+        keyboardManager.setCallback(callback);
     }
 }

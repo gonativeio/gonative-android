@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 
 /**
@@ -219,7 +220,7 @@ public class HtmlIntercept {
             return new WebResourceResponse("text/html", "UTF-8",
                     new ByteArrayInputStream(newString.getBytes("UTF-8")));
         } catch (Exception e) {
-            Log.e(TAG, e.toString(), e);
+            GNLog.getInstance().logError(TAG, e.toString(), e);
             return null;
         } finally {
             IOUtils.close(is);

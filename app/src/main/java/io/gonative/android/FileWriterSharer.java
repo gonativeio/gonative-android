@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.LeanUtils;
 
 public class FileWriterSharer {
@@ -70,12 +71,12 @@ public class FileWriterSharer {
                 } else if ("nextFileInfo".equals(event)) {
                     onNextFileInfo(json);
                 } else {
-                    Log.e(TAG, "Invalid event " + event);
+                    GNLog.getInstance().logError(TAG, "Invalid event " + event);
                 }
             } catch (JSONException e) {
-                Log.e(TAG, "Error parsing message as json", e);
+                GNLog.getInstance().logError(TAG, "Error parsing message as json", e);
             } catch (IOException e) {
-                Log.e(TAG, "IO Error", e);
+                GNLog.getInstance().logError(TAG, "IO Error", e);
             }
         }
     }
@@ -119,14 +120,14 @@ public class FileWriterSharer {
             js = "gonativeDownloadBlobUrl(" + LeanUtils.jsWrapString(url) + ")";
             context.runJavascript(js);
         } catch (IOException e) {
-            Log.e(TAG, "Error reading asset", e);
+            GNLog.getInstance().logError(TAG, e.getMessage(), e);
         }
     }
 
     private void onFileStart(JSONObject message) throws IOException {
         String identifier = LeanUtils.optString(message, "id");
         if (identifier == null || identifier.isEmpty()) {
-            Log.e(TAG, "Invalid file id");
+            GNLog.getInstance().logError(TAG, "Invalid file id");
             return;
         }
 
@@ -160,14 +161,14 @@ public class FileWriterSharer {
 
         long fileSize = message.optLong("size", -1);
         if (fileSize <= 0 || fileSize > MAX_SIZE) {
-            Log.e(TAG, "Invalid file size");
+            GNLog.getInstance().logError(TAG, "Invalid file size");
             return;
         }
 
         if (TextUtils.isEmpty(type)) {
             type = LeanUtils.optString(message, "type");
             if (TextUtils.isEmpty(type)) {
-                Log.e(TAG, "Invalid file type");
+                GNLog.getInstance().logError(TAG, "Invalid file type");
                 return;
             }
         }
@@ -192,7 +193,7 @@ public class FileWriterSharer {
                     final String js = "gonativeGotStoragePermissions()";
                     context.runOnUiThread(() -> context.runJavascript(js));
                 } catch (IOException e) {
-                    Log.e(TAG, "IO Error", e);
+                    GNLog.getInstance().logError(TAG, "IO Error", e);
                 }
             });
         } else {
@@ -248,7 +249,7 @@ public class FileWriterSharer {
         byte[] chunk = Base64.decode(data.substring(idx), Base64.DEFAULT);
 
         if (fileInfo.bytesWritten + chunk.length > fileInfo.size) {
-            Log.e(TAG, "Received too many bytes. Expected " + fileInfo.size);
+            GNLog.getInstance().logError(TAG, "Received too many bytes. Expected " + fileInfo.size);
             try {
                 fileInfo.fileOutputStream.close();
                 fileInfo.savedFile.delete();
@@ -267,13 +268,13 @@ public class FileWriterSharer {
     private void onFileEnd(JSONObject message) throws IOException {
         String identifier = LeanUtils.optString(message, "id");
         if (identifier == null || identifier.isEmpty()) {
-            Log.e(TAG, "Invalid identifier " + identifier + " for fileEnd");
+            GNLog.getInstance().logError(TAG, "Invalid identifier " + identifier + " for fileEnd");
             return;
         }
 
         final FileInfo fileInfo = this.idToFileInfo.get(identifier);
         if (fileInfo == null) {
-            Log.e(TAG, "Invalid identifier " + identifier + " for fileEnd");
+            GNLog.getInstance().logError(TAG, "Invalid identifier " + identifier + " for fileEnd");
             return;
         }
 
@@ -312,7 +313,7 @@ public class FileWriterSharer {
     private void onNextFileInfo(JSONObject message) {
         String name = LeanUtils.optString(message, "name");
         if (name == null || name.isEmpty()) {
-            Log.e(TAG, "Invalid name for nextFileInfo");
+            GNLog.getInstance().logError(TAG, "Invalid name for nextFileInfo");
             return;
         }
         this.nextFileName = name;

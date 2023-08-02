@@ -35,7 +35,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.security.PrivateKey;
@@ -45,7 +44,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.gonative.gonative_core.AppConfig;
-import io.gonative.gonative_core.GoNativeActivity;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
 import io.gonative.gonative_core.IOUtils;
 import io.gonative.gonative_core.LeanUtils;
@@ -188,7 +187,7 @@ public class UrlNavigation {
         // Check native bridge urls
         if ("gonative".equals(uri.getScheme()) && currentWebviewUrl != null &&
                 !LeanUtils.checkNativeBridgeUrls(currentWebviewUrl, mainActivity)) {
-            Log.e(TAG, "URL not authorized for native bridge: " + currentWebviewUrl);
+            GNLog.getInstance().logError(TAG, "URL not authorized for native bridge: " + currentWebviewUrl);
             return true;
         }
 
@@ -229,7 +228,6 @@ public class UrlNavigation {
                 }
                 mainActivity.startActivity(intent);
             } catch (ActivityNotFoundException ex) {
-                Log.e(TAG, ex.getMessage(), ex);
                 // Try loading fallback url if available
                 if (intent != null) {
                     String fallbackUrl = intent.getStringExtra("browser_fallback_url");
@@ -237,10 +235,11 @@ public class UrlNavigation {
                         mainActivity.loadUrl(fallbackUrl);
                     } else {
                         Toast.makeText(mainActivity, R.string.app_not_installed, Toast.LENGTH_LONG).show();
+                        GNLog.getInstance().logError(TAG, mainActivity.getString(R.string.app_not_installed), ex, GNLog.TYPE_TOAST_ERROR);
                     }
                 }
             } catch (URISyntaxException e) {
-                Log.e(TAG, e.getMessage(), e);
+                GNLog.getInstance().logError(TAG, e.getMessage(), e);
             }
             return true;
         }
@@ -663,7 +662,7 @@ public class UrlNavigation {
         }
     }
 
-    public void onReceivedSslError(SslError error) {
+    public void onReceivedSslError(SslError error, String webviewUrl) {
         int errorMessage;
         switch (error.getPrimaryError()) {
             case SslError.SSL_EXPIRED:
@@ -682,6 +681,8 @@ public class UrlNavigation {
         }
 
         Toast.makeText(mainActivity, errorMessage, Toast.LENGTH_LONG).show();
+        String finalErrorMessage = mainActivity.getString(errorMessage) + " - Error url: " + error.getUrl() + " - Source page: " + webviewUrl;
+        GNLog.getInstance().logError(TAG, finalErrorMessage, new Exception(finalErrorMessage), GNLog.TYPE_TOAST_ERROR);
     }
 
     @SuppressWarnings("unused")
@@ -870,7 +871,7 @@ public class UrlNavigation {
                 X509Certificate[] certificates = KeyChain.getCertificateChain(activity, alias);
                 return new Pair<>(privateKey, certificates);
             } catch (Exception e) {
-                Log.e(TAG, "Erorr getting private key for alias " + alias, e);
+                GNLog.getInstance().logError(TAG, "Error getting private key for alias " + alias, e);
                 return null;
             }
         }

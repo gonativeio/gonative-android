@@ -1,13 +1,13 @@
 package io.gonative.android;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 
 /**
  * Created by weiyin on 4/28/14.
@@ -35,7 +35,7 @@ public class UrlInspector {
             try {
                 userIdRegex = Pattern.compile(regexString);
             } catch (PatternSyntaxException e) {
-                Log.e(TAG, e.getMessage(), e);
+                GNLog.getInstance().logError(TAG, e.getMessage(), e);
             }
         }
     }

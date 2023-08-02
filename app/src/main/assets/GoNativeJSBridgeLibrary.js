@@ -254,6 +254,16 @@ gonative.clipboard = {
     }
 };
 
+gonative.keyboard = {
+    info: function(params){
+        return addCommandCallback("gonative://keyboard/info", params);
+    },
+    listen: function(callback){
+        var params = {callback};
+        addCommand("gonative://keyboard/listen", params);
+    }
+};
+
 //////////////////////////////////////
 ////   Webpage Helper Functions   ////
 //////////////////////////////////////

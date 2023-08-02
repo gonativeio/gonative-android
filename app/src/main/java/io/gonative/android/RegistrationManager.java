@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.LeanUtils;
 
 /**
@@ -153,7 +154,7 @@ public class RegistrationManager {
                     Log.w(TAG, "Recevied status code " + result + " when posting to " + registrationEndpoint.postUrl);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error posting to " + registrationEndpoint.postUrl, e);
+                GNLog.getInstance().logError(TAG, "Error posting to " + registrationEndpoint.postUrl, e);
             }
 
             return null;

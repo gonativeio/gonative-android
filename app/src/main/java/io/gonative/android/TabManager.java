@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.text.TextUtils;
-import android.util.Log;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -22,6 +21,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.gonative.gonative_core.AppConfig;
+import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.LeanUtils;
 import io.gonative.android.icons.Icon;
 
@@ -168,7 +168,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
     
         for (int i = 0; i < tabs.length(); i++) {
             if(i > (maxTabs-1)){
-                Log.e(TAG, "Tab menu items list should not have more than 5 items");
+                GNLog.getInstance().logError(TAG, "Tab menu items list should not have more than 5 items");
                 break;
             }
 
@@ -186,7 +186,7 @@ public class TabManager implements AHBottomNavigation.OnTabSelectedListener {
             // set default drawable "Question Mark" when no icon provided
             if (icon.isEmpty()) {
                 icon = "faw_question";
-                Log.e(TAG, "All tabs must have icons.");
+                GNLog.getInstance().logError(TAG, "All tabs must have icons.");
             }
             
             AHBottomNavigationItem navigationItem = new AHBottomNavigationItem(label, new Icon(mainActivity.getApplicationContext(), icon, tabbar_icon_size, mainActivity.getResources().getColor(R.color.tabBarTextColor)).getDrawable());

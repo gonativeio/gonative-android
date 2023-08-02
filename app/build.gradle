@@ -1,8 +1,9 @@
 import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
-//[enabled by builder] apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-android'
+//[enabled by builder] apply plugin: 'com.google.gms.google-services'
+//[enabled by builder] apply plugin: 'com.google.firebase.crashlytics'
 
 ext {
     fbAppId = ""

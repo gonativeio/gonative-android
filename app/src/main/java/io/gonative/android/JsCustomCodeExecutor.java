@@ -1,11 +1,11 @@
 package io.gonative.android;
 
-import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Map;
+
+import io.gonative.gonative_core.GNLog;
 
 public class JsCustomCodeExecutor {
     private static final String TAG = JsCustomCodeExecutor.class.getName();
@@ -27,7 +27,7 @@ public class JsCustomCodeExecutor {
                     }
                 }
                 catch(JSONException e) {
-                    Log.e(TAG, "Error building custom Json Data", e);
+                    GNLog.getInstance().logError(TAG, "Error building custom Json Data", e);
                 }
                 return json;
             }
@@ -57,7 +57,7 @@ public class JsCustomCodeExecutor {
         try {
             return handler.execute(params);
         } catch(Exception e) {
-            Log.e(TAG, "Error executing custom code", e);
+            GNLog.getInstance().logError(TAG, "Error executing custom code", e);
             return null;
         }
     }
