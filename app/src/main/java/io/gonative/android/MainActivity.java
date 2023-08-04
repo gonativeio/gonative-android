@@ -2257,15 +2257,15 @@ public class MainActivity extends AppCompatActivity implements Observer,
         if (statusBarStyle != null && !statusBarStyle.isEmpty() && Build.VERSION.SDK_INT >= 23) {
             switch (statusBarStyle) {
                 case "light": {
-                    // light icons and text
-                    View decor = getWindow().getDecorView();
-                    decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-                    break;
-                }
-                case "dark": {
                     // dark icons and text
                     View decor = getWindow().getDecorView();
                     decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    break;
+                }
+                case "dark": {
+                    // light icons and text
+                    View decor = getWindow().getDecorView();
+                    decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
                     break;
                 }
                 case "auto":
