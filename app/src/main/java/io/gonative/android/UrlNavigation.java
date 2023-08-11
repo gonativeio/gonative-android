@@ -40,6 +40,7 @@ import java.net.URISyntaxException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -711,7 +712,13 @@ public class UrlNavigation {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             chooseFileUploadAfterPermission(mimetypespec, multiple);
         } else {
-            mainActivity.getPermission(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
+            List<String> permissionToRequest = new ArrayList<>();
+            permissionToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            permissionToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (!Utils.isPermissionGranted(mainActivity, Manifest.permission.CAMERA)) {
+                permissionToRequest.add(Manifest.permission.CAMERA);
+            }
+            mainActivity.getPermission(permissionToRequest.toArray(new String[0]), (permissions, grantResults) -> chooseFileUploadAfterPermission(mimetypespec, multiple));
         }
         return true;
     }

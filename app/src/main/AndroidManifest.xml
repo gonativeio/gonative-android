@@ -15,12 +15,13 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
+    <!-- Camera permissions -->
+    <!--<uses-permission android:name="android.permission.CAMERA"/>-->
+    <!--<uses-feature android:name="android.hardware.camera" android:required="false" />-->
+
+    <!-- Microphone permissions -->
+    <!--<uses-permission android:name="android.permission.RECORD_AUDIO"/>-->
+    <!--<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>-->
 
     <!-- Bluetooth permissions -->
     <!--<uses-permission android:name="android.permission.BLUETOOTH" />-->
