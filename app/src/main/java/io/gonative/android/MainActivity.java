@@ -32,17 +32,24 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebView;
 import android.widget.ExpandableListView;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -61,6 +68,8 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.splashscreen.SplashScreen;
+import androidx.core.splashscreen.SplashScreenViewProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
@@ -89,11 +98,11 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import io.gonative.android.files.CapturedImageSaver;
-import io.gonative.gonative_core.AppConfig;
 import io.gonative.android.widget.GoNativeDrawerLayout;
 import io.gonative.android.widget.GoNativeSwipeRefreshLayout;
 import io.gonative.android.widget.SwipeHistoryNavigationLayout;
 import io.gonative.android.widget.WebViewContainerView;
+import io.gonative.gonative_core.AppConfig;
 import io.gonative.gonative_core.GNLog;
 import io.gonative.gonative_core.GoNativeActivity;
 import io.gonative.gonative_core.GoNativeWebviewInterface;
@@ -203,12 +212,27 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private ActivityResultLauncher<String> requestPermissionLauncher;
     private String deviceInfoCallback = "";
     private boolean flagThemeConfigurationChange = false;
+    private SplashScreenViewProvider splashProvider;
+    private boolean isSplashAlreadyShown;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
         final AppConfig appConfig = AppConfig.getInstance(this);
         GoNativeApplication application = (GoNativeApplication)getApplication();
         GoNativeWindowManager windowManager = application.getWindowManager();
+
+        // Splash events
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
+        splashScreen.setOnExitAnimationListener(splashScreenViewProvider -> {
+            this.splashProvider = splashScreenViewProvider;
+
+            // Add banner to unlicensed app
+            if (!appConfig.isLicensed()) {
+                FrameLayout splashView = (FrameLayout) this.splashProvider.getView();
+                LayoutInflater inflater = getLayoutInflater();
+                splashView.addView(inflater.inflate(R.layout.splash_banner, null));
+            }
+        });
 
         if(appConfig.androidFullScreen){
             toggleFullscreen(true);
@@ -242,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
 
         if (ignoreThemeUpdate) {
             // Ignore app theme setup cause its already called from function setupAppTheme()
-            Log.d("GNDebug", "onCreate: configuration change from setupAppTheme(), ignoring theme setup");
+            Log.d(TAG, "onCreate: configuration change from setupAppTheme(), ignoring theme setup");
         } else {
             if ("light".equals(appTheme)) {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
@@ -1568,6 +1592,53 @@ public class MainActivity extends AppCompatActivity implements Observer,
             this.postLoadJavascript = this.postLoadJavascriptForRefresh;
             this.mWebview.loadUrl(url);
         }
+    }
+
+    public void checkSplashState() {
+        if (splashProvider == null || isSplashAlreadyShown) return;
+        if (mWebview != null && mWebview instanceof WebView) {
+            WebView webView = (WebView) mWebview;
+            webView.evaluateJavascript(
+                    "javascript:document.readyState",
+                    value -> {
+                        if (value.equals("\"complete\"")) {
+                            removeSplashWithAnimation();
+                        }
+                    }
+            );
+        } else {
+            removeSplashWithAnimation();
+        }
+        isSplashAlreadyShown = true;
+    }
+
+    private void removeSplashWithAnimation() {
+        Animation fadeOut = new AlphaAnimation(1, 0);
+        fadeOut.setInterpolator(new AccelerateInterpolator());
+        fadeOut.setDuration(200);
+
+        AnimationSet animation = new AnimationSet(false);
+        animation.addAnimation(fadeOut);
+
+        animation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                splashProvider.remove();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+        View splash = splashProvider.getView();
+        splash.startAnimation(animation);
     }
 
     // onPageFinished
