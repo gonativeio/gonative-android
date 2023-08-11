@@ -1,7 +1,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:background="@drawable/splash">
+
     <TextView
         android:id="@+id/banner_text"
         android:layout_width="wrap_content"
@@ -11,6 +12,8 @@
         android:layout_marginBottom="60dp"
         android:gravity="center_horizontal"
         android:text="@string/banner_message"
-        android:textColor="@color/titleTextColor"
+        android:textColor="@color/colorPrimary"
+        android:visibility="invisible"
         android:textSize="18sp" />
+
 </RelativeLayout>

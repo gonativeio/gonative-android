@@ -52,9 +52,10 @@
     </style>
 
     <style name="SplashTheme" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/display_splash</item>
-        <item name="postSplashScreenTheme">@style/GN.DayNight.NoActionBar</item>
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimationDuration">0</item>
+        <item name="postSplashScreenTheme">@style/SplashScreen</item>
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
     </style>
 
     <attr name="inactiveColor" format="color" />

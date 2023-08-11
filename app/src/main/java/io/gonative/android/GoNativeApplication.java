@@ -25,6 +25,7 @@ public class GoNativeApplication extends MultiDexApplication {
     private RegistrationManager registrationManager;
     private WebViewPool webViewPool;
     private Message webviewMessage;
+    private ValueCallback webviewValueCallback;
     private GoNativeWindowManager goNativeWindowManager;
     private List<BridgeModule> plugins;
     private final static String TAG = GoNativeApplication.class.getSimpleName();
@@ -89,6 +90,16 @@ public class GoNativeApplication extends MultiDexApplication {
 
     public Map<String, Object> getAnalyticsProviderInfo() {
         return mBridge.getAnalyticsProviderInfo();
+    }
+
+    // Needed for Crosswalk
+    @SuppressWarnings("unused")
+    public ValueCallback getWebviewValueCallback() {
+        return webviewValueCallback;
+    }
+
+    public void setWebviewValueCallback(ValueCallback webviewValueCallback) {
+        this.webviewValueCallback = webviewValueCallback;
     }
 
     public GoNativeWindowManager getWindowManager() {

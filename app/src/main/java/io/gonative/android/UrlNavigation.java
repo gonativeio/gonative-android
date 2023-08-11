@@ -487,8 +487,6 @@ public class UrlNavigation {
         state = WebviewLoadState.STATE_DONE;
         setCurrentWebviewUrl(url);
 
-        mainActivity.checkSplashState();
-
         AppConfig appConfig = AppConfig.getInstance(mainActivity);
         if (url != null && appConfig.ignorePageFinishedRegexes != null) {
             for (Pattern pattern : appConfig.ignorePageFinishedRegexes) {

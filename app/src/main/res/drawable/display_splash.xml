@@ -1,6 +1,0 @@
-<inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/splash"
-    android:insetLeft="@dimen/splash_insets"
-    android:insetRight="@dimen/splash_insets"
-    android:insetTop="@dimen/splash_insets"
-    android:insetBottom="@dimen/splash_insets"/>

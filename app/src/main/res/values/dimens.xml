@@ -17,5 +17,4 @@
     <dimen name="handle_text_padding_right">12dp</dimen>
     <dimen name="handle_text_padding_bottom">1dp</dimen>
 
-    <dimen name="splash_insets">64dp</dimen>
 </resources>
