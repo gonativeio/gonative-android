@@ -75,9 +75,8 @@ build.dependsOn parseAppConfig
 build.dependsOn checkGoogleService
 
 android {
-    compileSdkVersion 33
-
     defaultConfig {
+        compileSdk 33
         minSdkVersion 21
         targetSdkVersion 33
         applicationId "io.gonative.android"
@@ -172,8 +171,6 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation "androidx.drawerlayout:drawerlayout:1.2.0"
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'com.google.android.gms:play-services-gcm:17.0.0'
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
     /**** end google ****/
 
     /**** local dependencies ****/
